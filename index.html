@@ -5028,19 +5028,22 @@ function viewReqF(){ebStyle();const ini=rqInitials(RQ.name);const W=["Add or cha
  <label class="eb-note" style="display:block;margin-top:10px">How can we contact you? (email or phone)</label><input data-rq="contact" value="${esc(RQ.contact)}" style="width:100%">
  <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap"><button class="pri" data-rq="send" ${RQ.busy?"disabled":""}>Send request</button><button data-rq="mail">Use my email app instead</button></div>
  <div class="eb-note" id="rqst" style="margin-top:8px">${esc(RQ.status)}</div>
-<p class="eb-note">Your request is emailed straight to the site owner. Files up to a few MB each can be attached. Needs an internet connection.</p></div></section>`}
+<p class="eb-note">Your request is emailed straight to the site owner. Files up to 10 MB in total can be attached. Needs an internet connection.</p></div></section>`}
 function rqMail(){const s="Website request from "+(rqInitials(RQ.name)||"visitor");location.href="mailto:"+RQ_TO+"?subject="+encodeURIComponent(s)+"&body="+encodeURIComponent(rqMsg()+"\n\n(Attach your files to this email before sending.)");RQ.status="Your email app should open with the request written. Attach your files there and press Send."}
 function rqFormPost(){return new Promise(res=>{const n="rqf"+Date.now(),fr=document.createElement("iframe");fr.name=n;fr.style.display="none";const f=document.createElement("form");f.method="POST";f.action="https://formsubmit.co/"+RQ_TO;f.enctype="multipart/form-data";f.target=n;f.style.display="none";
  const add=(k,v)=>{const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;f.appendChild(i)};
  add("_captcha","false");add("_subject","Website request from "+rqInitials(RQ.name));add("initials",rqInitials(RQ.name));add("rating",RQ.rating?RQ.rating+"/5":"not given");add("what",RQ.what);add("details",RQ.extra);add("comments",RQ.comments||"(none)");add("contact",RQ.contact||"(not given)");add("files_chosen",RQ.files.map(x=>x.name).join(", ")||"none");
  if(RQ.files.length){try{const fi=document.createElement("input");fi.type="file";fi.name="attachment";const dt=new DataTransfer();RQ.files.forEach(x=>dt.items.add(x));fi.files=dt.files;f.appendChild(fi)}catch(e){}}
  document.body.appendChild(fr);document.body.appendChild(f);let done=false;const fin=()=>{if(done)return;done=true;setTimeout(()=>{f.remove();fr.remove()},500);res(true)};fr.onload=fin;setTimeout(fin,15000);try{f.submit()}catch(e){done=true;res(false)}})}
+const RQ_APPS="https://script.google.com/macros/s/AKfycbxt0MoZF7XzqhhKOjRGCUyjFNzfAJQ45U6ZEkEnhIdmw3GxGoB-u2w3u_87R4AlILw/exec";
 async function rqSend(){if(!RQ.name.trim()||!RQ.extra.trim()){RQ.status="Please give your name and say what you want done.";return rqRefresh()}
  RQ.busy=true;RQ.status="Sending...";rqRefresh();
- try{const send=async withFiles=>{const fd=new FormData();fd.append("_captcha","false");fd.append("_subject","Website request from "+rqInitials(RQ.name));fd.append("initials",rqInitials(RQ.name));fd.append("rating",RQ.rating?RQ.rating+"/5":"not given");fd.append("what",RQ.what);fd.append("details",RQ.extra);fd.append("comments",RQ.comments||"(none)");fd.append("contact",RQ.contact||"(not given)");fd.append("files_chosen",RQ.files.map(f=>f.name).join(", ")||"none");if(withFiles)RQ.files.forEach(f=>fd.append("attachment",f,f.name));
-   const r=await fetch(RQ_URL,{method:"POST",body:fd,headers:{Accept:"application/json"}});const j=await r.json().catch(()=>({}));return r.ok&&(j.success===true||j.success==="true")};
-  let ok=await send(true),note="";if(!ok&&RQ.files.length){ok=await send(false);if(ok)note=" The files could not be attached; tap 'Use my email app instead' to send them.";}
-  RQ.status=ok?"Sent. Thank you! The site owner has your request."+note:"Could not send. Tap 'Use my email app instead'."}catch(e){const ok=await rqFormPost();RQ.status=ok?"Submitted. If the request does not reach the site owner, tap 'Use my email app instead'.":"Could not send (no connection?). Tap 'Use my email app instead'."}
+ const rd=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok({name:f.name,type:f.type,data:String(r.result).split(",")[1]||""});r.onerror=()=>no(r.error);r.readAsDataURL(f)});
+ const tot=RQ.files.reduce((a,f)=>a+f.size,0);if(tot>10*1024*1024){RQ.status="Your files total "+Math.round(tot/1048576)+" MB; the limit is 10 MB. Remove some, or use 'Use my email app instead'.";RQ.busy=false;return rqRefresh()}
+ let fj="";try{fj=JSON.stringify(await Promise.all(RQ.files.map(rd)))}catch(e){RQ.status="Could not read a chosen file.";RQ.busy=false;return rqRefresh()}
+ const prm=new URLSearchParams({files_json:fj,initials:rqInitials(RQ.name),rating:RQ.rating?RQ.rating+"/5":"not given",what:RQ.what,details:RQ.extra,comments:RQ.comments||"(none)",contact:RQ.contact||"(not given)",files_chosen:RQ.files.map(f=>f.name).join(", ")||"none"});
+ try{await fetch(RQ_APPS,{method:"POST",mode:"no-cors",body:prm});RQ.status="Sent. Thank you! The site owner has your request."+(RQ.files.length?" ("+RQ.files.length+" file"+(RQ.files.length>1?"s":"")+" included.)":"")}
+ catch(e){RQ.status="Could not send (no connection?). Tap 'Use my email app instead'."}
  RQ.busy=false;rqRefresh()}
 function rqRefresh(){const y=window.scrollY;if(tab==="reqf"){const a=document.activeElement;render();window.scrollTo(0,y)}}
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.rq)return;const k=t.dataset.rq;if(["name","extra","comments","contact"].includes(k)){RQ[k]=t.value;if(k==="name"){const el=t.parentNode.querySelector("b");/* live initials without re-render */const box=t.nextElementSibling;if(box&&box.classList&&box.classList.contains("eb-note"))box.innerHTML="Will be sent as: <b>"+esc(rqInitials(t.value))+"</b>"}}});
@@ -5048,8 +5051,10 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.datase
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-rq]");if(!t)return;const k=t.dataset.rq;if(k==="star"){RQ.rating=+t.dataset.n;rqRefresh()}else if(k==="send")rqSend();else if(k==="mail"){rqMail();rqRefresh()}});
 
 // ---------- update log ----------
-const APP_VER=20;
+const APP_VER=22;
 const APP_LOG=[
+[22,"2026-11-06","Send a request: chosen files (up to 10 MB total) are now sent with the request and attached to the email. The owner must paste the updated Apps Script and redeploy once."],
+[21,"2026-11-06","Send a request now sends through a Google Apps Script web app owned by the site owner, so it emails automatically with no activation step; files cannot be attached through it."],
 [20,"2026-11-06","Send a request: if the direct send is blocked (shown as 'no connection'), it now falls back to a plain form submission that works from any page."],
 [19,"2026-11-06","Send a request now emails the site owner automatically (with attached files) instead of opening the email app; the email-app route stays as a backup. The first send needs a one-time activation click in the owner's inbox."],
 [18,"2026-11-06","New Requests > Send a request form: initials only, file picker, what to do, comments, 1-5 rating and contact details; it writes a ready email to the site owner (automatic sending switches on once a form key is added)."],
