@@ -4643,7 +4643,7 @@ const HXN=[
  ["h1",2,0,"Countdown to next exam","#8aa08a",""],["h2",2,1,"Shuffle all flashcards","#8aa08a",""],["h3",2,2,"Review what is due","#8aa08a",""],["h4",2,3,"Subject tiles","#8aa08a",""],
  ["sp",2,7.5,"Subject page|5 subjects, same menu","#4fc3ae","subjects"],
  ["e_tr",2,12,"Triage|P1 to P4 priorities","#e6c85a","triage"],["e_tt",2,13,"Topic test","#e6c85a","ttest"],["e_dt",2,14,"Exam dates","#e6c85a","dates"],["e_xr",2,15,"Exam Room|timed practice","#e6c85a","xr"],["e_ts",2,16,"Tests","#e6c85a","tests"],["e_rv",2,17,"Spaced review|your mistakes live here","#e6c85a","rev"],["e_pg",2,18,"Progress","#e6c85a","prog"],
- ["m_f",2,19.5,"Files","#8fb3e6","files"],["m_r",2,20.5,"Research","#8fb3e6","res"],["m_h",2,21.5,"How it works|you are here","#8fb3e6","help"],["m_s",2,22.5,"Settings|export / reset","#8fb3e6","set"],["r_eb",2,23.5,"EB|a separate section","#d99a8a","eb"],["r_in",3,23.5,"Inside EB|own plan, practice, cards","#d99a8a",""],
+ ["m_f",2,19.5,"Files","#8fb3e6","files"],["m_r",2,20.5,"Research","#8fb3e6","res"],["m_h",2,21.5,"How it works|you are here","#8fb3e6","help"],["m_s",2,22.5,"Settings|export / reset","#8fb3e6","set"],["r_eb",2,23.5,"EB|a separate section","#d99a8a","eb"],["r_rf",2,24.5,"Send a request|form to the site owner","#d99a8a","reqf"],["r_in",3,23.5,"Inside EB|own plan, practice, cards","#d99a8a",""],
  ["s_learn",3,4.5,"Learn","#4fc3ae",""],["s_sheets",3,5.5,"Sheets","#4fc3ae",""],["s_fc",3,6.5,"Flashcards","#4fc3ae",""],["s_pr",3,7.5,"Practice","#4fc3ae",""],["s_qb",3,8.5,"Question bank","#4fc3ae",""],["s_c",3,9.5,"Section C essays (Legal)","#4fc3ae",""],
  ["sheet",4,4.6,"Revision sheet|topic notes","#4fc3ae",""],["fs",4,6.5,"Flashcard screen|pick a deck, then cards","#4fc3ae",""],["drill",4,7.8,"Practice drills|Learn mode / Exam mode","#4fc3ae",""],["essay",4,9.5,"Model essays|key points + practice","#4fc3ae",""],
  ["f1",5,4.6,"💡 Hint|top right, opens when tapped","#e6c85a",""],["f2",5,5.8,"Show answer, then|Got it / Missed","#8fc79a",""],["f3",5,7,"Hard / Good / Easy|your own rating","#e6c85a",""],["f4",5,8.2,"Notes (left)|Calculator (right)","#8fb3e6",""],["f5",5,9.4,"Learn this|opens the sheet section","#4fc3ae",""]];
@@ -4651,7 +4651,7 @@ const HXE=[["root","t_home"],["root","t_sub"],["root","t_ex"],["root","t_more"],
 ["t_home","h1"],["t_home","h2"],["t_home","h3"],["t_home","h4"],
 ["t_sub","sp"],["sp","s_learn"],["sp","s_sheets"],["sp","s_fc"],["sp","s_pr"],["sp","s_qb"],["sp","s_c"],
 ["t_ex","e_tr"],["t_ex","e_tt"],["t_ex","e_dt"],["t_ex","e_xr"],["t_ex","e_ts"],["t_ex","e_rv"],["t_ex","e_pg"],
-["t_more","m_f"],["t_more","m_r"],["t_more","m_h"],["t_more","m_s"],["root","t_req"],["t_req","r_eb"],["r_eb","r_in"],
+["t_more","m_f"],["t_more","m_r"],["t_more","m_h"],["t_more","m_s"],["root","t_req"],["t_req","r_eb"],["t_req","r_rf"],["r_eb","r_in"],
 ["h4","sp"],["h2","fs"],["s_fc","fs"],["s_sheets","sheet"],["s_learn","sheet"],["s_pr","drill"],["s_c","essay"],
 ["fs","f1"],["fs","f2"],["fs","f3"],["fs","f4"],["fs","f5"],
 ["h3","e_rv","","x"],["e_tt","e_tr","looks weak + suggest","x"],["e_tt","e_rv","wrong answers","x"],["f2","e_rv","Missed goes to mistakes","x"],["f3","e_tr","ratings shown per topic","x"],["f5","sheet","opens","x"]];
@@ -5011,9 +5011,42 @@ document.addEventListener("change",async e=>{const t=e.target;if(!t||!t.dataset|
  for(const f of t.files){const k=/ebfiles\s*(\d)/i.exec(f.name);if(!k)continue;const b=await f.arrayBuffer();EBZ[k[1]]=Promise.resolve(b);await ebzPutIdb("eb"+k[1],b);got.push(k[1])}
  if(m)m.textContent=got.length?"Got zip "+got.join(", ")+". Tap a file to open it.":"Those files are not named ebfiles1.zip, ebfiles2.zip or ebfiles3.zip."});
 
+// ---------- Send a request (contact form) ----------
+// Sends automatically through FormSubmit (free). The first ever submission makes FormSubmit email the owner an activation link, which must be clicked once.
+const RQ_TO="jacobhiltz7@gmail.com",RQ_URL="https://formsubmit.co/ajax/"+RQ_TO;
+const RQ={name:"",files:[],what:"Add or change something",extra:"",comments:"",rating:0,contact:"",status:"",busy:false};
+function rqInitials(n){return String(n||"").trim().split(/[\s\-]+/).filter(Boolean).map(w=>w[0].toUpperCase()).join("").slice(0,4)}
+function rqMsg(){const ini=rqInitials(RQ.name);return "From (initials): "+(ini||"(not given)")+"\nRating of the website: "+(RQ.rating?RQ.rating+" / 5":"(not given)")+"\nWhat should be done: "+RQ.what+"\nDetails: "+(RQ.extra||"(none)")+"\nComments: "+(RQ.comments||"(none)")+"\nHow to contact: "+(RQ.contact||"(not given)")+"\nFiles chosen ("+RQ.files.length+"): "+(RQ.files.map(f=>f.name+" ("+Math.round(f.size/1024)+" KB)").join(", ")||"none")}
+function viewReqF(){ebStyle();const ini=rqInitials(RQ.name);const W=["Add or change something","Fix a mistake","Make questions or flashcards from my files","Explain or check something","Other"];
+ return `<section class="eb"><div class="eb-card"><b>Send a request</b><p class="eb-note">Fill this in and it goes to the site owner, who updates the website. Only your <b>initials</b> are sent, never your full name.</p>
+ <label class="eb-note">Your name (sent as initials)</label><input data-rq="name" value="${esc(RQ.name)}" placeholder="e.g. First Last" autocomplete="off" style="width:100%">${ini?`<div class="eb-note">Will be sent as: <b>${esc(ini)}</b></div>`:""}
+ <label class="eb-note" style="display:block;margin-top:10px">Files (optional)</label><input type="file" multiple data-rq="files" style="width:100%"><div class="eb-note" id="rqfl">${RQ.files.length?esc(RQ.files.map(f=>f.name).join(", ")):"No files chosen"}</div>
+ <label class="eb-note" style="display:block;margin-top:10px">What do you want done?</label><select data-rq="what" style="width:100%">${W.map(w=>`<option ${RQ.what===w?"selected":""}>${esc(w)}</option>`).join("")}</select>
+ <textarea data-rq="extra" placeholder="Describe exactly what you want done" style="width:100%;min-height:90px;margin-top:6px">${esc(RQ.extra)}</textarea>
+ <label class="eb-note" style="display:block;margin-top:10px">Comments (optional)</label><textarea data-rq="comments" style="width:100%;min-height:60px">${esc(RQ.comments)}</textarea>
+ <label class="eb-note" style="display:block;margin-top:10px">Rate the website</label><div class="row" style="gap:6px">${[1,2,3,4,5].map(n=>`<button data-rq="star" data-n="${n}" class="${RQ.rating===n?"pri":""}" aria-label="${n} out of 5">${n}&#9733;</button>`).join("")}</div>
+ <label class="eb-note" style="display:block;margin-top:10px">How can we contact you? (email or phone)</label><input data-rq="contact" value="${esc(RQ.contact)}" style="width:100%">
+ <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap"><button class="pri" data-rq="send" ${RQ.busy?"disabled":""}>Send request</button><button data-rq="mail">Use my email app instead</button></div>
+ <div class="eb-note" id="rqst" style="margin-top:8px">${esc(RQ.status)}</div>
+<p class="eb-note">Your request is emailed straight to the site owner. Files up to a few MB each can be attached. Needs an internet connection.</p></div></section>`}
+function rqMail(){const s="Website request from "+(rqInitials(RQ.name)||"visitor");location.href="mailto:"+RQ_TO+"?subject="+encodeURIComponent(s)+"&body="+encodeURIComponent(rqMsg()+"\n\n(Attach your files to this email before sending.)");RQ.status="Your email app should open with the request written. Attach your files there and press Send."}
+async function rqSend(){if(!RQ.name.trim()||!RQ.extra.trim()){RQ.status="Please give your name and say what you want done.";return rqRefresh()}
+ RQ.busy=true;RQ.status="Sending...";rqRefresh();
+ try{const send=async withFiles=>{const fd=new FormData();fd.append("_captcha","false");fd.append("_subject","Website request from "+rqInitials(RQ.name));fd.append("initials",rqInitials(RQ.name));fd.append("rating",RQ.rating?RQ.rating+"/5":"not given");fd.append("what",RQ.what);fd.append("details",RQ.extra);fd.append("comments",RQ.comments||"(none)");fd.append("contact",RQ.contact||"(not given)");fd.append("files_chosen",RQ.files.map(f=>f.name).join(", ")||"none");if(withFiles)RQ.files.forEach(f=>fd.append("attachment",f,f.name));
+   const r=await fetch(RQ_URL,{method:"POST",body:fd,headers:{Accept:"application/json"}});const j=await r.json().catch(()=>({}));return r.ok&&(j.success===true||j.success==="true")};
+  let ok=await send(true),note="";if(!ok&&RQ.files.length){ok=await send(false);if(ok)note=" The files could not be attached; tap 'Use my email app instead' to send them.";}
+  RQ.status=ok?"Sent. Thank you! The site owner has your request."+note:"Could not send. Tap 'Use my email app instead'."}catch(e){RQ.status="Could not send (no connection?). Tap 'Use my email app instead'."}
+ RQ.busy=false;rqRefresh()}
+function rqRefresh(){const y=window.scrollY;if(tab==="reqf"){const a=document.activeElement;render();window.scrollTo(0,y)}}
+document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.rq)return;const k=t.dataset.rq;if(["name","extra","comments","contact"].includes(k)){RQ[k]=t.value;if(k==="name"){const el=t.parentNode.querySelector("b");/* live initials without re-render */const box=t.nextElementSibling;if(box&&box.classList&&box.classList.contains("eb-note"))box.innerHTML="Will be sent as: <b>"+esc(rqInitials(t.value))+"</b>"}}});
+document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.rq)return;if(t.dataset.rq==="what")RQ.what=t.value;if(t.dataset.rq==="files"){RQ.files=Array.from(t.files||[]);const l=document.getElementById("rqfl");if(l)l.textContent=RQ.files.length?RQ.files.map(f=>f.name).join(", "):"No files chosen"}});
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-rq]");if(!t)return;const k=t.dataset.rq;if(k==="star"){RQ.rating=+t.dataset.n;rqRefresh()}else if(k==="send")rqSend();else if(k==="mail"){rqMail();rqRefresh()}});
+
 // ---------- update log ----------
-const APP_VER=17;
+const APP_VER=19;
 const APP_LOG=[
+[19,"2026-11-06","Send a request now emails the site owner automatically (with attached files) instead of opening the email app; the email-app route stays as a backup. The first send needs a one-time activation click in the owner's inbox."],
+[18,"2026-11-06","New Requests > Send a request form: initials only, file picker, what to do, comments, 1-5 rating and contact details; it writes a ready email to the site owner (automatic sending switches on once a form key is added)."],
 [17,"2026-11-06","EB: fixed timed papers so Part A and Part B are always exactly 15 marks and Part C 20 (they varied from 11 to 16 before, so the 95-mark total was wrong); question numbers now show and run in order; added 4 longer unseens (16 in all) closer to the real exam length."],
 [16,"2026-11-06","EB: the supplied PDFs, notes and past papers (Word and PowerPoint converted to PDF) now open from the Links page, from three new zips, ebfiles1/2/3.zip, uploaded next to index.html."],
 [15,"2026-11-06","EB: new Links page with the official past-exam, study-design and examiner-report pages (open in a new tab)."],
@@ -5341,13 +5374,13 @@ const catsFor=sj=>MCATS[sj]||MCATS.def;
 const ERRP={S:"List each lost mark: topic, why it was lost, correct answer in one line.",M:"List each wrong question: topic, the step that failed, the right method.",F:"List each mistake with the rule (tense, agreement, accent) and a corrected sentence.",L:"List each missed element or defence with the correct rule and example.",E:"Note the weakest paragraph, why it was weak, and the fix."};
 // ---------- ui state ----------
 let tab="home",viewDay=null,focus=null,tool={k:"flash",arg:""},openId=null;
-const TAB_GROUPS=[["home","Home",["home"]],["subjects","Subjects",["subjects","learn","sheets","tools","qb","lc"]],["review","Exams",["triage","ttest","dates","xr","tests","rev","prog"]],["more","More",["files","res","help","log","set"]],["req","Requests",["eb"]]];
-const TAB_LABEL={triage:"Triage",ttest:"Topic test",dates:"Exam dates",xr:"Exam Room",tests:"Tests",rev:"Spaced review",prog:"Progress",files:"Files",res:"Research",help:"How it works",log:"Version history",eb:"EB",set:"Settings"};
+const TAB_GROUPS=[["home","Home",["home"]],["subjects","Subjects",["subjects","learn","sheets","tools","qb","lc"]],["review","Exams",["triage","ttest","dates","xr","tests","rev","prog"]],["more","More",["files","res","help","log","set"]],["req","Requests",["eb","reqf"]]];
+const TAB_LABEL={triage:"Triage",ttest:"Topic test",dates:"Exam dates",xr:"Exam Room",tests:"Tests",rev:"Spaced review",prog:"Progress",files:"Files",res:"Research",help:"How it works",log:"Version history",eb:"EB",reqf:"Send a request",set:"Settings"};
 function tabs(){const g=TAB_GROUPS.find(x=>x[2].includes(tab))||TAB_GROUPS[0];let h=`<nav class="tabs" role="tablist">${TAB_GROUPS.map(x=>`<button role="tab" data-act="tab" data-v="${x[2].includes(tab)?tab:x[2][0]}" aria-selected="${x===g}">${x[1]}</button>`).join("")}</nav>`;if((g[2].length>1||g[0]==="req")&&g[0]!=="subjects")h+=`<nav class="tabs sub" role="tablist">${g[2].map(k=>`<button role="tab" data-act="tab" data-v="${k}" aria-selected="${tab===k}">${TAB_LABEL[k]}</button>`).join("")}</nav>`;return h}
 function render(){const a=$("#app");if(!a)return;autoDone();
  const t=nowD();const pts=score();const el=examsLeft();
  let h=`<header class="top"><div class="brand"><h1>TheMossHead's Academics</h1><small>Year 10 end-of-year exams · v${APP_VER}</small></div><div class="score"><div><b>${pts}</b><br>points</div><div><b>${streak()}</b><br>day streak</div><div><b>${level(pts)}</b><br>level</div></div></header>`+tabs()+subCrumb();
- if(tab==="home")h+=viewHome();else if(tab==="dates")h+=viewDates();else if(tab==="triage")h+=viewTriage();else if(tab==="ttest")h+=viewTTest();else if(tab==="subjects")h+=viewSubjects();else if(tab==="today")h+=viewToday(t);else if(tab==="plan")h+=viewPlan(t);else if(tab==="tools")h+=viewTools();else if(tab==="tests")h+=viewTests();else if(tab==="files")h+=viewFiles();else if(tab==="res")h+=viewRes();else if(tab==="rev")h+=viewReview();else if(tab==="xr")h+=viewExam();else if(tab==="qb")h+=viewQB();else if(tab==="lc")h+=viewLC();else if(tab==="learn")h+=viewLearn();else if(tab==="sheets")h+=viewSheets();else if(tab==="help")h+=viewHelp();else if(tab==="log")h+=viewLog();else if(tab==="eb")h+=viewEB();else if(tab==="prog")h+=viewProg();else h+=viewSet();
+ if(tab==="home")h+=viewHome();else if(tab==="dates")h+=viewDates();else if(tab==="triage")h+=viewTriage();else if(tab==="ttest")h+=viewTTest();else if(tab==="subjects")h+=viewSubjects();else if(tab==="today")h+=viewToday(t);else if(tab==="plan")h+=viewPlan(t);else if(tab==="tools")h+=viewTools();else if(tab==="tests")h+=viewTests();else if(tab==="files")h+=viewFiles();else if(tab==="res")h+=viewRes();else if(tab==="rev")h+=viewReview();else if(tab==="xr")h+=viewExam();else if(tab==="qb")h+=viewQB();else if(tab==="lc")h+=viewLC();else if(tab==="learn")h+=viewLearn();else if(tab==="sheets")h+=viewSheets();else if(tab==="help")h+=viewHelp();else if(tab==="log")h+=viewLog();else if(tab==="eb")h+=viewEB();else if(tab==="reqf")h+=viewReqF();else if(tab==="prog")h+=viewProg();else h+=viewSet();
  a.innerHTML=h;
  if(focus)renderFocus();else{const f=$("#fo");if(f)f.remove()}
  if(tab==="tools")bindTool();if(tab==="rev")bindSR();if(tab==="learn")bindLearn();if(tab==="sheets")bindSheets();if(tab==="xr")bindExam();if(tab==="qb")bindQB();if(tab==="lc")bindLC();
