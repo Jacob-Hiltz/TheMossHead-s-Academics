@@ -384,12 +384,22 @@ html.fz-on,html.fz-on body{overflow:hidden}
 .fz-prog{position:relative}.fz-prog #hn-top{display:block;margin:8px 0 0 auto;padding:4px 12px;min-height:30px;font-size:12.5px;border-radius:999px;border:1px solid #e6c85a;background:rgba(230,200,90,.08);color:#e6c85a}.fz-prog #hn-top b{font-weight:600;margin-left:4px}.fz-prog #hn-top:disabled{opacity:.35}
 .fz-prog #hn-bar{position:absolute;right:20px;top:100%;margin:6px 0 0;width:min(340px,calc(100% - 40px));max-height:46vh;overflow:auto;z-index:20;background:var(--card);border:1px solid #e6c85a;border-radius:14px;padding:10px 10px 8px;box-shadow:0 12px 30px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:6px}.hn-x{align-self:flex-end;min-height:0;padding:0 8px;border:0;background:none;color:var(--mut);font-size:15px}
 #ft-row{flex:0 0 auto;display:flex;justify-content:space-between;gap:10px;padding:0 16px 8px}#ft-row button{min-height:34px;padding:4px 14px;font-size:13px;border-radius:999px;background:transparent;color:var(--acc);border:1px solid var(--acc)}#ft-row button.on{background:var(--acc);color:var(--accfg)}
-.ft-p{position:fixed;z-index:10050;bottom:0;width:min(360px,100vw);max-height:78vh;background:var(--card);border:1px solid var(--acc);color:var(--fg);display:flex;flex-direction:column;box-shadow:0 -6px 30px rgba(0,0,0,.5)}.ft-l{left:0;border-radius:0 16px 0 0;border-left:0;border-bottom:0;height:62vh}.ft-r{right:0;border-radius:16px 0 0 0;border-right:0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
-.ft-h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}.ft-h b{color:var(--acc);font-size:15px}.ft-h small{color:var(--mut);font-size:11px;flex:1}.ft-h b+button{margin-left:auto}.ft-h button{min-height:30px;padding:2px 10px;font-size:13px}
-#ft-ta{flex:1;resize:none;border:0;background:var(--soft);color:var(--fg);font:15px/1.5 var(--bf);padding:12px;outline:0}.ft-f{padding:8px 12px;display:flex;justify-content:flex-end}.ft-f button{min-height:30px;font-size:12.5px;color:var(--mut)}
-#ft-in{margin:10px 12px 0;padding:10px 12px;font:20px ui-monospace,Menlo,monospace;background:var(--soft);color:var(--fg);border:1px solid var(--line);border-radius:10px;text-align:right}#ft-res{margin:4px 14px 8px;min-height:22px;text-align:right;color:var(--acc);font:600 17px ui-monospace,Menlo,monospace}
-.ft-k{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px 12px}.ft-k button{min-height:44px;padding:0;font-size:16px;background:var(--soft);border:1px solid var(--line);color:var(--fg)}.ft-k button.d{background:var(--card)}.ft-k button.eq{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:700}
-.ft-k button{min-height:40px}.ft-k button.eq{grid-column:1/-1}.ft-r{overflow:auto}
+.ft-p{position:fixed;z-index:10050;background:var(--card);border:1px solid var(--acc);border-radius:14px;color:var(--fg);display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden;min-width:170px}.ft-p.ft-act{box-shadow:0 14px 40px rgba(0,0,0,.65);opacity:.96}
+.ft-h{display:flex;align-items:center;gap:5px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--line);cursor:grab;touch-action:none;user-select:none;flex:0 0 auto}.ft-h b{color:var(--acc);font-size:14px}.ft-h small{color:var(--mut);font-size:10.5px;flex:1;white-space:nowrap}.ft-h b+button{margin-left:auto}.ft-h button{min-height:26px;padding:0 7px;font-size:12px;line-height:1}
+#ft-ta{flex:1;min-height:0;resize:none;border:0;background:var(--soft);color:var(--fg);font:15px/1.5 var(--bf);padding:10px 12px;outline:0}.ft-f{padding:5px 10px 14px;display:flex;justify-content:flex-end}.ft-f button{min-height:26px;font-size:12px;color:var(--mut)}
+.ft-cb{flex:1;min-height:0;overflow:auto;padding-bottom:16px}#ft-in{display:block;width:calc(100% - 20px);box-sizing:border-box;margin:8px 10px 0;padding:8px 10px;font:18px ui-monospace,Menlo,monospace;background:var(--soft);color:var(--fg);border:1px solid var(--line);border-radius:10px;text-align:right}#ft-res{margin:3px 12px 6px;min-height:20px;text-align:right;color:var(--acc);font:600 15px ui-monospace,Menlo,monospace}
+.ft-k{--kh:40px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 10px}.ft-k button{min-height:var(--kh);height:var(--kh);padding:0;font-size:15px;background:var(--soft);border:1px solid var(--line);color:var(--fg)}.ft-k button.d{background:var(--card)}.ft-k button.eq{grid-column:1/-1;background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:700}
+.ft-rs{position:absolute;right:0;bottom:0;width:26px;height:26px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 55%,var(--acc) 56% 62%,transparent 63% 72%,var(--acc) 73% 79%,transparent 80%);border-radius:0 0 14px 0}
+.ft-h{flex-wrap:nowrap}.ft-h button{white-space:nowrap;flex:0 0 auto}.ft-h b{white-space:nowrap}.ft-h small{overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+#rt-row{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px 8px;font-size:12.5px;color:var(--mut)}#rt-row small{opacity:.75}.rt-b{min-height:32px;padding:3px 14px;font-size:13px;border-radius:999px;background:transparent}.rt-b.rt-hard{color:#d79a8b;border-color:#d79a8b}.rt-b.rt-good{color:#e6c85a;border-color:#e6c85a}.rt-b.rt-easy{color:#8fc79a;border-color:#8fc79a}.rt-b.on.rt-hard{background:#d79a8b;color:#2a1410}.rt-b.on.rt-good{background:#e6c85a;color:#2a2410}.rt-b.on.rt-easy{background:#8fc79a;color:#0e2415}
+.rt-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;border:1px solid currentColor}.rt-tag small{opacity:.8}.rt-tag.rt-hard{color:#d79a8b}.rt-tag.rt-good{color:#e6c85a}.rt-tag.rt-easy{color:#8fc79a}
+.rt-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle}.rt-dot.rt-hard{background:#d79a8b}.rt-dot.rt-good{background:#e6c85a}.rt-dot.rt-easy{background:#8fc79a}
+.tr-sug{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;border:1px solid #e8924a;color:#e8924a}.tr-sugbar{display:flex;flex-direction:column;gap:4px;margin:8px 0}.tr-sugbar small{color:var(--mut)}
+
+#hx-q{width:100%;box-sizing:border-box;padding:10px 12px;font-size:15px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--fg)}.hx-ans{margin-top:10px;padding:10px 12px;border-left:3px solid var(--acc);background:var(--soft);border-radius:8px}.hx-ans p{margin:4px 0 0;font-size:14px;line-height:1.5}
+.hx-q{border-bottom:1px solid var(--line);padding:6px 0}.hx-q summary{cursor:pointer;font-weight:600;font-size:14.5px}.hx-q p{margin:6px 0 4px;font-size:14px;line-height:1.55;color:var(--mut)}
+.hx-tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}#hx-map{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:75vh;background:var(--bg)}#hx-map svg{display:block}.hx-t{font:600 13px Inter,system-ui,sans-serif;fill:var(--fg)}.hx-s{font:11px Inter,system-ui,sans-serif;fill:var(--mut)}.hx-h{font:700 13px Inter,system-ui,sans-serif;fill:var(--acc);letter-spacing:.06em;text-transform:uppercase}.hx-el{font:11px Inter,system-ui,sans-serif;fill:#e8924a}.hx-n[data-hxgo]{cursor:pointer}.hx-n[data-hxgo]:hover rect:first-child{fill:var(--soft)}
 /* ===== optional appearance settings (everything below only applies when an option is switched on) ===== */
 :root[data-theme="night"]{--bg:#05080c;--fg:#dfe7f2;--mut:#8b9bb0;--line:#1b2431;--card:#0b1119;--soft:#121a25;--acc:#6aa8ff;--accfg:#041226;--good:#58c88b;--bad:#f07a70;--warn:#e8a64a;color-scheme:dark}
 :root[data-theme="pastel"]{--bg:#fbf4fa;--fg:#3b3350;--mut:#7a6f90;--line:#eadff0;--card:#fffafe;--soft:#f3e8f6;--acc:#9b7fd1;--accfg:#fff;--good:#4aa87a;--bad:#d9667c;--warn:#c98f3a}
@@ -4357,18 +4367,24 @@ function trSet(k,f,v){S.triage=S.triage||{};const o=S.triage[k]=S.triage[k]||{};
 function viewTriage(){
  const ks=trTopics();const q={1:[],2:[],3:[],4:[],un:[]};
  ks.forEach(k=>{const p=trGet(k).p;(p?q[p]:q.un).push(k)});
- const nm=k=>k.replace(/^Notes /,"").replace(/ \(check with your teacher\)/,"*");const chip=k=>`<button class="tr-chip" data-act="trsheet" data-k="${esc(k)}">${esc(nm(k))}</button>`;
+ const nm=k=>k.replace(/^Notes /,"").replace(/ \(check with your teacher\)/,"*");const chip=k=>`<button class="tr-chip" data-act="trsheet" data-k="${esc(k)}">${esc(nm(k))}${rtDot(k)}</button>`;
  const cell=(id,n,t,s)=>`<div class="tr-cell tr-p${n}"><b>${t}</b><span>${s}</span><div class="tr-chips">${q[id].length?q[id].map(chip).join(""):'<em>None yet</em>'}</div></div>`;
- const row=k=>{const o=trGet(k);return `<div class="tr-row"><div class="tr-name">${esc(nm(k))}${ttHint(k)?`<span class="tr-hint">test: ${ttHint(k)}</span>`:""}${TR_FREQ[k]?`<span class="tr-scope yes">${TR_FREQ[k]}</span>`:""}${TR_SCOPE[k]?`<span class="tr-scope ${(TR_SCOPE[k]==="n"||TR_SCOPE[k]==="c"||TR_SCOPE[k]==="mn")?"no":"yes"}">${TR_SCOPE_TXT[TR_SCOPE[k]]}</span>`:""}</div><div class="tr-tg">${[1,2,3,4].map(n=>`<button class="tr-t${o.p===n?" on":""}" data-act="trset" data-k="${esc(k)}" data-f="p" data-v="${n}">P${n}</button>`).join("")}</div></div>`};
+ const row=k=>{const o=trGet(k);return `<div class="tr-row"><div class="tr-name">${esc(nm(k))}${ttHint(k)?`<span class="tr-hint">test: ${ttHint(k)}</span>`:""}${rtTag(k)}${trSugTag(k)}${TR_FREQ[k]?`<span class="tr-scope yes">${TR_FREQ[k]}</span>`:""}${TR_SCOPE[k]?`<span class="tr-scope ${(TR_SCOPE[k]==="n"||TR_SCOPE[k]==="c"||TR_SCOPE[k]==="mn")?"no":"yes"}">${TR_SCOPE_TXT[TR_SCOPE[k]]}</span>`:""}</div><div class="tr-tg">${[1,2,3,4].map(n=>`<button class="tr-t${o.p===n?" on":""}" data-act="trset" data-k="${esc(k)}" data-f="p" data-v="${n}">P${n}</button>`).join("")}</div></div>`};
  return `<section class="tr"><h2>Triage</h2><p class="mut">Give each topic a priority below. P1 = common on the exam and weak, P2 = common and strong, P3 = uncommon and weak, P4 = uncommon and strong. Work through the table in that order.</p>
  <div class="tr-subj">${Object.keys(TR_SJ).map(c=>`<button class="tr-s${c===trSj?" on":""}" data-act="trsj" data-v="${c}">${TR_SJ[c][0]}</button>`).join("")}</div>
  <div class="tr-grid"><div class="tr-corner"></div><div class="tr-h">Weak topic</div><div class="tr-h">Strong topic</div>
  <div class="tr-h tr-hr">Common on exam</div>${cell(1,1,"P1","Common and weak: do first")}${cell(2,2,"P2","Common and strong: keep sharp")}
  <div class="tr-h tr-hr">Uncommon on exam</div>${cell(3,3,"P3","Uncommon and weak: if time allows")}${cell(4,4,"P4","Uncommon and strong: last")}</div>
- <h3>${TR_SJ[trSj][0]}: ${ks.length} topics, ${q.un.length} not sorted yet</h3><div class="tr-subj"><button class="tr-s${trAll?"":" on"}" data-act="trall" data-v="0">Not sorted</button><button class="tr-s${trAll?" on":""}" data-act="trall" data-v="1">All topics</button></div><div class="tr-list">${(trAll?ks:q.un).map(row).join("")||"<p class=mut>Everything in this subject is sorted.</p>"}</div>
- <p class="ed-note">Tap a topic in the table to open its revision sheet. * means the content is beyond the class notes. "Common" means it is likely to be on the exam; use the Exam dates tab and your teacher's checklist to decide.</p></section>`}
+ <h3>${TR_SJ[trSj][0]}: ${ks.length} topics, ${q.un.length} not sorted yet</h3><div class="tr-subj"><button class="tr-s${trAll?"":" on"}" data-act="trall" data-v="0">Not sorted</button><button class="tr-s${trAll?" on":""}" data-act="trall" data-v="1">All topics</button></div>${trSugBtn(ks)}<div class="tr-list">${(trAll?ks:q.un).map(row).join("")||"<p class=mut>Everything in this subject is sorted.</p>"}</div>
+ <p class="ed-note">Tap a topic in the table to open its revision sheet. The coloured dot and "your rating" tag come from the Hard / Good / Easy ratings you give flashcards; they are stored only on this device. * means the content is beyond the class notes. "Common" means it is likely to be on the exam; use the Exam dates tab and your teacher's checklist to decide.</p></section>`}
 
-// Topic test: one hard multiple-choice question per topic. Results are a hint only; they never change the triage.
+function trSug(k){const w=[];const x=S.tt&&S.tt[k];if(x===0)w.push("wrong in the topic test");else if(x===-1)w.push("didn't know it in the topic test");const r=rtStat(k);if(r&&r.avg<1.67)w.push("you rated its cards Hard");return w}
+function trSugTag(k){const w=trSug(k);return w.length&&!trGet(k).p?`<span class="tr-sug">looks weak: ${w.join(" and ")}</span>`:""}
+function trCommon(k){return !!TR_FREQ[k]||["y","my","a","d","c"].indexOf(TR_SCOPE[k])>=0}
+function trSugBtn(ks){const n=ks.filter(k=>!trGet(k).p&&trSug(k).length).length;return n?`<div class="tr-sugbar"><button class="pri sm" data-act="trsug">Mark the ${n} suggested weak topic${n>1?"s":""} (P1 if common, P3 if not)</button><small>Only touches topics you haven't sorted yet. You can change any of them.</small></div>`:""}
+function trApplySug(){S.triage=S.triage||{};trTopics().forEach(k=>{if(!trGet(k).p&&trSug(k).length)(S.triage[k]=S.triage[k]||{}).p=trCommon(k)?1:3});save();render()}
+
+// Topic test: one hard multiple-choice question per topic. Results show up as a hint in Triage and wrong answers go to Spaced review; they never change a priority by themselves.
 const TT_SJ={M:"Maths",S:"Science",E:"English",F:"French",L:"Legal Studies"};
 let ttUI={v:"home",sj:"M",order:[],i:0,picked:null,rev:null};
 function ttQs(c){return (typeof TT_DATA!=="undefined"&&TT_DATA[c])||[]}
@@ -4377,8 +4393,8 @@ function ttCount(c){const r=ttRes();const qs=ttQs(c);let ok=0,no=0,idk=0;qs.forE
 function ttShuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function ttAct(a,t){const v=t.dataset.v;
  if(a==="ttgo"){ttUI.sj=v;const r=ttRes();ttUI.order=ttShuf(ttQs(v).filter(q=>r[q.t]===undefined));ttUI.i=0;ttUI.picked=null;ttUI.v=ttUI.order.length?"q":"home"}
- else if(a==="ttpick"){const q=ttUI.order[ttUI.i];if(ttUI.picked!==null)return;ttUI.picked=+v;ttRes()[q.t]=(+v===q.a)?1:0;save()}
- else if(a==="ttidk"){const q=ttUI.order[ttUI.i];if(ttUI.picked!==null)return;ttUI.picked=-1;ttRes()[q.t]=-1;save()}
+ else if(a==="ttpick"){const q=ttUI.order[ttUI.i];if(ttUI.picked!==null)return;ttUI.picked=+v;ttRes()[q.t]=(+v===q.a)?1:0;if(+v!==q.a){try{addMiss(ttUI.sj,q.q,q.o[q.a]+(q.e?" ("+q.e+")":""))}catch(e){}}save()}
+ else if(a==="ttidk"){const q=ttUI.order[ttUI.i];if(ttUI.picked!==null)return;ttUI.picked=-1;ttRes()[q.t]=-1;try{addMiss(ttUI.sj,q.q,q.o[q.a]+(q.e?" ("+q.e+")":""))}catch(e){}save()}
  else if(a==="ttnext"){ttUI.i++;ttUI.picked=null;if(ttUI.i>=ttUI.order.length)ttUI.v="res"}
  else if(a==="ttskip"){const q=ttUI.order.splice(ttUI.i,1)[0];ttUI.order.push(q);ttUI.picked=null}
  else if(a==="ttexit"){ttUI.v="home"}
@@ -4426,10 +4442,10 @@ function fzDraw(){let o=document.getElementById("fz");if(!o){o=document.createEl
  if(fz.pick){const d=fzDecks();const btn=(k,l)=>`<button class="fz-d" data-fz="deck" data-v="${k}">${l}<small>${deckFor(k).cards.length}</small></button>`;
   o.innerHTML=`<div class="fz-top"><button class="fz-x" data-fz="back">Back</button><span>Choose a deck</span><span></span></div><div class="fz-scroll">${btn("all:all","Everything (all subjects)")}${d.groups.map(g=>`<h4>${g.s}</h4>${g.main?btn(g.main,"All "+g.s):""}${g.items.map(k=>btn(k,DF_TOPIC[k][0])).join("")}`).join("")}</div>`;return}
  const n=fz.order.length;
- if(fz.i>=n){const pct=Math.round(fz.ok/Math.max(1,n)*100);o.innerHTML=`<div class="fz-top"><button class="fz-x" data-fz="close">Close</button><span>${esc(fz.name)}</span><span></span></div><div class="fz-mid"><div class="fz-done"><div class="fz-ring" style="--p:${pct}"><b>${pct}%</b></div><h2>Round complete</h2><p><b>${fz.ok}</b> got it &middot; <b>${fz.no}</b> missed &middot; <b>${fz.hok}</b> right with a hint &middot; <b>${fz.hno}</b> wrong with a hint &middot; ${n} cards</p>${fz.missed.length?`<button class="fz-b pri" data-fz="missed">Practise the ${fz.missed.length} I missed</button>`:""}<button class="fz-b" data-fz="again">New shuffled round</button><button class="fz-b" data-fz="pick">Change deck</button></div></div>`;fzAccent(o);return}
+ if(fz.i>=n){const pct=Math.round(fz.ok/Math.max(1,n)*100);o.innerHTML=`<div class="fz-top"><button class="fz-x" data-fz="close">Close</button><span>${esc(fz.name)}</span><span></span></div><div class="fz-mid"><div class="fz-done"><div class="fz-ring" style="--p:${pct}"><b>${pct}%</b></div><h2>Round complete</h2><p><b>${fz.ok}</b> got it &middot; <b>${fz.hok}</b> right with a hint &middot; <b>${fz.hno}</b> wrong with a hint &middot; <b>${fz.no}</b> missed &middot; ${n} cards</p>${fz.missed.length?`<button class="fz-b pri" data-fz="missed">Practise the ${fz.missed.length} I missed</button>`:""}<button class="fz-b" data-fz="again">New shuffled round</button><button class="fz-b" data-fz="pick">Change deck</button></div></div>`;fzAccent(o);return}
  const c=fz.order[fz.i];const q=esc(cleanTxt(c.q)),a=esc(cleanTxt(c.a));const sz=t=>t.length>260?"s3":t.length>140?"s2":t.length>60?"s1":"s0";
  o.innerHTML=`<div class="fz-top"><button class="fz-x" data-fz="close" aria-label="Close">&#10005;</button><button class="fz-name" data-fz="pick">${esc(fz.name)} &#9662;</button><button class="fz-x" data-fz="undo" ${fz.hist&&fz.hist.length?"":"disabled"}>Undo</button></div>
- <div class="fz-prog"><div class="fz-bar"><i style="width:${Math.round(fz.i/n*100)}%"></i></div><div class="fz-stats"><span>${fz.i+1} of ${n}</span><span class="fz-sc"><i class="g"><b>${fz.ok}</b>got it</i><i class="r"><b>${fz.no}</b>missed</i><i class="y"><b>${fz.hok}</b>hint, right</i><i class="o"><b>${fz.hno}</b>hint, wrong</i></span></div></div>
+ <div class="fz-prog"><div class="fz-bar"><i style="width:${Math.round(fz.i/n*100)}%"></i></div><div class="fz-stats"><span>${fz.i+1} of ${n}</span><span class="fz-sc"><i class="g"><b>${fz.ok}</b>got it</i><i class="y"><b>${fz.hok}</b>hint, right</i><i class="o"><b>${fz.hno}</b>hint, wrong</i><i class="r"><b>${fz.no}</b>missed</i></span></div></div>
  <div class="fz-mid"><div class="fz-stage"><div class="fz-c${fz.flip?" flipped":""}" id="fzc" data-fz="flip"><div class="fz-face fz-front"><small>Question</small><div class="fz-t ${sz(q)}">${q}</div><em>Tap to reveal</em></div><div class="fz-face fz-back"><small>Answer</small><div class="fz-qs">${q}</div><div class="fz-rule"></div><div class="fz-t ${sz(a)}">${a}</div></div></div></div></div>
  <div class="fz-foot" id="fzf">${fzFoot()}</div><div class="fz-hint">${fz.flip?"Swipe right = got it, left = missed":"Keys: Space = flip &middot; H = hint &middot; 1 = missed &middot; 2 = got it"}</div>`;fzAccent(o);fzSwipe()}
 function fzFoot(){return fz.flip?`<button class="fz-b no" data-fz="no">Missed</button><button class="fz-b pri" data-fz="ok">Got it</button>`:`<button class="fz-b pri wide" data-fz="flip">Show answer</button>`}
@@ -4510,7 +4526,7 @@ if(T.dataset.hnx){fz._ho=false}else if(T.dataset.hnt){fz._ho=!fz._ho}else{fz._hn
 document.addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest("textarea,input"))return;if(fz&&document.getElementById("fz")&&!fz.pick&&!fz.flip&&(e.key==="h"||e.key==="H")){fz._hn=Math.min((fz._hn||0)+1,(fz._hl||[]).length||9);fz._ho=true;hnBar()}})})();
 
 /* flashcard side tools: notepad (left) + calculator (right). Notes are never marked. */
-const FT={open:null,deg:true,expr:"",last:""};
+const FT={on:{notes:false,calc:false},deg:true,expr:"",last:""};
 function ftNum(){return FT}
 function ftEval(src){let s=String(src).replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").replace(/π/g,"(pi)").replace(/\s+/g,"");let p=0;
 const peek=()=>s[p];
@@ -4527,31 +4543,140 @@ function expr(){let v=term();for(;;){const c=peek();if(c==="+"){p++;v+=term()}el
 const v=expr();if(p<s.length)throw 0;if(!isFinite(v))throw 0;return v}
 function ftFmt(v){return String(parseFloat(v.toPrecision(12)))}
 function ftSave(){try{save()}catch(e){}}
-function ftPanels(){const fzo=document.getElementById("fz");["ft-notes","ft-calc","ft-row"].forEach(id=>{const e=document.getElementById(id);if(e&&!fzo)e.remove()});
-if(!fzo||!fz||fz.pick){document.getElementById("ft-row")&&document.getElementById("ft-row").remove();["ft-notes","ft-calc"].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});return}
+function ftDef(id){const W=innerWidth,H=innerHeight;if(id==="notes"){const w=Math.round(Math.min(340,Math.max(190,W*.5)));return{x:0,y:Math.round(H*.1),w:w,h:Math.round(Math.min(420,H*.4))}}
+const w=Math.round(Math.min(310,Math.max(214,W*.52)));return{x:W-w,y:Math.round(H*.5),w:w,h:Math.round(Math.min(460,H*.48))}}
+function ftGeo(id){const g=(S.ftGeo&&S.ftGeo[id])||ftDef(id);return ftClamp(Object.assign({},g))}
+function ftClamp(g){const W=innerWidth,H=innerHeight;g.w=Math.max(170,Math.min(g.w,W));g.h=Math.max(150,Math.min(g.h,H-20));g.x=Math.max(0,Math.min(g.x,W-g.w));g.y=Math.max(0,Math.min(g.y,H-g.h));return g}
+function ftPut(id,g){if(!S.ftGeo)S.ftGeo={};S.ftGeo[id]=g;ftSave()}
+function ftApply(el,g){el.style.left=g.x+"px";el.style.top=g.y+"px";el.style.width=g.w+"px";el.style.height=g.h+"px";const k=el.querySelector(".ft-k");if(k)k.style.setProperty("--kh",Math.max(28,Math.min(46,(g.h-170)/8.2))+"px")}
+function ftPanels(){const fzo=document.getElementById("fz");
+if(!fzo||!fz||fz.pick){["ft-notes","ft-calc","ft-row"].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});return}
 if(!document.getElementById("ft-row")){const r=document.createElement("div");r.id="ft-row";r.innerHTML=`<button data-ft="notes">&#9998; Notes</button><button data-ft="calc">&#128425;&#xFE0E; Calculator</button>`;const ft=document.getElementById("fzf");if(ft)fzo.insertBefore(r,ft);else fzo.appendChild(r)}
 ftSync()}
+function ftMake(id){const el=document.createElement("aside");el.id="ft-"+id;el.className="ft-p";
+const ctl=`<button data-fdock="l" title="Dock to left edge">&#9703;</button><button data-fdock="r" title="Dock to right edge">&#9704;</button><button data-ft="x" data-id="${id}" aria-label="Close">&#10005;</button>`;
+if(id==="notes"){el.innerHTML=`<div class="ft-h" data-drag="1"><b title="Just for you - never marked">Notepad</b><small>not marked</small>${ctl}</div><textarea id="ft-ta" spellcheck="false" placeholder="Jot working, formulas, ideas here..."></textarea><div class="ft-f"><button data-ft="clr">Clear notes</button></div><i class="ft-rs" data-rs="1"></i>`;const t=el.querySelector("textarea");t.value=S.fzNotes||"";t.addEventListener("input",()=>{S.fzNotes=t.value;ftSave()})}
+else{const K=[["C","clr"],["(","("],[")",")"],["⌫","bs"],["sin","sin("],["cos","cos("],["tan","tan("],["÷","÷"],["√","sqrt("],["x²","^2"],["^","^"],["×","×"],["7","7"],["8","8"],["9","9"],["−","−"],["4","4"],["5","5"],["6","6"],["+","+"],["1","1"],["2","2"],["3","3"],["π","π"],["0","0"],[".","."],["%","%"],["Ans","ans"],["=","eq"]];
+el.innerHTML=`<div class="ft-h" data-drag="1"><b>Calculator</b><button data-ft="deg" id="ft-deg">${FT.deg?"DEG":"RAD"}</button>${ctl}</div><div class="ft-cb"><input id="ft-in" inputmode="none" autocomplete="off" spellcheck="false" placeholder="0"><div class="ft-res" id="ft-res">&nbsp;</div><div class="ft-k">${K.map(k=>`<button data-fk="${k[1]}"${k[1]==="eq"?' class="eq"':/^\d|\./.test(k[1])?' class="d"':""}>${k[0]}</button>`).join("")}</div></div><i class="ft-rs" data-rs="1"></i>`;
+const inp=el.querySelector("#ft-in");inp.value=FT.expr;inp.addEventListener("input",()=>{FT.expr=inp.value;ftLive()});inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ftKey("eq")}})}
+document.body.appendChild(el);ftApply(el,ftGeo(id));if(id==="calc")ftLive();return el}
 function ftSync(){const fzo=document.getElementById("fz");if(!fzo)return;
-let n=document.getElementById("ft-notes"),c=document.getElementById("ft-calc");
-if(FT.open==="notes"){if(c)c.remove();if(!n){n=document.createElement("aside");n.id="ft-notes";n.className="ft-p ft-l";n.innerHTML=`<div class="ft-h"><b>Notepad</b><small>Just for you &mdash; never marked</small><button data-ft="x" aria-label="Close notes">&#10005;</button></div><textarea id="ft-ta" spellcheck="false" placeholder="Jot working, formulas, ideas here..."></textarea><div class="ft-f"><button data-ft="clr">Clear notes</button></div>`;document.body.appendChild(n);const t=n.querySelector("textarea");t.value=(S.fzNotes||"");t.addEventListener("input",()=>{S.fzNotes=t.value;ftSave()})}}
-else if(FT.open==="calc"){if(n)n.remove();if(!c){c=document.createElement("aside");c.id="ft-calc";c.className="ft-p ft-r";const K=[["C","clr"],["(","("],[")",")"],["⌫","bs"],["sin","sin("],["cos","cos("],["tan","tan("],["÷","÷"],["√","sqrt("],["x²","^2"],["^","^"],["×","×"],["7","7"],["8","8"],["9","9"],["−","−"],["4","4"],["5","5"],["6","6"],["+","+"],["1","1"],["2","2"],["3","3"],["π","π"],["0","0"],[".","."],["%","%"],["Ans","ans"],["=","eq"]];
-c.innerHTML=`<div class="ft-h"><b>Calculator</b><button data-ft="deg" id="ft-deg">${FT.deg?"DEG":"RAD"}</button><button data-ft="x" aria-label="Close calculator">&#10005;</button></div><input id="ft-in" inputmode="none" autocomplete="off" spellcheck="false" placeholder="0"><div class="ft-res" id="ft-res">&nbsp;</div><div class="ft-k">${K.map(k=>`<button data-fk="${k[1]}"${k[1]==="eq"?' class="eq"':/^\d|\./.test(k[1])?' class="d"':""}>${k[0]}</button>`).join("")}</div>`;document.body.appendChild(c);const inp=c.querySelector("#ft-in");inp.value=FT.expr;inp.addEventListener("input",()=>{FT.expr=inp.value;ftLive()});inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ftKey("eq")}});ftLive()}}
-else{if(n)n.remove();if(c)c.remove()}
-document.querySelectorAll("#ft-row button").forEach(b=>b.classList.toggle("on",b.dataset.ft===FT.open))}
+["notes","calc"].forEach(id=>{let e=document.getElementById("ft-"+id);if(FT.on[id]){if(!e)e=ftMake(id)}else if(e)e.remove()});
+document.querySelectorAll("#ft-row button").forEach(b=>b.classList.toggle("on",!!FT.on[b.dataset.ft]))}
 function ftLive(){const r=document.getElementById("ft-res");if(!r)return;if(!FT.expr.trim()){r.innerHTML="&nbsp;";return}try{r.textContent="= "+ftFmt(ftEval(FT.expr))}catch(e){r.innerHTML="&nbsp;"}}
 function ftKey(k){const inp=document.getElementById("ft-in");if(!inp)return;
 if(k==="clr")FT.expr="";else if(k==="bs")FT.expr=FT.expr.replace(/(asin\(|acos\(|atan\(|sin\(|cos\(|tan\(|sqrt\(|ans|.)$/,"");
 else if(k==="eq"){try{const v=ftFmt(ftEval(FT.expr));FT.last=v;FT.expr=v;const r=document.getElementById("ft-res");inp.value=v;if(r)r.textContent="= "+v;return}catch(e){const r=document.getElementById("ft-res");if(r)r.textContent="Check the expression";return}}
 else FT.expr+=k;inp.value=FT.expr;ftLive()}
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-ft],[data-fk]");if(!t)return;e.stopPropagation();
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-ft],[data-fk],[data-fdock]");if(!t)return;e.stopPropagation();
 if(t.dataset.fk){ftKey(t.dataset.fk);return}
-const a=t.dataset.ft;if(a==="notes"||a==="calc"){FT.open=FT.open===a?null:a;ftSync()}else if(a==="x"){FT.open=null;ftSync()}
+if(t.dataset.fdock){const el=t.closest(".ft-p");const id=el.id.slice(3);const g=ftGeo(id);g.x=t.dataset.fdock==="l"?0:innerWidth-g.w;ftPut(id,ftClamp(g));ftApply(el,g);return}
+const a=t.dataset.ft;if(a==="notes"||a==="calc"){FT.on[a]=!FT.on[a];ftSync()}else if(a==="x"){FT.on[t.dataset.id]=false;ftSync()}
 else if(a==="deg"){FT.deg=!FT.deg;t.textContent=FT.deg?"DEG":"RAD";ftLive()}
 else if(a==="clr"){if(confirm("Clear your notes?")){S.fzNotes="";ftSave();const ta=document.getElementById("ft-ta");if(ta)ta.value=""}}},true);
-/* typing in notes/calc must not trigger flashcard shortcuts */
 document.addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest(".ft-p"))e.stopPropagation()},true);
+/* drag by header, resize by corner, snap to side edges */
+(function(){let m=null;
+document.addEventListener("pointerdown",e=>{const el=e.target.closest&&e.target.closest(".ft-p");if(!el)return;const rs=e.target.closest("[data-rs]"),hd=e.target.closest("[data-drag]");if(!rs&&!(hd&&!e.target.closest("button")))return;
+const id=el.id.slice(3);m={el:el,id:id,mode:rs?"rs":"mv",x0:e.clientX,y0:e.clientY,g:ftGeo(id)};el.classList.add("ft-act");e.preventDefault();try{el.setPointerCapture&&el.setPointerCapture(e.pointerId)}catch(_){}} ,true);
+document.addEventListener("pointermove",e=>{if(!m)return;const dx=e.clientX-m.x0,dy=e.clientY-m.y0;const g=Object.assign({},m.g);if(m.mode==="mv"){g.x+=dx;g.y+=dy}else{g.w+=dx;g.h+=dy}m.cur=ftClamp(g);ftApply(m.el,m.cur)},true);
+const end=()=>{if(!m)return;const g=m.cur||m.g;if(m.mode==="mv"){if(g.x<26)g.x=0;else if(g.x+g.w>innerWidth-26)g.x=innerWidth-g.w}ftPut(m.id,ftClamp(g));ftApply(m.el,g);m.el.classList.remove("ft-act");m=null};
+document.addEventListener("pointerup",end,true);document.addEventListener("pointercancel",end,true);
+addEventListener("resize",()=>["notes","calc"].forEach(id=>{const e=document.getElementById("ft-"+id);if(e)ftApply(e,ftGeo(id))}))})();
 (function(){const _d=fzDraw;fzDraw=function(){_d.apply(this,arguments);ftPanels()};const _f=fzFlip;fzFlip=function(){_f.apply(this,arguments);ftPanels()};
-const _c=fzClose;fzClose=function(){FT.open=null;_c.apply(this,arguments);ftPanels()}})();
+const _c=fzClose;fzClose=function(){FT.on.notes=FT.on.calc=false;_c.apply(this,arguments);ftPanels()}})();
+
+/* Flashcard difficulty rating (Hard / Good / Easy). Stored on this device only (S.fzRate). Feeds spaced review + Triage. */
+const RT_N={1:"Hard",2:"Good",3:"Easy"};
+function rtTopic(c){try{const m=llFind(c,fz.arg);return m&&m.title?m.title:""}catch(e){return ""}}
+function rtStat(k){const o=S.fzRate||{};let n=[0,0,0,0],s=0;for(const id in o){if(o[id].t===k){n[o[id].r]++;s+=o[id].r}}const t=n[1]+n[2]+n[3];return t?{n:n,t:t,avg:s/t}:null}
+function rtLabel(a){return a<1.67?"Hard":a>2.33?"Easy":"Good"}
+function rtTag(k){const r=rtStat(k);if(!r)return"";const L=rtLabel(r.avg);return `<span class="rt-tag rt-${L.toLowerCase()}" title="Your own ratings from flashcards: ${r.n[1]} hard, ${r.n[2]} good, ${r.n[3]} easy">your rating: ${L} <small>(${r.n[1]}H ${r.n[2]}G ${r.n[3]}E)</small></span>`}
+function rtDot(k){const r=rtStat(k);if(!r)return"";const L=rtLabel(r.avg);return ` <i class="rt-dot rt-${L.toLowerCase()}" title="Your rating: ${L} (${r.t} card${r.t>1?"s":""})"></i>`}
+function rtBar(){const o=document.getElementById("fz");if(!o)return;let b=document.getElementById("rt-row");
+if(!fz||fz.pick||fz.i>=fz.order.length||!fz.flip){if(b)b.remove();return}
+const c=fz.order[fz.i];if(fz._rk!==c.k){fz._rk=c.k;fz._rt=(S.fzRate&&S.fzRate[c.k]&&0)||0}
+if(!b){b=document.createElement("div");b.id="rt-row";const ft=document.getElementById("ft-row")||document.getElementById("fzf");o.insertBefore(b,ft||null)}
+b.innerHTML=`<span>How hard was it? <small>(optional)</small></span>`+[1,2,3].map(n=>`<button class="rt-b rt-${RT_N[n].toLowerCase()}${fz._rt===n?" on":""}" data-rt="${n}">${RT_N[n]}</button>`).join("")}
+(function(){const _d=fzDraw;fzDraw=function(){_d.apply(this,arguments);rtBar()};const _f=fzFlip;fzFlip=function(){_f.apply(this,arguments);rtBar()};
+const _a=fzAnswer;fzAnswer=function(ok){const c=fz&&fz.order[fz.i];const rt=c&&fz._rk===c.k?fz._rt:0;const t=c&&rt?rtTopic(c):"";const prevR=c&&S.fzRate?S.fzRate[c.k]:undefined;
+_a.apply(this,arguments);if(c){const h=fz.hist&&fz.hist[fz.hist.length-1];if(h){h.rp=prevR||null}
+if(rt){S.fzRate=S.fzRate||{};S.fzRate[c.k]={r:rt,t:t};if(ok){const v=S.cards[c.k]||0;if(rt===1)S.cards[c.k]=Math.min(v,1);else if(rt===3)S.cards[c.k]=Math.min(4,v+1)}save()}}
+fz._rk=null;fz._rt=0;rtBar()};
+const _u=fzUndo;fzUndo=function(){const h=fz&&fz.hist&&fz.hist[fz.hist.length-1];const c=h&&fz.order[fz.i-1];_u.apply(this,arguments);if(h&&c&&"rp" in h){S.fzRate=S.fzRate||{};if(h.rp)S.fzRate[c.k]=h.rp;else delete S.fzRate[c.k];save()}rtBar()};
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-rt]");if(!t||!fz)return;e.stopPropagation();const n=+t.dataset.rt;fz._rt=fz._rt===n?0:n;rtBar()},true)})();
+
+/* How it works: smart search (on-device), FAQ, and a site map flowchart. */
+const HX_FAQ=[
+["How do hints work on flashcards?","Tap the 💡 Hint button in the top right, under the score counts. It stays closed until you tap it, and each tap reveals the next hint (where to look, a formula or a definition, a sentence with the answer blanked out, then first letters). Pressing H on a keyboard does the same. Using a hint changes how the card is scored (see the colours question)."],
+["What do the green, yellow, orange and red counts mean?","Green is got it. Yellow is got it right but you used a hint. Orange is wrong after using a hint. Red is missed without a hint. They are shown in that order at the top right of the flashcard screen."],
+["What are the Notes and Calculator buttons?","Under the flashcard you can open a Notepad (left) and a Calculator (right). Both can be open at once. Drag them by their title bar, resize them with the corner grip, or dock them to a side with the small half-screen buttons. Your notes are only for you and are never marked."],
+["What do Hard, Good and Easy do?","After you flip a card you can rate how hard it felt. Rating a right answer Hard brings the card back sooner; Easy pushes it later. The ratings are saved on this device only and show up in Triage as a tag and a coloured dot per topic."],
+["Where do my mistakes go?","Wrong answers from flashcards, practice drills and the topic test are logged to Spaced review (Exams, then Spaced review). A wrong answer comes back in ten minutes, then after 1, 3, 7, 14 and 30 days if you keep getting it right. Filter by subject or by wrong to see only your mistakes."],
+["What is Triage and what do P1 to P4 mean?","Triage is a table for deciding what to study first. P1 is common on the exam and weak, P2 common and strong, P3 uncommon and weak, P4 uncommon and strong. Work through them in that order. Each topic also shows how often it appeared in past papers and whether it is on your teacher's checklist."],
+["Does the topic test change my Triage?","Not by itself. A wrong or 'didn't know' answer adds a note on that topic ('looks weak') and a button that offers to mark all the suggested topics at once. It only touches topics you haven't sorted, and you can change any of them afterwards."],
+["What happens when I miss a flashcard?","It comes back sooner, it is added to Spaced review, and a 'Learn this' link opens the part of the revision sheet that covers it, with a button back to your cards."],
+["What are the keyboard shortcuts?","On the flashcard screen: Space or Enter flips the card, H gives a hint, 1 means missed, 2 means got it, Z or Backspace undoes, Esc closes. Typing in the Notepad or Calculator never triggers these."],
+["Why do my results differ on my phone and my laptop?","Everything is saved in the browser on the device you are using. Devices don't share it, and clearing site data removes it. Use Export in Settings to keep a copy."],
+["How do I update the live website?","On GitHub, open the repository, choose Add file, then Upload files, upload the new iPhone file renamed to index.html, and commit. The site refreshes in a minute or two."],
+["Can I trust the questions and answers?","Maths and Science practice questions are generated by code and the answers are checked by code, but a teacher has not marked them. Anything beyond your class notes is marked (check with your teacher). Check important things against your own notes."],
+["Is there a live AI answering my questions?","No. The search box on this page matches your question against this site's own help and FAQ, on your device. It does not call an AI and nothing leaves your device."],
+["Why are equations shown as proper maths?","Equations are typeset automatically, so fractions, roots, powers and trig show the way they do in a textbook rather than as plain text with slashes."],
+["When are the exams?","Monday 9 to Monday 16 November 2026. Open Exams, then Exam dates for the timetable, times, rooms and what each paper covers."],
+["Where is the timed practice?","Exams, then Exam Room, for timed practice papers. Tests has shorter sets, and Progress shows how you are going."]];
+const HX={idx:null};
+function hxTok(s){return String(s).toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>(w.length>2||w==="ai")&&!/^(the|and|for|are|was|you|your|can|how|what|does|this|that|with|from|into|not|have|has|did|its|when|where|why|who|which|will|all)$/.test(w)).map(w=>w.replace(/(ing|ed|es|s)$/,""))}
+function hxDocs(){const d=HX_FAQ.map(f=>({t:f[0],a:f[1],faq:1}));try{const tmp=document.createElement("div");tmp.innerHTML=_hxHelp();tmp.querySelectorAll(".card").forEach(c=>{const h=c.querySelector("h3");const tt=h?h.textContent:"";const tx=c.textContent.replace(h?h.textContent:"","").replace(/\s+/g," ").trim();if(tt&&tx)d.push({t:tt,a:tx.slice(0,520)+(tx.length>520?"…":""),faq:0})})}catch(e){}return d}
+function hxIndex(){if(HX.idx)return HX.idx;const docs=hxDocs();const df=new Map();docs.forEach(d=>{d.tf=new Map();hxTok(d.t+" "+d.t+" "+d.a).forEach(w=>d.tf.set(w,(d.tf.get(w)||0)+1));d.tf.forEach((v,w)=>df.set(w,(df.get(w)||0)+1))});const N=docs.length;docs.forEach(d=>{let n=0;d.v=new Map();d.tf.forEach((v,w)=>{const x=(1+Math.log(v))*Math.log(1+N/df.get(w));d.v.set(w,x);n+=x*x});d.n=Math.sqrt(n)||1});HX.idx={docs,df,N};return HX.idx}
+function hxSearch(q){const I=hxIndex();const qt=hxTok(q);if(!qt.length)return[];const qv=new Map();qt.forEach(w=>qv.set(w,(qv.get(w)||0)+1));let qn=0;qv.forEach((v,w)=>{const x=(1+Math.log(v))*Math.log(1+I.N/(I.df.get(w)||1));qv.set(w,x);qn+=x*x});qn=Math.sqrt(qn)||1;
+return I.docs.map(d=>{let s=0;qv.forEach((x,w)=>{const y=d.v.get(w);if(y)s+=x*y});s/=qn*d.n;const tt=new Set(hxTok(d.t));let hit=0;qt.forEach(w=>{if(tt.has(w))hit++});s+=0.15*hit/qt.length+(d.faq?0.02:0);return{d,s}}).filter(x=>x.s>0.12).sort((a,b)=>b.s-a.s).slice(0,3)}
+function hxResults(q){q=q.trim();if(q.length<3)return `<p class="mut" style="margin:8px 0 0">Try: <a href="#" data-hxq="how do hints work">how do hints work</a> · <a href="#" data-hxq="where do my mistakes go">where do my mistakes go</a> · <a href="#" data-hxq="what do the colours mean">what do the colours mean</a></p>`;
+const r=hxSearch(q);if(!r.length)return `<p class="mut" style="margin:10px 0 0">I couldn't find that in the help. Try different words, or look through the questions below.</p>`;
+return r.map(x=>`<div class="hx-ans"><b>${esc(x.d.t)}</b><p>${esc(x.d.a)}</p></div>`).join("")}
+function hxFaq(){return HX_FAQ.map(f=>`<details class="hx-q"><summary>${esc(f[0])}</summary><p>${esc(f[1])}</p></details>`).join("")}
+/* ---- site map ---- */
+const HXM={col:[20,265,510,775,1040,1305],W:1610,rh:50,nh:38,nw:205};
+const HXN=[
+ ["root",0,11.3,"TheMossHead's Academics|opens on Home","#8aa08a",""],
+ ["t_home",1,1.5,"Home","#8aa08a","home"],["t_sub",1,7.5,"Subjects","#4fc3ae","subjects"],["t_ex",1,15,"Exams","#e6c85a","triage"],["t_more",1,21,"More","#8fb3e6","files"],
+ ["h1",2,0,"Countdown to next exam","#8aa08a",""],["h2",2,1,"Shuffle all flashcards","#8aa08a",""],["h3",2,2,"Review what is due","#8aa08a",""],["h4",2,3,"Subject tiles","#8aa08a",""],
+ ["sp",2,7.5,"Subject page|5 subjects, same menu","#4fc3ae","subjects"],
+ ["e_tr",2,12,"Triage|P1 to P4 priorities","#e6c85a","triage"],["e_tt",2,13,"Topic test","#e6c85a","ttest"],["e_dt",2,14,"Exam dates","#e6c85a","dates"],["e_xr",2,15,"Exam Room|timed practice","#e6c85a","xr"],["e_ts",2,16,"Tests","#e6c85a","tests"],["e_rv",2,17,"Spaced review|your mistakes live here","#e6c85a","rev"],["e_pg",2,18,"Progress","#e6c85a","prog"],
+ ["m_f",2,19.5,"Files","#8fb3e6","files"],["m_r",2,20.5,"Research","#8fb3e6","res"],["m_h",2,21.5,"How it works|you are here","#8fb3e6","help"],["m_s",2,22.5,"Settings|export / reset","#8fb3e6","set"],
+ ["s_learn",3,4.5,"Learn","#4fc3ae",""],["s_sheets",3,5.5,"Sheets","#4fc3ae",""],["s_fc",3,6.5,"Flashcards","#4fc3ae",""],["s_pr",3,7.5,"Practice","#4fc3ae",""],["s_qb",3,8.5,"Question bank","#4fc3ae",""],["s_c",3,9.5,"Section C essays (Legal)","#4fc3ae",""],
+ ["sheet",4,4.6,"Revision sheet|topic notes","#4fc3ae",""],["fs",4,6.5,"Flashcard screen|pick a deck, then cards","#4fc3ae",""],["drill",4,7.8,"Practice drills|Learn mode / Exam mode","#4fc3ae",""],["essay",4,9.5,"Model essays|key points + practice","#4fc3ae",""],
+ ["f1",5,4.6,"💡 Hint|top right, opens when tapped","#e6c85a",""],["f2",5,5.8,"Show answer, then|Got it / Missed","#8fc79a",""],["f3",5,7,"Hard / Good / Easy|your own rating","#e6c85a",""],["f4",5,8.2,"Notes (left)|Calculator (right)","#8fb3e6",""],["f5",5,9.4,"Learn this|opens the sheet section","#4fc3ae",""]];
+const HXE=[["root","t_home"],["root","t_sub"],["root","t_ex"],["root","t_more"],
+["t_home","h1"],["t_home","h2"],["t_home","h3"],["t_home","h4"],
+["t_sub","sp"],["sp","s_learn"],["sp","s_sheets"],["sp","s_fc"],["sp","s_pr"],["sp","s_qb"],["sp","s_c"],
+["t_ex","e_tr"],["t_ex","e_tt"],["t_ex","e_dt"],["t_ex","e_xr"],["t_ex","e_ts"],["t_ex","e_rv"],["t_ex","e_pg"],
+["t_more","m_f"],["t_more","m_r"],["t_more","m_h"],["t_more","m_s"],
+["h4","sp"],["h2","fs"],["s_fc","fs"],["s_sheets","sheet"],["s_learn","sheet"],["s_pr","drill"],["s_c","essay"],
+["fs","f1"],["fs","f2"],["fs","f3"],["fs","f4"],["fs","f5"],
+["h3","e_rv","","x"],["e_tt","e_tr","looks weak + suggest","x"],["e_tt","e_rv","wrong answers","x"],["f2","e_rv","Missed goes to mistakes","x"],["f3","e_tr","ratings shown per topic","x"],["f5","sheet","opens","x"]];
+function hxMap(){const P={};HXN.forEach(n=>{P[n[0]]={x:HXM.col[n[1]],y:40+n[2]*HXM.rh,l:n[3].split("|"),c:n[4],go:n[5],i:n[0],col:n[1]}});
+const H=40+23.5*HXM.rh+30;const mid=n=>({x:n.x+HXM.nw,y:n.y+HXM.nh/2}),lft=n=>({x:n.x,y:n.y+HXM.nh/2});
+let ed="",lb="",bi=0;HXE.forEach(e=>{const a=P[e[0]],b=P[e[1]];if(!a||!b)return;const x=e[3]==="x";const s=mid(a),t=lft(b);let d;
+if(b.col>a.col){const k=(t.x-s.x)*.5;d=`M${s.x},${s.y} C${s.x+k},${s.y} ${t.x-k},${t.y} ${t.x},${t.y}`}
+else{const te={x:b.x+HXM.nw,y:t.y};const g=b.x+HXM.nw+14+bi*10;const lane=H-14-bi*18;bi++;
+d=a.col===b.col?`M${s.x},${s.y} H${g} V${te.y} H${te.x}`:`M${s.x},${s.y} H${s.x+16+bi*6} V${lane} H${g} V${te.y} H${te.x}`;if(e[2])lb+=`<text x="${a.col===b.col?g+6:(s.x+g)/2}" y="${a.col===b.col?(s.y+te.y)/2:lane-4}" text-anchor="${a.col===b.col?"start":"middle"}" class="hx-el">${esc(e[2])}</text>`}
+ed+=`<path d="${d}" fill="none" stroke="${x?"#e8924a":"var(--mut)"}" stroke-width="${x?1.7:1.2}" ${x?'stroke-dasharray="6 5"':""} opacity="${x?.95:.55}" stroke-linejoin="round" marker-end="url(#hxa${x?"x":""})"/>`;
+if(b.col>a.col&&e[2]){lb+=`<text x="${s.x+8}" y="${s.y-6}" class="hx-el">${esc(e[2])}</text>`}});
+let nd="";Object.values(P).forEach(n=>{const two=n.l.length>1;nd+=`<g class="hx-n"${n.go?` data-hxgo="${n.go}" tabindex="0"`:""}><rect x="${n.x}" y="${n.y}" width="${HXM.nw}" height="${HXM.nh}" rx="10" fill="var(--card)" stroke="${n.c}" stroke-width="1.6"/><rect x="${n.x}" y="${n.y}" width="6" height="${HXM.nh}" rx="3" fill="${n.c}"/><text x="${n.x+16}" y="${n.y+(two?16:24)}" class="hx-t">${esc(n.l[0])}</text>${two?`<text x="${n.x+16}" y="${n.y+30}" class="hx-s">${esc(n.l[1])}</text>`:""}</g>`});
+const hd=["Start","Top tabs","Pages","Subject menu","What opens","Flashcard screen"].map((t,i)=>`<text x="${HXM.col[i]}" y="22" class="hx-h">${t}</text>`).join("");
+return `<svg id="hx-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${HXM.W} ${H}" width="${HXM.W}" height="${H}" font-family="Inter,system-ui,sans-serif"><defs><marker id="hxa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--mut)"/></marker><marker id="hxax" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8924a"/></marker></defs><rect width="${HXM.W}" height="${H}" fill="var(--bg)"/>${hd}${ed}${lb}${nd}</svg>`}
+function hxTop(){return `<div class="card"><h3 style="margin:0 0 6px">Ask a question</h3><p class="mut" style="margin:0 0 8px;font-size:13px">Smart search of this site's own help. It runs on your device; it is not a live AI and nothing is sent anywhere.</p><input id="hx-q" type="search" placeholder="e.g. how do I use the calculator?" autocomplete="off"><div id="hx-res">${hxResults("")}</div></div>
+<div class="card"><h3 style="margin:0 0 6px">Frequently asked questions</h3>${hxFaq()}</div>
+<div class="card"><h3 style="margin:0 0 4px">Map of the whole website</h3><p class="mut" style="margin:0 0 8px;font-size:13px">Every page and which button leads where. Solid grey lines are menus; dashed orange lines show how information flows between tools. Tap a box to jump to that page.</p><div class="hx-tools"><button class="sm" data-hxz="-">&minus;</button><button class="sm" data-hxz="+">+</button><button class="sm" data-hxz="fit">Fit width</button><button class="sm" data-hxz="dl">Download image</button></div><div id="hx-map">${hxMap()}</div></div>`}
+function hxZoom(z){const s=document.getElementById("hx-svg");if(!s)return;z=Math.max(.25,Math.min(1.6,z));HX.z=z;s.setAttribute("width",HXM.W*z);s.setAttribute("height",(40+23.5*HXM.rh+30)*z)}
+const _hxHelp=viewHelp;viewHelp=function(){return hxTop()+_hxHelp()};
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="hx-q"){const r=document.getElementById("hx-res");if(r)r.innerHTML=hxResults(e.target.value)}});
+document.addEventListener("click",e=>{const g=e.target.closest&&e.target.closest("[data-hxgo]");if(g){tab=g.dataset.hxgo;render();window.scrollTo(0,0);return}
+const q=e.target.closest&&e.target.closest("[data-hxq]");if(q){e.preventDefault();const i=document.getElementById("hx-q");i.value=q.dataset.hxq;document.getElementById("hx-res").innerHTML=hxResults(i.value);return}
+const z=e.target.closest&&e.target.closest("[data-hxz]");if(!z)return;const k=z.dataset.hxz;const box=document.getElementById("hx-map");
+if(k==="+")hxZoom((HX.z||1)*1.25);else if(k==="-")hxZoom((HX.z||1)/1.25);else if(k==="fit")hxZoom((box.clientWidth-4)/HXM.W);
+else if(k==="dl"){const s=document.getElementById("hx-svg");const c=s.cloneNode(true);c.setAttribute("width",HXM.W);c.setAttribute("height",40+23.5*HXM.rh+30);const cs=getComputedStyle(document.documentElement);let x=new XMLSerializer().serializeToString(c);["--bg","--card","--mut","--fg"].forEach(v=>{x=x.split("var("+v+")").join(cs.getPropertyValue(v).trim()||"#888")});x=x.replace("<defs>",`<style>.hx-t{font:600 13px sans-serif;fill:${cs.getPropertyValue("--fg").trim()||"#eee"}}.hx-s{font:11px sans-serif;fill:${cs.getPropertyValue("--mut").trim()||"#999"}}.hx-h{font:700 13px sans-serif;fill:#8aa08a;letter-spacing:.06em}.hx-el{font:11px sans-serif;fill:#e8924a}</style><defs>`);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([x],{type:"image/svg+xml"}));a.download="TheMossHead-site-map.svg";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}});
+new MutationObserver(()=>{const b=document.getElementById("hx-map");if(b&&!b.dataset.z){b.dataset.z=1;hxZoom(Math.max(.45,Math.min(1,(b.clientWidth-4)/HXM.W)))}}).observe(document.body,{childList:true,subtree:true});
 
 // Simplified navigation: Home, Subjects (one hub per subject), Exams, More.
 let curSub=null;
@@ -5398,7 +5523,7 @@ function fcMC(c,fv,cs,arg){const sent=t=>{t=cleanTxt(t).split("\n")[0].trim();co
 // ---------- events ----------
 const bindReview=()=>{};
 document.addEventListener("click",e=>{const t=e.target.closest("[data-act]");if(!t)return;const a=t.dataset.act;
- if(a.slice(0,2)==="tt"&&a!=="tthome_x"){ttAct(a,t)}else if(a==="trset"){trSet(t.dataset.k,t.dataset.f,+t.dataset.v)}else if(a==="trall"){trAll=t.dataset.v==="1";render()}else if(a==="trsheet"){shUI.sj=trSj;shUI.q="";shUI.t=t.dataset.k;tab="sheets";render();window.scrollTo(0,0)}else if(a==="trsj"){trSj=t.dataset.v;render()}else if(a==="trset"){trSet(t.dataset.k,t.dataset.f,+t.dataset.v)}else if(a==="trsj"){trSj=t.dataset.v;render()}else if(a==="subopen"){subOpen(t.dataset.v)}else if(a==="subhome"){curSub=null;tab="subjects";render();window.scrollTo(0,0)}else if(a==="subgo"){subGo(t.dataset.v)}else if(a==="mhsub"){curSub=t.dataset.v;tab="subjects";render();window.scrollTo(0,0)}else if(a==="mhgo"){const v=t.dataset.v;if(v.slice(0,4)==="tab:")tab=v.slice(4);else{tab="tools";usetool(v)}render();window.scrollTo(0,0)}else if(a==="tab"){tab=t.dataset.v;render()}else if(a==="rlevel"){window.__rl=t.dataset.v;render()}
+ if(a.slice(0,2)==="tt"&&a!=="tthome_x"){ttAct(a,t)}else if(a==="trset"){trSet(t.dataset.k,t.dataset.f,+t.dataset.v)}else if(a==="trsug"){trApplySug()}else if(a==="trall"){trAll=t.dataset.v==="1";render()}else if(a==="trsheet"){shUI.sj=trSj;shUI.q="";shUI.t=t.dataset.k;tab="sheets";render();window.scrollTo(0,0)}else if(a==="trsj"){trSj=t.dataset.v;render()}else if(a==="trset"){trSet(t.dataset.k,t.dataset.f,+t.dataset.v)}else if(a==="trsj"){trSj=t.dataset.v;render()}else if(a==="subopen"){subOpen(t.dataset.v)}else if(a==="subhome"){curSub=null;tab="subjects";render();window.scrollTo(0,0)}else if(a==="subgo"){subGo(t.dataset.v)}else if(a==="mhsub"){curSub=t.dataset.v;tab="subjects";render();window.scrollTo(0,0)}else if(a==="mhgo"){const v=t.dataset.v;if(v.slice(0,4)==="tab:")tab=v.slice(4);else{tab="tools";usetool(v)}render();window.scrollTo(0,0)}else if(a==="tab"){tab=t.dataset.v;render()}else if(a==="rlevel"){window.__rl=t.dataset.v;render()}
  else if(a==="day"){const d=viewDay!==null?viewDay:curDayIdx();viewDay=Math.max(0,Math.min(NDAYS-1,d+ +t.dataset.v));render()}
  else if(a==="gotoday"){viewDay=null;render()}
  else if(a==="openday"){viewDay=+t.dataset.v;tab="today";render();window.scrollTo(0,0)}
