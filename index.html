@@ -4694,6 +4694,381 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 document.addEventListener("keydown",e=>{if(!fz||!document.getElementById("fz")||fz.pick)return;if(e.key==="Escape")fzClose();else if(e.key===" "||e.key==="Enter"){e.preventDefault();if(fz.i<fz.order.length)fzFlip()}else if(fz.flip&&(e.key==="1"||e.key==="ArrowLeft"))fzGo(false);else if(fz.flip&&(e.key==="2"||e.key==="ArrowRight"))fzGo(true);else if(e.key==="z"||e.key==="Backspace")fzUndo()});
 function toolFlash(el){const arg=tool.arg||"sci:all";if(!fz||fz.arg!==arg)fzStart(arg);el.innerHTML="";fzDraw()}
 
+/* fr_engine.js: a small French sentence engine for the sentence builder (present, passé composé, imparfait, futur proche,
+   futur simple; negatives; questions; reflexives). Every verb form is either generated from a regular pattern or written out. */
+(function(){
+const SUBJ=[
+ {l:"je (m)",w:"je",p:0,a:""},{l:"je (f)",w:"je",p:0,a:"e"},{l:"tu (m)",w:"tu",p:1,a:""},{l:"tu (f)",w:"tu",p:1,a:"e"},
+ {l:"il",w:"il",p:2,a:""},{l:"elle",w:"elle",p:2,a:"e"},{l:"on",w:"on",p:2,a:""},
+ {l:"nous (m or mixed)",w:"nous",p:3,a:"s"},{l:"nous (all girls)",w:"nous",p:3,a:"es"},
+ {l:"vous (plural, m)",w:"vous",p:4,a:"s"},{l:"vous (plural, f)",w:"vous",p:4,a:"es"},{l:"vous (one man)",w:"vous",p:4,a:""},{l:"vous (one woman)",w:"vous",p:4,a:"e"},
+ {l:"ils",w:"ils",p:5,a:"s"},{l:"elles",w:"elles",p:5,a:"es"}];
+const REFL=["me","te","se","nous","vous","se"];
+const ENDI=["ais","ais","ait","ions","iez","aient"],ENDF=["ai","as","a","ons","ez","ont"];
+const AUXF={avoir:["ai","as","a","avons","avez","ont"],etre:["suis","es","est","sommes","êtes","sont"]};
+const V={};
+function add(inf,gloss,o){V[inf]=Object.assign({inf,gloss,aux:"avoir",comp:"",tr:0,pe:0,refl:0,type:"irr"},o)}
+function reg(inf,gloss,o){o=o||{};const refl=/^s[e']\s?/.test(inf);const base=inf.replace(/^se\s+|^s'/,"");const t=base.slice(-2)==="er"?"er":base.slice(-2)==="ir"?"ir":"re";const st=base.slice(0,-2);
+ let pres,imp,fut,pp;
+ if(t==="er"){pres=[st+"e",st+"es",st+"e",st+"ons",st+"ez",st+"ent"];imp=ENDI.map(e=>st+e);fut=base;pp=st+"é"}
+ else if(t==="ir"){pres=[st+"is",st+"is",st+"it",st+"issons",st+"issez",st+"issent"];imp=ENDI.map(e=>st+"iss"+e);fut=base;pp=st+"i"}
+ else{pres=[st+"s",st+"s",st,st+"ons",st+"ez",st+"ent"];imp=ENDI.map(e=>st+e);fut=st+"r";pp=st+"u"}
+ add(inf,gloss,Object.assign({type:t,pres,imp,fut,pp},o));if(refl)V[inf].refl=1}
+function irr(inf,gloss,pres,impStem,fut,pp,o){add(inf,gloss,Object.assign({pres,imp:ENDI.map(e=>impStem+e),fut,pp},o))}
+/* regular -er */
+reg("parler","to speak",{comp:"français"});reg("regarder","to watch",{comp:"un film",tr:1,pe:1});reg("aimer","to like",{comp:"le chocolat",tr:1});
+reg("travailler","to work",{comp:"à la maison"});reg("jouer","to play",{comp:"au tennis"});reg("habiter","to live",{comp:"à Paris"});
+reg("écouter","to listen to",{comp:"de la musique",tr:1,pe:1});reg("danser","to dance",{comp:"avec mes amis"});reg("chanter","to sing",{comp:"une chanson",tr:1});
+reg("donner","to give",{comp:"un cadeau",tr:1});reg("trouver","to find",{comp:"mon sac",tr:1});
+reg("arriver","to arrive",{comp:"à midi",aux:"etre"});reg("entrer","to enter",{comp:"dans la classe",aux:"etre"});reg("rester","to stay",{comp:"à la maison",aux:"etre"});
+reg("tomber","to fall",{comp:"par terre",aux:"etre"});reg("rentrer","to go home",{comp:"à la maison",aux:"etre"});reg("monter","to go up",{comp:"dans le bus",aux:"etre"});
+/* spelling-change -er */
+irr("manger","to eat",["mange","manges","mange","mangeons","mangez","mangent"],"mang","manger","mangé",{type:"er",comp:"une pizza",tr:1});
+V.manger.imp=["mangeais","mangeais","mangeait","mangions","mangiez","mangeaient"];
+irr("commencer","to start",["commence","commences","commence","commençons","commencez","commencent"],"commenc","commencer","commencé",{type:"er",comp:"à huit heures"});
+V.commencer.imp=["commençais","commençais","commençait","commencions","commenciez","commençaient"];
+irr("acheter","to buy",["achète","achètes","achète","achetons","achetez","achètent"],"achet","achèter","acheté",{type:"er",comp:"un livre",tr:1});
+/* regular -ir */
+reg("finir","to finish",{comp:"mes devoirs",tr:1});reg("choisir","to choose",{comp:"une robe",tr:1});reg("réussir","to succeed",{comp:"à l'examen"});reg("grandir","to grow",{comp:"vite"});
+/* regular -re */
+reg("vendre","to sell",{comp:"des livres",tr:1});reg("attendre","to wait for",{comp:"le bus",tr:1,pe:1});reg("répondre","to answer",{comp:"à la question"});
+reg("perdre","to lose",{comp:"mon portable",tr:1});reg("entendre","to hear",{comp:"un bruit",tr:1,pe:1});reg("descendre","to go down",{comp:"à la cave",aux:"etre"});
+/* irregular */
+irr("être","to be",["suis","es","est","sommes","êtes","sont"],"ét","ser","été",{comp:"en retard"});
+irr("avoir","to have",["ai","as","a","avons","avez","ont"],"av","aur","eu",{comp:"un chien",tr:1});
+irr("aller","to go",["vais","vas","va","allons","allez","vont"],"all","ir","allé",{aux:"etre",comp:"au cinéma"});
+irr("faire","to do / make",["fais","fais","fait","faisons","faites","font"],"fais","fer","fait",{comp:"du sport",tr:1});
+irr("prendre","to take",["prends","prends","prend","prenons","prenez","prennent"],"pren","prendr","pris",{comp:"le bus",tr:1});
+irr("apprendre","to learn",["apprends","apprends","apprend","apprenons","apprenez","apprennent"],"appren","apprendr","appris",{comp:"le français",tr:1});
+irr("comprendre","to understand",["comprends","comprends","comprend","comprenons","comprenez","comprennent"],"compren","comprendr","compris",{comp:"la leçon",tr:1});
+irr("venir","to come",["viens","viens","vient","venons","venez","viennent"],"ven","viendr","venu",{aux:"etre",comp:"à la fête"});
+irr("devenir","to become",["deviens","deviens","devient","devenons","devenez","deviennent"],"deven","deviendr","devenu",{aux:"etre",comp:"médecin"});
+irr("revenir","to come back",["reviens","reviens","revient","revenons","revenez","reviennent"],"reven","reviendr","revenu",{aux:"etre",comp:"à la maison"});
+irr("vouloir","to want",["veux","veux","veut","voulons","voulez","veulent"],"voul","voudr","voulu",{comp:"un café",tr:1});
+irr("pouvoir","to be able to",["peux","peux","peut","pouvons","pouvez","peuvent"],"pouv","pourr","pu",{comp:"aider mon frère"});
+irr("devoir","to have to",["dois","dois","doit","devons","devez","doivent"],"dev","devr","dû",{comp:"finir mes devoirs"});
+irr("savoir","to know",["sais","sais","sait","savons","savez","savent"],"sav","saur","su",{comp:"la réponse",tr:1});
+irr("voir","to see",["vois","vois","voit","voyons","voyez","voient"],"voy","verr","vu",{comp:"un film",tr:1,pe:1});
+irr("dire","to say",["dis","dis","dit","disons","dites","disent"],"dis","dir","dit",{comp:"la vérité",tr:1});
+irr("mettre","to put",["mets","mets","met","mettons","mettez","mettent"],"mett","mettr","mis",{comp:"la table",tr:1});
+irr("partir","to leave",["pars","pars","part","partons","partez","partent"],"part","partir","parti",{aux:"etre",comp:"à huit heures"});
+irr("sortir","to go out",["sors","sors","sort","sortons","sortez","sortent"],"sort","sortir","sorti",{aux:"etre",comp:"avec mes amis"});
+irr("dormir","to sleep",["dors","dors","dort","dormons","dormez","dorment"],"dorm","dormir","dormi",{comp:"bien"});
+irr("lire","to read",["lis","lis","lit","lisons","lisez","lisent"],"lis","lir","lu",{comp:"un livre",tr:1});
+irr("écrire","to write",["écris","écris","écrit","écrivons","écrivez","écrivent"],"écriv","écrir","écrit",{comp:"une lettre",tr:1});
+irr("boire","to drink",["bois","bois","boit","buvons","buvez","boivent"],"buv","boir","bu",{comp:"de l'eau",tr:1});
+irr("naître","to be born",["nais","nais","naît","naissons","naissez","naissent"],"naiss","naîtr","né",{aux:"etre",comp:"à Paris"});
+irr("mourir","to die",["meurs","meurs","meurt","mourons","mourez","meurent"],"mour","mourr","mort",{aux:"etre",comp:""});
+reg("retourner","to return",{comp:"à l'école",aux:"etre"});
+irr("ouvrir","to open",["ouvre","ouvres","ouvre","ouvrons","ouvrez","ouvrent"],"ouvr","ouvrir","ouvert",{comp:"la porte",tr:1});
+/* reflexive */
+function rf(inf,gloss,o){reg(inf,gloss,Object.assign({aux:"etre"},o));V[inf].refl=1}
+rf("se laver","to wash (oneself)",{comp:""});rf("se coucher","to go to bed",{comp:"tard"});rf("s'habiller","to get dressed",{comp:"vite"});
+rf("se réveiller","to wake up",{comp:"à sept heures"});rf("se dépêcher","to hurry",{comp:""});rf("s'amuser","to have fun",{comp:"bien"});
+rf("se brosser","to brush",{comp:"les dents",noAgr:1});
+irr("se lever","to get up",["lève","lèves","lève","levons","levez","lèvent"],"lev","lèver","levé",{type:"er",refl:1,aux:"etre",comp:"tôt"});
+irr("se promener","to go for a walk",["promène","promènes","promène","promenons","promenez","promènent"],"promen","promèner","promené",{type:"er",refl:1,aux:"etre",comp:"dans le parc"});
+const VOW=/^[aeiouyàâäéèêëîïôöùûüœh]/i;
+const infOf=v=>v.inf.replace(/^se\s+/,"").replace(/^s'/,"");
+function pp(v,S){return (v.aux==="etre"&&!v.noAgr)?v.pp+S.a:v.pp}
+function negComp(c){let m;if((m=c.match(/^(?:un|une|des|du|de la)\s+(.*)$/)))return VOW.test(m[1])?"d'"+m[1]:"de "+m[1];if((m=c.match(/^de l'(.*)$/)))return "d'"+m[1];return c}
+const NEGS={pas:["ne","pas"],jamais:["ne","jamais"],plus:["ne","plus"],"pas encore":["ne","pas encore"],rien:["ne","rien"],personne:["ne","personne"]};
+function neg_ok(v,t,n){if(!n)return true;if(n==="rien")return !!v.tr;if(n==="personne")return !!v.pe;if(n==="pas encore")return t==="pres"||t==="pc"||t==="futproche";return true}
+/* build tokens: [{w,r}] roles: subj neg refl aux verb part comp q */
+function build(o){const S=SUBJ[o.s],v=V[o.v],p=S.p;const T=[];const push=(w,r)=>{if(w!=="")T.push({w,r})};
+ const q=o.q||null;let fin,rest=[];const reflW=v.refl?REFL[p]:null;
+ const t=o.t;
+ if(t==="pres")fin={w:v.pres[p],r:"verb"};else if(t==="imp")fin={w:v.imp[p],r:"verb"};else if(t==="futsimple")fin={w:v.fut+ENDF[p],r:"verb"};
+ else if(t==="pc"){fin={w:AUXF[v.aux==="etre"?"etre":"avoir"][p],r:"aux"};rest.push({w:pp(v,S),r:"part"})}
+ else{fin={w:V.aller.pres[p],r:"aux"};if(reflW)rest.push({w:reflW,r:"refl"});rest.push({w:infOf(v),r:"part"})}
+ const nn=o.neg||null;let comp=o.comp===false?"":(o.comp==null?v.comp:o.comp);
+ if(nn==="rien"||nn==="personne")comp="";else if(nn)comp=negComp(comp);
+ if(q&&(q.w==="où"||q.w==="que"))comp="";
+ const inv=q&&q.k==="inv"&&p!==0&&q.k==="inv";
+ const pre=[];if(reflW&&t!=="futproche")pre.push({w:reflW,r:"refl"});
+ const negA=nn&&nn!=="personne"?NEGS[nn][1]:null;
+ const negTok=nn?{w:"ne",r:"neg"}:null;
+ const mid=[];if(negA)mid.push({w:negA,r:"neg"});
+ const tail=[];if(nn==="personne")tail.push({w:"personne",r:"neg"});if(comp)comp.split(" ").forEach(x=>tail.push({w:x,r:"comp"}));
+ if(q){
+  if(q.w){const qm={"où":"où","quand":"quand","pourquoi":"pourquoi","comment":"comment","avec qui":"avec qui","que":(q.k==="est"?"qu'est-ce que":"que")};push(qm[q.w],"q")}
+  if(q.k==="est"&&q.w!=="que")push("est-ce que","q");
+ }
+ if(inv){
+  if(negTok)push("ne","neg");pre.forEach(x=>T.push(x));
+  const ending=/[ae]$/.test(fin.w)&&p===2;push(fin.w+"-"+(ending?"t-":"")+S.w,fin.r);
+ }else{
+  if(!q||q.k==="est"||q.k==="int")push(S.w,"subj");
+  if(negTok)push("ne","neg");pre.forEach(x=>T.push(x));push(fin.w,fin.r);
+ }
+ mid.forEach(x=>T.push(x));rest.forEach(x=>T.push(x));tail.forEach(x=>T.push(x));
+ /* elision */
+ for(let i=0;i<T.length-1;i++){const a=T[i].w,b=T[i+1].w;
+  if(["je","ne","me","te","se"].includes(a)&&VOW.test(b))T[i].w=a[0]+"'";
+  else if(a==="est-ce que"&&["il","elle","on","ils","elles"].includes(b))T[i].w="est-ce qu'";
+  else if(a==="de"&&VOW.test(b))T[i].w="d'"}
+ return T}
+function join(T){let s="";T.forEach((x,i)=>{s+=(i&&!T[i-1].w.endsWith("'")?" ":"")+x.w});return s}
+function say(o){const T=build(o);let s=join(T);const isQ=!!o.q;s=s.charAt(0).toUpperCase()+s.slice(1);return s+(isQ?" ?":".")}
+/* token strings for tiles (split after apostrophes) */
+function tiles(T){const out=[];T.forEach(x=>{if(x.w.endsWith("'")&&x.w.length>1&&!/^(qu'est-ce qu')$/.test(x.w)){out.push({w:x.w,r:x.r})}else out.push({w:x.w,r:x.r})});return out}
+/* split complement words and apostrophes: "d'eau" -> d' eau, "l'examen" -> l' examen */
+function split(T){const out=[];T.forEach(x=>{const m=x.w.match(/^((?:[a-zàâéèêëîïôûüç]+-?)*[a-zàâéèêëîïôûüç]*')(.+)$/i);if(m&&x.r==="comp"){out.push({w:m[1],r:x.r});out.push({w:m[2],r:x.r})}else out.push(x)});return out}
+function table(vn,t,subs){const v=V[vn];return (subs||[0,2,4,7,9,13]).map(i=>say({s:i,v:vn,t,comp:false}).replace(/\.$/,"")).map(x=>x)}
+window.FRE={SUBJ,V,build,say,join,split,negComp,neg_ok,infOf,REFL,AUXF,NEGS};
+})();
+
+/* fr_builder.js: French sentence builder tool ("frsb"): Build (tap tiles), Maker (pick parts), Rules (word-order sheet). */
+(function(){
+const F=window.FRE;
+const COL={subj:"#6aa8ff",neg:"#ff7b7b",refl:"#c39bff",aux:"#ffb454",verb:"#6fd18b",part:"#6fd18b",comp:"#aab",q:"#4fd1c5"};
+const LAB={subj:"subject",neg:"negative",refl:"reflexive pronoun",aux:"auxiliary",verb:"verb",part:"participle / infinitive",comp:"the rest",q:"question word"};
+const TENSE=[["pres","Present"],["pc","Passé composé"],["imp","Imparfait"],["futproche","Futur proche"],["futsimple","Futur simple"]];
+const TN=Object.fromEntries(TENSE);
+const NEGL=[["","(none)"],["pas","ne … pas"],["jamais","ne … jamais"],["plus","ne … plus"],["rien","ne … rien"],["personne","ne … personne"],["pas encore","ne … pas encore"]];
+const QL=[["","(statement)"],["est","est-ce que"],["inv","inversion"],["est|où","où + est-ce que"],["inv|où","où + inversion"],["est|quand","quand + est-ce que"],["est|pourquoi","pourquoi + est-ce que"],["est|comment","comment + est-ce que"]];
+const TOPICS=[["pres","Present tense (regular and irregular)"],["pc","Passé composé (avoir and être)"],["refl","Reflexive verbs"],["imp","Imparfait"],["fut","Futur proche and simple"],["neg","Negative expressions"],["q","Question words and questions"],["all","Everything mixed"]];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const VK=Object.keys(F.V);
+const reflV=VK.filter(k=>F.V[k].refl),plainV=VK.filter(k=>!F.V[k].refl);
+const ST=window.__frsb||(window.__frsb={tab:"build",topic:"all",cur:null,pick:[],fb:null,n:0,ok:0,mk:{s:0,v:"aller",t:"pc",neg:"",q:""}});
+function mkChip(x,sm){return `<span style="display:inline-block;border:1.5px solid ${COL[x.r]||"#888"};border-radius:8px;padding:${sm?"3px 7px":"6px 10px"};margin:2px;font-size:${sm?14:16}px">${esc(x.w)}</span>`}
+function legend(){return Object.keys(LAB).map(k=>`<span style="display:inline-block;margin:2px 8px 2px 0;font-size:12px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${COL[k]};margin-right:4px"></span>${LAB[k]}</span>`).join("")}
+function pickOpts(topic){
+  const t=topic==="all"?rnd(["pres","pc","refl","imp","fut","neg","q"]):topic;let o;
+  const subj=()=>rnd([0,1,2,3,4,5,6,7,8,9,10,13,14]);
+  if(t==="pres")o={s:subj(),v:rnd(plainV),t:"pres"};
+  else if(t==="pc")o={s:subj(),v:rnd(plainV),t:"pc"};
+  else if(t==="refl")o={s:subj(),v:rnd(reflV),t:rnd(["pres","pc","futproche"]),neg:rnd(["","","pas"])};
+  else if(t==="imp")o={s:subj(),v:rnd(plainV),t:"imp"};
+  else if(t==="fut")o={s:subj(),v:rnd(plainV),t:rnd(["futproche","futsimple"])};
+  else if(t==="neg"){const v=rnd(plainV),ts=["pres","pc","futproche","imp"],tt=rnd(ts);let n=rnd(["pas","jamais","plus","rien","personne","pas encore"]);
+    o={s:subj(),v,t:tt,neg:n};if(!F.neg_ok(F.V[v],tt,n))o.neg=rnd(["pas","jamais","plus"])}
+  else{const k=rnd(["est","inv","est|où","inv|où","est|quand","est|pourquoi","est|comment"]);const [kk,w]=k.split("|");
+    o={s:rnd([2,3,4,5,6,7,8,9,10,13,14]),v:rnd(plainV),t:rnd(["pres","pc","futproche"]),q:w?{k:kk,w}:{k:kk}}}
+  if(o.neg&&!F.neg_ok(F.V[o.v],o.t,o.neg))o.neg="pas";
+  if(o.q&&o.q.w==="où"&&o.q.k==="est"&&false)o.q=o.q;
+  return o}
+function distract(o,T){
+  const v=F.V[o.v],S=F.SUBJ[o.s],p=S.p,have=new Set(T.map(x=>x.w)),out=[];
+  const add=w=>{if(w&&!have.has(w)&&!out.includes(w))out.push(w)};
+  if(o.t==="pc"){const other=v.aux==="etre"?"avoir":"etre";add(F.AUXF[other][p]);
+    if(v.aux==="etre"&&!v.noAgr){add(v.pp)}else add(v.pp+"e");
+    add(v.type==="er"?v.pp.replace(/é$/,"er"):v.pres[p])}
+  else if(o.t==="imp"){add(v.pres[p]);add(v.fut+"ai")}
+  else if(o.t==="futsimple"){add(v.inf.replace(/^se\s+|^s'/,""));add(v.pres[p])}
+  else if(o.t==="futproche"){add(F.V.avoir.pres[p]);add(v.pres[p])}
+  else{add(v.imp[p]);add(v.pres[(p+1)%6])}
+  if(v.refl){const r=F.REFL[(p+1)%6];add(F.REFL[p]===r?F.REFL[(p+2)%6]:r)}
+  return out.slice(0,3)}
+function newQ(){
+  let o,T,tries=0;
+  do{o=pickOpts(ST.topic);T=F.split(F.build(o));tries++}while(tries<30&&ST.cur&&F.join(T)===ST.cur.ans);
+  const d=distract(o,T);
+  const tiles=shuf(T.map((x,i)=>({w:x.w,r:x.r,d:0})).concat(d.map(w=>({w,r:"x",d:1}))));
+  tiles.forEach((x,i)=>x.i=i);
+  ST.cur={o,T,tiles,ans:F.join(T)};ST.pick=[];ST.fb=null}
+function promptText(o){
+  const v=F.V[o.v],S=F.SUBJ[o.s];const bits=[`Subject: <b>${esc(S.l)}</b>`,`Verb: <b>${esc(v.inf)}</b> (${esc(v.gloss)})`,`Tense: <b>${TN[o.t]}</b>`];
+  if(o.neg)bits.push(`Negative: <b>ne … ${esc(o.neg)}</b>`);
+  if(o.q){const w=o.q.w;bits.push(`Question: <b>${w?esc(w)+" + ":""}${o.q.k==="inv"?"inversion":"est-ce que"}</b>`)}
+  const c=(o.neg==="rien"||o.neg==="personne"||(o.q&&(o.q.w==="où"))) ?"":(v.comp?`Finish with: <i>${esc(o.neg&&o.neg!=="personne"?F.negComp(v.comp):v.comp)}</i>`:"");
+  if(c)bits.push(c);
+  return bits.join(" &nbsp;·&nbsp; ")}
+function why(o){
+  const v=F.V[o.v],S=F.SUBJ[o.s],p=S.p,w=[];
+  if(o.t==="pres")w.push(`Present of <b>${esc(v.inf)}</b> with ${S.w}: <b>${esc(v.pres[p])}</b>.`);
+  if(o.t==="pc"){w.push(`Passé composé = auxiliary + past participle. <b>${esc(v.inf)}</b> takes <b>${v.aux==="etre"?"être":"avoir"}</b>: <b>${F.AUXF[v.aux==="etre"?"etre":"avoir"][p]}</b> + <b>${esc(v.pp)}</b>.`);
+    if(v.aux==="etre"&&!v.noAgr)w.push(`With être the participle agrees with the subject${S.a?` (here add "${S.a}")`:" (masculine singular, so nothing is added)"}.`);else w.push("With avoir the participle does not agree with the subject.")}
+  if(o.t==="imp")w.push(`Imparfait: stem from the nous form + <b>${F.V.avoir&&["ais","ais","ait","ions","iez","aient"][p]}</b>. Used for habits, descriptions and background.`);
+  if(o.t==="futproche")w.push(`Futur proche = <b>aller</b> in the present (${F.V.aller.pres[p]}) + the infinitive.`);
+  if(o.t==="futsimple")w.push(`Futur simple = future stem <b>${esc(v.fut)}</b> + <b>${["ai","as","a","ons","ez","ont"][p]}</b>.`);
+  if(v.refl)w.push(`Reflexive: the pronoun <b>${F.REFL[p]}</b> matches the subject and goes ${o.t==="futproche"?"before the infinitive":"right before the verb (before the auxiliary in the passé composé)"}.`);
+  if(o.neg){w.push(o.neg==="personne"?`ne goes before the conjugated verb or auxiliary; <b>personne</b> goes after the whole verb (after the participle in the passé composé).`:`Negative: <b>ne</b> goes before, <b>${esc(o.neg)}</b> goes after the conjugated verb (or auxiliary).`);
+    if(o.neg!=="rien"&&o.neg!=="personne"&&/^(un|une|des|du|de la)\s/.test(v.comp||""))w.push("After a negative, un / une / des / du / de la becomes de (d' before a vowel).")}
+  if(o.q)w.push(o.q.k==="inv"?`Inversion: verb (or auxiliary) + hyphen + subject pronoun${/[ae]$/.test(F.build(o)[0].w)?"":""}. With il, elle, on add <b>-t-</b> when the verb ends in a vowel.`:`Est-ce que goes before the normal subject + verb order.`);
+  return w.map(x=>`<li>${x}</li>`).join("")}
+function viewBuild(el){
+  if(!ST.cur)newQ();
+  const c=ST.cur,o=c.o,sel=ST.pick;
+  const used=new Set(sel);
+  const ansHtml=sel.length?sel.map(i=>`<button class="sm" data-un="${i}" style="margin:2px;font-size:16px">${esc(c.tiles[i].w)}</button>`).join(""):`<span class="mut">Tap the tiles in order to build the sentence.</span>`;
+  const pool=c.tiles.map(x=>used.has(x.i)?"":`<button data-t="${x.i}" style="margin:3px;font-size:16px;padding:8px 12px">${esc(x.w)}</button>`).join("");
+  let fb="";
+  if(ST.fb){const ok=ST.fb==="ok";fb=`<div class="card" style="margin-top:10px;border-color:${ok?"#6fd18b":"#ff7b7b"}"><b>${ok?"Correct":"Not quite"}</b>${ok?"":` : you built <i>${esc(sel.map(i=>c.tiles[i].w).join(" ").replace(/' /g,"'"))}</i>`}<div style="margin:8px 0">${c.T.map(x=>mkChip(x)).join("")}</div><ul style="margin:6px 0 0 18px;font-size:14px">${why(o)}</ul><div class="mut" style="font-size:12px;margin-top:6px">${legend()}</div><div class="row" style="margin-top:8px"><button class="pri" id="sbnext">Next sentence</button></div></div>`}
+  el.innerHTML=`<div class="row" style="align-items:flex-end"><label class="f">Topic<select id="sbtopic">${TOPICS.map(t=>`<option value="${t[0]}" ${ST.topic===t[0]?"selected":""}>${t[1]}</option>`).join("")}</select></label><span class="mut mono" style="font-size:12px">${ST.ok} / ${ST.n} right</span></div>
+  <div class="card" style="margin-top:8px"><div style="font-size:14px;line-height:1.6">${promptText(o)}</div>
+  <div style="min-height:50px;margin:10px 0;padding:8px;border:1px dashed var(--line);border-radius:10px">${ansHtml}</div>
+  ${ST.fb?"":`<div>${pool}</div><div class="row" style="margin-top:8px"><button class="pri" id="sbchk" ${sel.length?"":"disabled"}>Check</button><button class="sm" id="sbclr">Clear</button><button class="sm" id="sbhint">Hint</button><button class="sm" id="sbskip">Skip</button></div><div id="sbh" class="mut" style="font-size:13px;margin-top:6px"></div>`}
+  <div class="mut" style="font-size:12px;margin-top:6px">Some tiles are wrong on purpose. Keep the apostrophe tiles (like j' or n') as they are.</div></div>${fb}`;
+  $("#sbtopic").onchange=e=>{ST.topic=e.target.value;newQ();viewBuild(el)};
+  el.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{ST.pick.push(+b.dataset.t);viewBuild(el)});
+  el.querySelectorAll("[data-un]").forEach(b=>b.onclick=()=>{ST.pick=ST.pick.filter(i=>i!==+b.dataset.un);viewBuild(el)});
+  const g=id=>document.getElementById(id);
+  if(g("sbclr"))g("sbclr").onclick=()=>{ST.pick=[];viewBuild(el)};
+  if(g("sbskip"))g("sbskip").onclick=()=>{newQ();viewBuild(el)};
+  if(g("sbhint"))g("sbhint").onclick=()=>{const nx=c.T[ST.pick.length];g("sbh").innerHTML=nx?`Next part is the <b>${LAB[nx.r]}</b>.`:"You have every part. Press Check."};
+  if(g("sbchk"))g("sbchk").onclick=()=>{const got=F.join(ST.pick.map(i=>({w:c.tiles[i].w})));ST.n++;if(got===c.ans){ST.ok++;ST.fb="ok"}else ST.fb="bad";viewBuild(el)};
+  if(g("sbnext"))g("sbnext").onclick=()=>{newQ();viewBuild(el)};
+}
+function sel(id,opts,val){return `<select id="${id}">${opts.map(([k,l])=>`<option value="${esc(k)}" ${String(val)===String(k)?"selected":""}>${esc(l)}</option>`).join("")}</select>`}
+function viewMaker(el){
+  const M=ST.mk;const v=F.V[M.v];
+  const qo=M.q?(()=>{const [k,w]=M.q.split("|");return w?{k,w}:{k}})():null;
+  const o={s:M.s,v:M.v,t:M.t,neg:M.neg||null,q:qo};
+  let msg="";
+  if(o.neg&&!F.neg_ok(v,o.t,o.neg)){msg=`ne … ${o.neg} does not suit this verb or tense, so ne … pas is used.`;o.neg="pas"}
+  if(qo&&qo.k==="inv"&&F.SUBJ[M.s].p===0){msg="Inversion is not used with je, so est-ce que is used.";o.q={k:"est",w:qo.w}}
+  const T=F.build(o),sent=F.say(o);
+  const rows=[0,2,4,7,9,13].map(i=>{const s=F.SUBJ[i];const x=F.say({s:i,v:M.v,t:M.t,comp:false}).replace(/\.$/,"");return `<tr><td class="mut" style="padding:2px 10px 2px 0">${esc(s.l)}</td><td>${esc(x)}</td></tr>`}).join("");
+  el.innerHTML=`<div class="card"><div class="row">
+  <label class="f">Subject${sel("mks",F.SUBJ.map((s,i)=>[i,s.l]),M.s)}</label>
+  <label class="f">Verb${sel("mkv",VK.map(k=>[k,k+" ("+F.V[k].gloss+")"]),M.v)}</label>
+  <label class="f">Tense${sel("mkt",TENSE,M.t)}</label>
+  <label class="f">Negative${sel("mkn",NEGL,M.neg)}</label>
+  <label class="f">Question${sel("mkq",QL,M.q)}</label></div>
+  <div style="margin:14px 0 6px;font-size:20px;line-height:1.5">${esc(sent)}</div>
+  <div>${T.map(x=>mkChip(x)).join("")}</div>
+  <div class="mut" style="font-size:12px;margin-top:6px">${legend()}</div>
+  ${msg?`<div style="margin-top:8px;color:#ffb454;font-size:13px">${esc(msg)}</div>`:""}
+  <ul style="margin:10px 0 0 18px;font-size:14px">${why(o)}</ul></div>
+  <div class="card" style="margin-top:8px"><b>${esc(v.inf)} · ${TN[M.t]}</b><table style="margin-top:6px;font-size:15px">${rows}</table><div class="mut" style="font-size:12px;margin-top:6px">Table shows the verb part only.</div></div>`;
+  [["mks","s",1],["mkv","v"],["mkt","t"],["mkn","neg"],["mkq","q"]].forEach(([id,k,num])=>{$("#"+id).onchange=e=>{M[k]=num?+e.target.value:e.target.value;viewMaker(el)}});
+}
+const R=(t,body)=>`<details class="card" style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:600">${t}</summary><div style="font-size:14px;line-height:1.6;margin-top:8px">${body}</div></details>`;
+const tbl=(rows)=>`<table style="font-size:14px;border-collapse:collapse">${rows.map(r=>`<tr>${r.map((c,i)=>`<td style="padding:2px 12px 2px 0;${i===0?"color:var(--mut)":""}">${c}</td>`).join("")}</tr>`).join("")}</table>`;
+function viewRules(el){
+ el.innerHTML=`<p class="mut" style="font-size:13px">Word-order sheet for the nine exam topics. These are standard French rules. Where a list could differ from your class list (which verbs, which adjectives), it says so.</p>
+ ${R("The sentence recipe (use this every time)",`<ol style="margin:0 0 0 18px"><li>Start with the <b>subject</b> (or a time word: hier, demain, d'habitude).</li><li>Pick the <b>tense</b>: habit or description = imparfait; one finished event = passé composé; planned soon = futur proche; later = futur simple.</li><li>Conjugate (add the <b>auxiliary</b> and participle for the passé composé; put the reflexive pronoun before the verb).</li><li>Wrap any <b>negative</b> around the conjugated verb (around the auxiliary in the passé composé).</li><li>Add the rest: object, place, time. Adjectives agree in gender and number.</li><li>Check: accents, agreement, a/à, elision (j', n', m').</li></ol>`)}
+ ${R("Present: -ER, -IR, -RE",tbl([["-er (parler)","parle · parles · parle · parlons · parlez · parlent"],["-ir (finir)","finis · finis · finit · finissons · finissez · finissent"],["-re (vendre)","vends · vends · vend · vendons · vendez · vendent"],["être","suis · es · est · sommes · êtes · sont"],["avoir","ai · as · a · avons · avez · ont"],["aller","vais · vas · va · allons · allez · vont"],["faire","fais · fais · fait · faisons · faites · font"],["prendre","prends · prends · prend · prenons · prenez · prennent"],["vouloir","veux · veux · veut · voulons · voulez · veulent"],["pouvoir","peux · peux · peut · pouvons · pouvez · peuvent"]])+`<p class="mut" style="margin:6px 0 0">Spelling changes: manger → nous mangeons; commencer → nous commençons; acheter → j'achète. Not every -ir verb is like finir (partir, sortir, dormir are irregular).</p>`)}
+ ${R("Passé composé: avoir or être",`<p style="margin:0 0 6px">Auxiliary (present) + past participle. Participles: -er → <b>é</b>, -ir → <b>i</b>, -re → <b>u</b>.</p><p style="margin:0 0 6px"><b>Être</b> verbs (Dr and Mrs Vandertramp): devenir, revenir, monter, rester, sortir, venir, aller, naître, descendre, entrer, retourner, tomber, rentrer, arriver, mourir, partir, plus <b>all reflexive verbs</b>. The participle agrees with the subject: elle est allée, nous sommes arrivés, elles sont parties. <span class="mut">(check with your teacher: whether your class list includes passer and others)</span></p><p style="margin:0 0 6px">Everything else uses <b>avoir</b> and the participle does not agree: elle a mangé.</p>`+tbl([["Irregular participles","être → été · avoir → eu · faire → fait · prendre → pris · voir → vu · boire → bu · lire → lu · écrire → écrit · mettre → mis · pouvoir → pu · vouloir → voulu · devoir → dû · savoir → su · dire → dit · ouvrir → ouvert"]]))}
+ ${R("Reflexive verbs",tbl([["Pronouns","me · te · se · nous · vous · se (m', t', s' before a vowel or h)"],["Present","je me lave · tu te laves · il se lave · nous nous lavons · vous vous lavez · ils se lavent"],["Negative","je <b>ne</b> me lave <b>pas</b> (ne goes before the pronoun)"],["Passé composé","je me suis lavé(e) · ils se sont lavés (être, agrees)"],["Neg. passé composé","je ne me suis pas lavé(e)"],["Futur proche","je vais me laver (pronoun before the infinitive)"],["Imparfait","je me lavais"]]))}
+ ${R("Imparfait",tbl([["Recipe","nous form of the present, drop -ons, add the endings"],["Endings","ais · ais · ait · ions · iez · aient"],["Example","nous parlons → je parlais · nous finissons → je finissais · nous vendons → je vendais"],["être","j'étais · tu étais · il était · nous étions · vous étiez · ils étaient"],["Use","habits (je jouais souvent), descriptions, background (il pleuvait), feelings in the past"]]))}
+ ${R("Futur proche and futur simple",tbl([["Futur proche","aller (present) + infinitive: je vais manger · nous allons partir"],["Futur simple","infinitive (drop the e of -re) + ai · as · a · ons · ez · ont: je parlerai · tu finiras · il vendra"],["Irregular stems","être → ser · avoir → aur · aller → ir · faire → fer · voir → verr · pouvoir → pourr · vouloir → voudr · venir → viendr · devoir → devr · savoir → saur · envoyer → enverr · falloir → faudr"],["Time words","demain · bientôt · la semaine prochaine · l'année prochaine · plus tard · dans deux jours"]]))}
+ ${R("Negative expressions",tbl([["ne … pas","not"],["ne … jamais","never"],["ne … plus","no longer, not any more"],["ne … rien","nothing"],["ne … personne","nobody (personne goes after the participle)"],["ne … pas encore","not yet"],["Present","je <b>ne</b> mange <b>pas</b>"],["Passé composé","je <b>n'</b>ai <b>pas</b> mangé · je n'ai <b>rien</b> mangé · je n'ai vu <b>personne</b>"],["Futur proche","je <b>ne</b> vais <b>pas</b> manger"],["After a negative","un, une, des, du, de la → de (d' before a vowel): je n'ai pas de chien. Not after être: ce n'est pas un chien."],["Short answer","Jamais ! · Rien ! · Personne ! · Pas encore."]]))}
+ ${R("Questions and question words",tbl([["Three ways","Tu parles français ? (voice goes up) · Est-ce que tu parles français ? · Parles-tu français ?"],["Inversion","verb – subject pronoun: Où vas-tu ? Avez-vous mangé ? With il, elle, on and a verb ending in a vowel: A-t-il mangé ? Parle-t-elle ?"],["où","where: Où habites-tu ?"],["quand","when: Quand est-ce que tu pars ?"],["pourquoi","why: Pourquoi est-ce qu'il pleure ? (answer with parce que)"],["comment","how: Comment vas-tu ?"],["qui","who: Qui est-ce ?"],["que / qu'est-ce que","what: Que fais-tu ? Qu'est-ce que tu fais ?"],["combien (de)","how much, how many: Combien de frères as-tu ?"],["quel / quelle / quels / quelles","which, what (agrees with the noun): Quelle heure est-il ?"],["Passé composé","invert the auxiliary: As-tu mangé ? Est-elle partie ?"]]))}
+ ${R("Adjectives: agreement and position",`<p style="margin:0 0 6px">Agreement: feminine usually +e, plural +s (grand, grande, grands, grandes). Already ending in -e: no change in the feminine (rouge). Common irregulars: beau → belle, nouveau → nouvelle, vieux → vieille, blanc → blanche, long → longue, heureux → heureuse, actif → active, gentil → gentille. Plural of -eau is -eaux.</p><p style="margin:0 0 6px"><b>Position</b>: most adjectives go <b>after</b> the noun (une voiture rouge, un garçon intelligent), including colours, nationalities and shapes. The BAGS adjectives go <b>before</b>: Beauty (beau, joli), Age (jeune, vieux, nouveau), Goodness (bon, mauvais, gentil), Size (grand, petit, gros). <span class="mut">(check with your teacher: your 20 adjectives and which ones are before the noun)</span></p><p style="margin:0">Before a masculine noun starting with a vowel: bel, nouvel, vieil (un bel homme).</p>`)}
+ ${R("Avoir expressions (English says 'to be', French says 'to have')",tbl([["Age","J'ai quinze ans (I am fifteen). Never: je suis quinze ans."],["Feelings","J'ai faim (hungry) · soif (thirsty) · froid (cold) · chaud (hot) · sommeil (sleepy) · peur (scared)"],["Pain","J'ai mal à la tête (I have a sore head)"],["Être is for","jobs, descriptions, nationality, where: Elle est professeure. Je suis australien."]]))}
+ ${R("Agreement exceptions (passé composé)",tbl([["avoir","The participle does not agree with the subject. Exception: if the direct object comes before the verb, it agrees with that object: la photo que j'ai prise."],["Reflexive","Agrees with the subject: Elle s'est lavée. Ils se sont couchés."],["Reflexive + object","If a direct object follows the verb, no agreement: Elle s'est lavé les mains. Ils se sont brossé les dents. Elle s'est cassé le bras."]]))}
+ ${R("Imparfait or passé composé?",tbl([["Imparfait","habits (chaque été, souvent, d'habitude), descriptions and states (il faisait beau, elle était triste), background"],["Passé composé","one finished event (soudain, hier, un jour)"],["Together","Je lisais (background) quand le téléphone a sonné (event). Il pleuvait quand je suis sorti."],["Si + present","S'il pleut demain, nous resterons à la maison (si + present, futur simple)."]]))}
+ ${R("Linking words for the writing task",tbl([["Past","hier · la semaine dernière · l'année dernière · il y a deux jours · ce matin"],["Habits (imparfait)","d'habitude · souvent · toujours · tous les jours · quand j'étais petit(e)"],["Present","aujourd'hui · maintenant · en ce moment · d'habitude"],["Future","demain · la semaine prochaine · l'année prochaine · bientôt · plus tard"],["Order","d'abord · ensuite · puis · après · enfin"],["Joining","et · mais · parce que · donc · quand · pendant que · aussi"]]))}`}
+function toolFrSb(el){
+ el.innerHTML=`<div class="card"><h3>French sentence builder</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Build correct sentences for the exam topics. Colours show each part of the sentence. Sentences are generated by rules and every form was tested, but check anything unusual with your teacher.</p><div class="row" id="sbtabs"></div></div><div id="sbbody" style="margin-top:8px"></div>`;
+ const tabs=[["build","Build it"],["maker","Sentence maker"],["rules","Word order sheet"]];
+ const draw=()=>{$("#sbtabs").innerHTML=tabs.map(([k,l])=>`<button class="${ST.tab===k?"pri":"sm"}" data-k="${k}">${l}</button>`).join("");
+  $("#sbtabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ST.tab=b.dataset.k;draw()});
+  const body=$("#sbbody");({build:viewBuild,maker:viewMaker,rules:viewRules})[ST.tab](body)};
+ draw()}
+window.toolFrSb=toolFrSb;
+})();
+
+/* fr_drills.js: "French table drills" tool (frdr): Fill-in tables, Fade-out recital, Speed round, Match-up. Uses FRE. */
+(function(){
+const F=window.FRE;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const VK=Object.keys(F.V),plain=VK.filter(k=>!F.V[k].refl),refl=VK.filter(k=>F.V[k].refl);
+const IRR=["être","avoir","aller","faire","prendre","venir","vouloir","pouvoir","devoir","savoir","voir","dire","mettre","partir","sortir","dormir","lire","écrire","boire","ouvrir","apprendre","comprendre"];
+const REG=plain.filter(k=>!IRR.includes(k)&&["er","ir","re"].includes(F.V[k].type)&&!F.V[k].aux.startsWith("e"));
+const PL=["je","tu","il / elle / on","nous","vous","ils / elles"],PI=[0,2,4,7,11,13];
+const norm=s=>String(s).toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
+const noacc=s=>norm(s).normalize("NFD").replace(/[̀-ͯ]/g,"");
+const SUBJRE=/^(je|j'|tu|il|elle|on|nous|vous|ils|elles)\s*\/?\s*/;
+function clean(s){let x=norm(s);const y=x.replace(/^(je|tu|il|elle|on|nous|vous|ils|elles)\s+/,"").replace(/^j'/,"");return [x,y]}
+function strip(s){return norm(s).replace(/^(je|tu|il|elle|on|nous|vous|ils|elles)\s+/,"").replace(/^j'/,"")}
+function grade(input,ans){let note=false;const I=strip(input);
+ for(const a of String(ans).split("|")){const A=strip(a);if(I===A)return {ok:1,note:0};if(noacc(I)===noacc(A))note=true}
+ return note?{ok:1,note:1}:{ok:0}}
+function ansDisp(a){return String(a).split("|")[0]}
+/* ---- table generators ---- */
+function formOf(vn,t,i){return F.join(F.build({s:i,v:vn,t,comp:false}))}
+function perVerb(t,tn,pool,label){return {id:t+(pool===refl?"r":""),name:tn,gen(){const vn=rnd(pool);const v=F.V[vn];
+  const idx=(t==="pc"&&v.aux==="etre"&&!v.noAgr&&!v.refl)?[0,3,5,7,13,14]:(t==="pc"&&v.refl)?[0,3,5,7,13,14]:PI;
+  return {title:`${vn} (${v.gloss}) · ${label}`,cols:[""],rows:idx.map((i,k)=>({lab:idx===PI?PL[k]:F.SUBJ[i].l,ans:[formOf(vn,t,i)]})),key:vn}}}}
+const SETS=[
+ perVerb("pres","Present: regular -er / -ir / -re",REG,"present"),
+ perVerb("pres","Present: irregular verbs",IRR.filter(k=>F.V[k]),"present"),
+ perVerb("pc","Passé composé (avoir and être verbs)",plain,"passé composé"),
+ perVerb("imp","Imparfait",plain,"imparfait"),
+ perVerb("futsimple","Futur simple",plain,"futur simple"),
+ perVerb("pres","Reflexive verbs: present",refl,"present"),
+ perVerb("pc","Reflexive verbs: passé composé",refl,"passé composé"),
+ {id:"ppart",name:"Past participles and auxiliary",gen(){const vs=shuf(plain).slice(0,6);return {title:"Past participle and auxiliary",cols:["participle","avoir or être"],rows:vs.map(k=>({lab:k+" ("+F.V[k].gloss+")",ans:[F.V[k].pp,F.V[k].aux==="etre"?"être":"avoir"]}))}}},
+ {id:"fstem",name:"Futur simple stems",gen(){const X=[["envoyer","enverrai"],["falloir (il form)","faudra"]];const vs=shuf(["être","avoir","aller","faire","voir","pouvoir","vouloir","venir","devoir","savoir","parler","finir","vendre"]).map(k=>[k,F.V[k].fut+"ai"]).concat(X);return {title:"Future simple: the je form",cols:["je form"],rows:shuf(vs).slice(0,6).map(x=>({lab:x[0],ans:[x[1]]}))}}},
+ {id:"rpron",name:"Reflexive pronouns",gen(){return {title:"Reflexive pronoun for each subject",cols:["pronoun"],rows:PL.map((p,i)=>({lab:p,ans:[F.REFL[i]]}))}}},
+ {id:"neg",name:"Negative expressions (meanings)",gen(){return {title:"What does it mean?",cols:["English"],rows:shuf([["ne … pas","not"],["ne … jamais","never"],["ne … plus","no longer|not anymore|no more|not any more|no longer any"],["ne … rien","nothing|not anything"],["ne … personne","nobody|no one|not anyone|not anybody"],["ne … pas encore","not yet"]]).map(x=>({lab:x[0],ans:[x[1]]}))}}},
+ {id:"qw",name:"Question words (meanings)",gen(){return {title:"What does it mean?",cols:["English"],rows:shuf([["où","where"],["quand","when"],["pourquoi","why"],["comment","how"],["qui","who"],["que / qu'est-ce que","what"],["combien (de)","how much|how many|how much / how many|how many / how much"],["quel / quelle","which|what"]]).slice(0,6).map(x=>({lab:x[0],ans:[x[1]]}))}}},
+ {id:"adj",name:"Adjectives: all four forms (the 20 most common)",gen(){const A=[["grand","grande","grands","grandes"],["petit","petite","petits","petites"],["bon","bonne","bons","bonnes"],["mauvais","mauvaise","mauvais","mauvaises"],["beau","belle","beaux","belles"],["joli","jolie","jolis","jolies"],["nouveau","nouvelle","nouveaux","nouvelles"],["vieux","vieille","vieux","vieilles"],["jeune","jeune","jeunes","jeunes"],["long","longue","longs","longues"],["court","courte","courts","courtes"],["gentil","gentille","gentils","gentilles"],["content","contente","contents","contentes"],["triste","triste","tristes","tristes"],["heureux","heureuse","heureux","heureuses"],["fatigué","fatiguée","fatigués","fatiguées"],["intelligent","intelligente","intelligents","intelligentes"],["drôle","drôle","drôles","drôles"],["facile","facile","faciles","faciles"],["difficile","difficile","difficiles","difficiles"],["sportif","sportive","sportifs","sportives"],["blanc","blanche","blancs","blanches"],["rouge","rouge","rouges","rouges"]];
+  return {title:"Adjective forms",cols:["feminine","masc. plural","fem. plural"],rows:shuf(A).slice(0,5).map(a=>({lab:a[0],ans:[a[1],a[2],a[3]]}))}}},
+ {id:"bags",name:"Adjectives: before or after the noun (BAGS)",gen(){const B=[["beau","before"],["joli","before"],["jeune","before"],["vieux","before"],["nouveau","before"],["bon","before"],["mauvais","before"],["gentil","before"],["grand","before"],["petit","before"],["gros","before"],["rouge","after"],["intelligent","after"],["français","after"],["facile","after"],["difficile","after"],["blanc","after"],["fatigué","after"]];return {title:"Before or after the noun? (Beauty, Age, Goodness, Size go before; colours and nationalities after)",cols:["before / after"],rows:shuf(B).slice(0,6).map(x=>({lab:x[0],ans:[x[1]]}))}}},
+ {id:"bel",name:"Beau, nouveau, vieux before a vowel",gen(){const R=[["un ___ homme (beau)","bel"],["un ___ ami (nouveau)","nouvel"],["un ___ arbre (vieux)","vieil"],["un ___ garçon (beau)","beau"],["un ___ livre (nouveau)","nouveau"],["un ___ chat (vieux)","vieux"],["une ___ fille (beau)","belle"],["une ___ idée (nouveau)","nouvelle"],["une ___ maison (vieux)","vieille"]];return {title:"Fill the form",cols:["answer"],rows:shuf(R).slice(0,6).map(x=>({lab:x[0],ans:[x[1]]}))}}},
+ {id:"avx",name:"Avoir expressions (J'ai faim...)",gen(){const R=[["J'ai quinze ans","I am fifteen|i am 15|i'm fifteen|i'm 15"],["J'ai faim","I am hungry|i'm hungry"],["J'ai soif","I am thirsty|i'm thirsty"],["J'ai froid","I am cold|i'm cold"],["J'ai chaud","I am hot|i'm hot"],["J'ai sommeil","I am sleepy|i'm sleepy|i am tired|i'm tired"],["J'ai peur","I am scared|i'm scared|i am afraid|i'm afraid"],["J'ai mal à la tête","I have a sore head|i have a headache|my head hurts"]];return {title:"What does it mean? (these use avoir, not être)",cols:["English"],rows:shuf(R).slice(0,6).map(x=>({lab:x[0],ans:[x[1]]}))}}},
+ {id:"vdt",name:"The 16 Vandertramp verbs: participles",gen(){const V=["devenir","revenir","monter","rester","sortir","venir","aller","naître","descendre","entrer","rentrer","tomber","retourner","arriver","mourir","partir"];return {title:"Past participle (all take être)",cols:["participle"],rows:shuf(V).slice(0,6).map(k=>({lab:k+" ("+F.V[k].gloss+")",ans:[F.V[k].pp]}))}}},
+ {id:"tpc",name:"Imparfait or passé composé?",gen(){const R=[["Chaque été, nous ___ à la plage","imparfait"],["Il ___ beau (description)","imparfait"],["Elle ___ triste (state)","imparfait"],["D'habitude, je ___ au parc","imparfait"],["Je lisais quand le téléphone ___ (interrupting)","passé composé|pc"],["Soudain, il ___","passé composé|pc"],["Hier, nous ___ au cinéma","passé composé|pc"],["Un jour, elle ___ un chien","passé composé|pc"],["Il pleuvait quand je ___ (single event)","passé composé|pc"],["Souvent, ils ___ du foot","imparfait"]];return {title:"Which tense? Habit, description and background = imparfait; one finished event = passé composé",cols:["tense"],rows:shuf(R).slice(0,6).map(x=>({lab:x[0],ans:[x[1]]}))}}}
+];
+const ST=window.__frdr||(window.__frdr={mode:"fill",set:0,tab:null,lvl:0,res:null,sp:null,mt:null,best:{}});
+try{ST.best=JSON.parse(localStorage.getItem("frdr_best")||"{}")}catch(e){}
+function saveBest(){try{localStorage.setItem("frdr_best",JSON.stringify(ST.best))}catch(e){}}
+const MODES=[["fill","Fill the table"],["fade","Fade out"],["speed","Speed round"],["match","Match up"]];
+function stopTimer(){if(ST.sp&&ST.sp.iv){clearInterval(ST.sp.iv);ST.sp.iv=null}}
+function head(el){return `<div class="card"><h3>French table drills</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Practise conjugation tables and word lists from memory. Forms are generated by rules and tested; check unusual ones with your teacher.</p><div class="row" id="drm"></div><label class="f" style="margin-top:8px">Topic<select id="drs">${SETS.map((s,i)=>`<option value="${i}" ${ST.set===i?"selected":""}>${esc(s.name)}</option>`).join("")}</select></label></div><div id="drb" style="margin-top:8px"></div>`}
+/* ---- fill / fade ---- */
+function newTab(){ST.tab=SETS[ST.set].gen();ST.res=null;ST.lvl=0;ST.hide=null}
+function hidSet(){const cells=[];ST.tab.rows.forEach((r,i)=>r.ans.forEach((a,j)=>cells.push(i+"_"+j)));
+ const frac=ST.mode==="fill"?1:[0,.34,.67,1][Math.min(ST.lvl,3)];const n=frac===0?0:Math.max(1,Math.round(cells.length*frac));return new Set(shuf(cells).slice(0,n))}
+function viewTable(b){
+ if(!ST.tab)newTab();if(!ST.hide)ST.hide=hidSet();
+ const T=ST.tab,H=ST.hide,res=ST.res;const fade=ST.mode==="fade";
+ const lvlTxt=fade?["Study the table (nothing hidden)","About a third hidden","About two thirds hidden","Everything hidden: recite it"][Math.min(ST.lvl,3)]:"";
+ b.innerHTML=`<div class="card"><b>${esc(T.title)}</b>${fade?`<div class="mut" style="font-size:13px;margin:4px 0">Level ${ST.lvl+1} of 4: ${lvlTxt}</div>`:""}
+ <table style="width:100%;margin-top:8px;border-collapse:collapse"><thead><tr><th></th>${T.cols.map(c=>`<th class="mut" style="text-align:left;font-weight:400;font-size:12px">${esc(c)}</th>`).join("")}</tr></thead><tbody>${T.rows.map((r,i)=>`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap">${esc(r.lab)}</td>${r.ans.map((a,j)=>{const k=i+"_"+j;if(!H.has(k))return `<td style="padding:4px"><span style="display:block;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,.05)">${esc(ansDisp(a))}</span></td>`;
+  const g=res&&res[k];return `<td style="padding:4px"><input data-k="${k}" autocomplete="off" autocapitalize="off" spellcheck="false" ${res?"disabled":""} value="${res?esc(g.val):""}" style="width:100%;min-width:90px;${res?`border:2px solid ${g.ok?"#6fd18b":"#ff7b7b"}`:""}">${res&&!g.ok?`<div style="font-size:12px;color:#6fd18b">${esc(ansDisp(a))}</div>`:res&&g.note?`<div style="font-size:12px;color:#ffb454">check accents: ${esc(ansDisp(a))}</div>`:""}</td>`}).join("")}</tr>`).join("")}</tbody></table>
+ <div class="row" style="margin-top:10px">${res?`<span class="mono">${res.score} / ${res.total}</span>`:`<button class="pri" id="drchk">Check</button>`}${res&&fade&&ST.lvl<3?`<button class="pri" id="drlvl">Hide more</button>`:""}<button class="sm" id="drnew">${res?"New table":"Skip"}</button>${fade&&!res&&ST.lvl===0?`<button class="sm" id="drgo">Start hiding</button>`:""}${res&&fade&&ST.lvl>0?`<button class="sm" id="drsame">Try again</button>`:""}</div></div>`;
+ const ins=[...b.querySelectorAll("input")];ins.forEach((i,n)=>i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();(ins[n+1]||document.getElementById("drchk")||i).focus()}}));
+ const g=id=>document.getElementById(id);
+ if(g("drchk"))g("drchk").onclick=()=>{const r={score:0,total:0};ins.forEach(i=>{const [a,c]=i.dataset.k.split("_").map(Number);const gr=grade(i.value,T.rows[a].ans[c]);r.total++;if(gr.ok)r.score++;r[i.dataset.k]={ok:gr.ok,note:gr.note,val:i.value}});ST.res=r;viewTable(b)};
+ if(g("drnew"))g("drnew").onclick=()=>{newTab();ST.lvl=0;ST.hide=null;viewTable(b)};
+ if(g("drgo"))g("drgo").onclick=()=>{ST.lvl=1;ST.hide=hidSet();viewTable(b)};
+ if(g("drlvl"))g("drlvl").onclick=()=>{ST.lvl++;ST.res=null;ST.hide=hidSet();viewTable(b)};
+ if(g("drsame"))g("drsame").onclick=()=>{ST.res=null;ST.hide=hidSet();viewTable(b)};
+}
+/* ---- speed round ---- */
+function spPrompt(){const s=SETS[ST.set],t=s.gen();const ri=Math.floor(Math.random()*t.rows.length),r=t.rows[ri],ci=Math.floor(Math.random()*r.ans.length);
+ return {q:`${r.lab}${t.key?" · "+t.key:""}${t.cols[ci]?" → "+t.cols[ci]:""}`,sub:t.title,ans:r.ans[ci]}}
+function viewSpeed(b){
+ const sp=ST.sp;const best=ST.best[ST.set]||0;
+ if(!sp||sp.state==="idle"){stopTimer();b.innerHTML=`<div class="card"><b>Speed round</b><p class="mut" style="font-size:13px">60 seconds. One form at a time; press Enter to submit. Your best for this topic: <b>${best}</b>.</p><button class="pri" id="spgo">Start</button></div>`;document.getElementById("spgo").onclick=()=>{ST.sp={state:"run",t:60,score:0,n:0,cur:spPrompt(),fb:"",wrong:[]};ST.sp.iv=setInterval(()=>{if(!document.getElementById("spq")){stopTimer();return}ST.sp.t--;const e=document.getElementById("spt");if(e)e.textContent=ST.sp.t+"s";if(ST.sp.t<=0){stopTimer();ST.sp.state="done";if(ST.sp.score>(ST.best[ST.set]||0)){ST.best[ST.set]=ST.sp.score;ST.sp.newbest=1;saveBest()}viewSpeed(b)}},1000);viewSpeed(b)};return}
+ if(sp.state==="done"){b.innerHTML=`<div class="card"><b>Time up: ${sp.score} / ${sp.n}</b>${sp.newbest?` <span style="color:#6fd18b">new best</span>`:""}${sp.wrong.length?`<div style="margin-top:8px;font-size:14px">Missed:</div><ul style="margin:4px 0 0 18px;font-size:14px">${sp.wrong.slice(0,12).map(w=>`<li>${esc(w[0])} → <b>${esc(w[1])}</b> <span class="mut">(you wrote ${esc(w[2]||"nothing")})</span></li>`).join("")}</ul>`:""}<div class="row" style="margin-top:10px"><button class="pri" id="spagain">Go again</button></div></div>`;document.getElementById("spagain").onclick=()=>{ST.sp=null;viewSpeed(b)};return}
+ b.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><span class="mono">Score ${sp.score}/${sp.n}</span><span class="mono" id="spt">${sp.t}s</span></div><div class="mut" style="font-size:12px;margin-top:8px">${esc(sp.cur.sub)}</div><div id="spq" style="font-size:20px;margin:6px 0 10px">${esc(sp.cur.q)}</div><input id="spi" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%" placeholder="Type the answer, then Enter"><div style="min-height:22px;margin-top:8px;font-size:14px">${sp.fb}</div></div>`;
+ const i=document.getElementById("spi");i.focus();i.addEventListener("keydown",e=>{if(e.key!=="Enter")return;e.preventDefault();const gr=grade(i.value,sp.cur.ans);sp.n++;if(gr.ok){sp.score++;sp.fb=`<span style="color:#6fd18b">Last one correct${gr.note?" (check accents: "+esc(ansDisp(sp.cur.ans))+")":""}</span>`}else{sp.wrong.push([sp.cur.q,ansDisp(sp.cur.ans),i.value]);sp.fb=`<span style="color:#ff7b7b">Last answer was: ${esc(ansDisp(sp.cur.ans))}</span>`}sp.cur=spPrompt();viewSpeed(b)})}
+/* ---- match up ---- */
+function newMatch(){const t=SETS[ST.set].gen();const col=Math.floor(Math.random()*t.cols.length);const pairs=t.rows.slice(0,6).map((r,i)=>({id:i,l:r.lab,r:ansDisp(r.ans[col])}));ST.mt={title:t.title+(t.cols[col]?" · match: "+t.cols[col]:""),pairs,right:shuf(pairs.map(p=>({id:p.id,t:p.r}))),done:new Set(),sel:null,miss:0,t0:Date.now()}}
+function viewMatch(b){
+ if(!ST.mt)newMatch();const M=ST.mt;const fin=M.done.size===M.pairs.length;
+ b.innerHTML=`<div class="card"><b>${esc(M.title)}</b><div class="mut" style="font-size:12px;margin:2px 0 8px">Tap an item on the left, then its match on the right. Misses: ${M.miss}</div>
+ <div style="display:flex;gap:10px"><div style="flex:1">${M.pairs.map(p=>`<button data-l="${p.id}" ${M.done.has(p.id)?"disabled":""} style="display:block;width:100%;margin:4px 0;text-align:left;${M.sel===p.id?"outline:2px solid #6aa8ff;":""}${M.done.has(p.id)?"opacity:.35":""}">${esc(p.l)}</button>`).join("")}</div>
+ <div style="flex:1">${M.right.map((p,k)=>`<button data-r="${k}" ${M.done.has(p.id)?"disabled":""} style="display:block;width:100%;margin:4px 0;text-align:left;${M.done.has(p.id)?"opacity:.35":""}">${esc(p.t)}</button>`).join("")}</div></div>
+ ${fin?`<div style="margin-top:10px"><b style="color:#6fd18b">Done in ${Math.round((Date.now()-M.t0)/1000)}s with ${M.miss} miss${M.miss===1?"":"es"}.</b></div>`:""}
+ <div class="row" style="margin-top:10px"><button class="${fin?"pri":"sm"}" id="mtnew">${fin?"New set":"Skip"}</button></div></div>`;
+ b.querySelectorAll("[data-l]").forEach(x=>x.onclick=()=>{M.sel=+x.dataset.l;viewMatch(b)});
+ b.querySelectorAll("[data-r]").forEach(x=>x.onclick=()=>{if(M.sel==null)return;const R=M.right[+x.dataset.r],P=M.pairs[M.sel];if(R.t===P.r){M.done.add(P.id);M.right.forEach(y=>{if(y.t===P.r)M.done.add(y.id)});M.pairs.forEach(q=>{if(q.r===P.r)M.done.add(q.id)})}else M.miss++;M.sel=null;viewMatch(b)});
+ document.getElementById("mtnew").onclick=()=>{ST.mt=null;viewMatch(b)}}
+function draw(el){stopTimer();const b=document.getElementById("drb");({fill:viewTable,fade:viewTable,speed:viewSpeed,match:viewMatch})[ST.mode](b)}
+function toolFrDr(el){
+ el.innerHTML=head(el);
+ const mm=document.getElementById("drm");
+ const dm=()=>{mm.innerHTML=MODES.map(([k,l])=>`<button class="${ST.mode===k?"pri":"sm"}" data-m="${k}">${l}</button>`).join("");mm.querySelectorAll("button").forEach(x=>x.onclick=()=>{ST.mode=x.dataset.m;ST.tab=null;ST.hide=null;ST.sp=null;ST.mt=null;dm();draw(el)})};
+ dm();
+ document.getElementById("drs").onchange=e=>{ST.set=+e.target.value;ST.tab=null;ST.hide=null;ST.sp=null;ST.mt=null;draw(el)};
+ draw(el)}
+window.toolFrDr=toolFrDr;window.FRDR_SETS=SETS;window.frdrGrade=grade;
+})();
+
 /* Flashcard -> cheat-sheet "learn this" links: match a card to the best section of the sheets for its subject. */
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
 function llTok(t){const o=[];(String(t||"").toLowerCase().match(/[a-z][a-z0-9]*|\d+/g)||[]).forEach(w=>{if(w.length<2||LL.STOP.has(w))return;if(w.length>4){w=w.replace(/(ing|ed|es|s)$/,"")}o.push(w)});return o}
@@ -5313,8 +5688,12 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.datase
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
 // ---------- update log ----------
-const APP_VER=28;
+const APP_VER=32;
 const APP_LOG=[
+[32,"2026-11-08","French tools now match the French study page: its exact 20 adjectives and before/after list, the 16 Vandertramp verbs, avoir expressions, imparfait vs passé composé, beau/bel, si + present, and the extra future stems (envoyer, falloir)."],
+[31,"2026-11-08","French: new Table drills tool with four ways to practise from memory: fill the table, fade-out tables, 60-second speed round and match-up, across present, passé composé, imparfait, futur, reflexives, participles, negatives, question words and adjectives."],
+[30,"2026-11-08","Files: one search bar at the top now filters every list on the page (study files, your uploads, and files by subject), and opens the matching sections."],
+[29,"2026-11-08","French: new Sentence builder (Languages tools). Tap tiles to build a sentence from a prompt, pick the parts yourself in the Sentence maker, or use the word order sheet for the nine exam topics."],
 [28,"2026-11-08","Flashcards: the deck title now shows what you chose (e.g. \"All Maths\" or \"French: Mixed topics\") instead of just \"Mixed topics\"."],
 [27,"2026-11-08","Flashcards: cards now grow to fit a long question, diagram or answer instead of clipping it (the page scrolls if needed); fixed the question being cut off at the top and the diagram squashing on the answer side."],
 [26,"2026-11-08","Flashcards: drawn diagrams on the front and back of cards that describe a shape or graph (solids, right-angled triangles, circles and sectors, coordinate-geometry segments, lines with intercepts, parabolas, exponentials, unit circle, sine/cosine/tan graphs and bearings). Made by the app from the numbers in each question; cards it cannot draw confidently get none."],
@@ -5379,7 +5758,7 @@ const SUBJ_CFG={
  M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
  S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
- F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","fr","tr"],exam:["French"],drill:["fr","Practice and translate","French drills and a translator"]},
+ F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","fr","frsb","frdr","tr"],exam:["French"],drill:["fr","Practice and translate","French drills and a translator"]},
  L:{n:"Legal Studies",c:"#d99a8a",flash:"legal:all",tools:["flash","legal"],exam:["Legal Studies"],drill:["legal","Case studies","Practice case studies and mock questions"]}
 };
 const SUBJ_PAGES=["learn","sheets","tools","qb","lc"];
@@ -5734,9 +6113,9 @@ function diagCard(){const rows=DAYS[0].blocks.map(b=>({b,p:parseSc((S.diag||{})[
 function viewFiles(){const idx={};
  for(const b of BLOCKS){for(let p of String(b.res||"").split(" + ")){p=p.trim();if(!p)continue;const isFile=/\.(pdf|docx|pptx|apkg|xlsx)\b/i.test(p)||/^Tapis Volant/.test(p);const key=(isFile?"f|":"t|")+p;const o=(idx[b.sj]=idx[b.sj]||{});const e=(o[key]=o[key]||{d:[],seen:{}});const k=b.t+"|"+b.day;if(!e.seen[k]){e.seen[k]=1;e.d.push([b.t,b.day])}}}
  const row=(k,e)=>{const nm=k.slice(2);const used=e.d.map(x=>`${esc(x[0])} <span class="mut">(${dayLabel(x[1])})</span>`).join("; ");return `<div class="frow" data-t="${esc((nm+" "+e.d.map(x=>x[0]).join(" ")).toLowerCase())}" style="margin-top:8px"><b style="font-size:14px;word-break:break-word">${esc(nm)}</b><div class="mut" style="font-size:13px">Used for: ${used}</div></div>`};
- let h=`<div class="card" style="margin-bottom:12px"><h3>Study files (${STUDY.length})</h3><p class="mut" style="margin:6px 0 8px;font-size:13px">Guides, quizzes, flashcards and mock exams made for this app. Tap one to open it in a new tab.</p><div style="margin:0 0 10px;padding:10px;border:1px solid var(--line,#ccc);border-radius:10px"><a href="study/Question-Generator.html" onclick="openStudy(event,'Question-Generator.html')"><b>Question Generator</b></a> <span class="mut" style="font-size:13px">— unlimited hard timed questions, all subjects, with why-wrong explanations, copy and save</span></div>${["Study Skills","Wellbeing","Science","Maths","French","Legal","English"].map(sj=>`<details open style="margin-top:8px"><summary><b>${sj}</b> <span class="mut">${STUDY.filter(x=>x[0]===sj).length}</span></summary>${STUDY.filter(x=>x[0]===sj).map(x=>`<div style="margin:6px 0 0 12px"><a href="study/${x[1]}" onclick="openStudy(event,'${x[1]}')">${esc(x[2])}</a></div>`).join("")}</details>`).join("")}</div>`;
- {const sch=[...new Set(USERIN.map(x=>x[0]))];h+=`<div class="card" style="margin-bottom:12px"><h3>User input (${USERIN.length})</h3><p class="mut" style="margin:6px 0 8px;font-size:13px">Everything you gave me, grouped by school then subject. Tap a name for a text version, or <b>original</b> to open the real file (Word files were converted to PDF) in a new tab.</p>${sch.map(sc=>`<details style="margin-top:8px"><summary><b>${esc(sc)}</b> <span class="mut">${USERIN.filter(x=>x[0]===sc).length}</span></summary>${[...new Set(USERIN.filter(x=>x[0]===sc).map(x=>x[1]))].map(sj=>`<details style="margin:6px 0 0 10px"><summary>${sj} <span class="mut">${USERIN.filter(x=>x[0]===sc&&x[1]===sj).length}</span></summary>${USERIN.filter(x=>x[0]===sc&&x[1]===sj).map(x=>`<div style="margin:5px 0 0 12px;font-size:14px">${x[2]?`<a href="study/${x[2]}" onclick="openStudy(event,'${x[2]}')">${esc(x[3])}</a>`:`<b>${esc(x[3])}</b>`}${x[4]?` <a href="#" onclick="openOrig(event,'${x[4]}')" style="font-size:12px;border:1px solid var(--line,#ccc);border-radius:999px;padding:1px 8px;margin-left:6px">original</a>`:""}</div>`).join("")}</details>`).join("")}</details>`).join("")}</div>`}
- h+=`<div class="card" style="margin-bottom:12px"><h3>Files by subject and topic</h3><p class="mut" style="margin:6px 0 8px;font-size:13px">Every file named in the timetable, with the topics and days it is used for. File names are exactly as in your folder. Type to filter.</p><input id="ffilter" data-act="ffilter" placeholder="Search a file or topic" style="width:100%"></div>`;
+ let h=`<div class="card" style="margin-bottom:12px;position:sticky;top:0;z-index:5"><input id="ffilter" data-act="ffilter" type="search" placeholder="Search all files and topics" style="width:100%"></div><div class="card" style="margin-bottom:12px"><h3>Study files (${STUDY.length})</h3><p class="mut" style="margin:6px 0 8px;font-size:13px">Guides, quizzes, flashcards and mock exams made for this app. Tap one to open it in a new tab.</p><div style="margin:0 0 10px;padding:10px;border:1px solid var(--line,#ccc);border-radius:10px"><a href="study/Question-Generator.html" onclick="openStudy(event,'Question-Generator.html')"><b>Question Generator</b></a> <span class="mut" style="font-size:13px">— unlimited hard timed questions, all subjects, with why-wrong explanations, copy and save</span></div>${["Study Skills","Wellbeing","Science","Maths","French","Legal","English"].map(sj=>`<details open style="margin-top:8px"><summary><b>${sj}</b> <span class="mut">${STUDY.filter(x=>x[0]===sj).length}</span></summary>${STUDY.filter(x=>x[0]===sj).map(x=>`<div class="fsx" data-t="${esc((x[0]+" "+x[2]).toLowerCase())}" style="margin:6px 0 0 12px"><a href="study/${x[1]}" onclick="openStudy(event,'${x[1]}')">${esc(x[2])}</a></div>`).join("")}</details>`).join("")}</div>`;
+ {const sch=[...new Set(USERIN.map(x=>x[0]))];h+=`<div class="card" style="margin-bottom:12px"><h3>User input (${USERIN.length})</h3><p class="mut" style="margin:6px 0 8px;font-size:13px">Everything you gave me, grouped by school then subject. Tap a name for a text version, or <b>original</b> to open the real file (Word files were converted to PDF) in a new tab.</p>${sch.map(sc=>`<details style="margin-top:8px"><summary><b>${esc(sc)}</b> <span class="mut">${USERIN.filter(x=>x[0]===sc).length}</span></summary>${[...new Set(USERIN.filter(x=>x[0]===sc).map(x=>x[1]))].map(sj=>`<details style="margin:6px 0 0 10px"><summary>${sj} <span class="mut">${USERIN.filter(x=>x[0]===sc&&x[1]===sj).length}</span></summary>${USERIN.filter(x=>x[0]===sc&&x[1]===sj).map(x=>`<div class="fsx" data-t="${esc((x[0]+" "+x[1]+" "+x[3]).toLowerCase())}" style="margin:5px 0 0 12px;font-size:14px">${x[2]?`<a href="study/${x[2]}" onclick="openStudy(event,'${x[2]}')">${esc(x[3])}</a>`:`<b>${esc(x[3])}</b>`}${x[4]?` <a href="#" onclick="openOrig(event,'${x[4]}')" style="font-size:12px;border:1px solid var(--line,#ccc);border-radius:999px;padding:1px 8px;margin-left:6px">original</a>`:""}</div>`).join("")}</details>`).join("")}</details>`).join("")}</div>`}
+ h+=`<div class="card" style="margin-bottom:12px"><h3>Files by subject and topic</h3><p class="mut" style="margin:6px 0 8px;font-size:13px">Every file named in the timetable, with the topics and days it is used for. File names are exactly as in your folder.</p></div>`;
  for(const sj of SJORDER){const o=idx[sj]||{};const ks=Object.keys(o);const fk=ks.filter(k=>k[0]==="f"),tk=ks.filter(k=>k[0]==="t");
   h+=`<details class="card fsec" style="margin-bottom:12px;--c:${SUBJ[sj].c}" open><summary style="cursor:pointer"><b style="color:${SUBJ[sj].c}">${SUBJ[sj].n}</b> <span class="mut">${fk.length} files</span></summary>${fk.map(k=>row(k,o[k])).join("")}${tk.length?`<div class="mut" style="margin-top:12px;font-size:12px;text-transform:uppercase;letter-spacing:.05em">Built into this app, or not a file</div>`+tk.map(k=>row(k,o[k])).join(""):""}</details>`}
  return h}
@@ -5778,11 +6157,11 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
 // ---------- tools ----------
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["sci","Science"],["fr","French"],["eng","English essay"],["annot","Poem annotator"],["legal","Legal practice"],["tr","Translate"]];
-const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["sci","Science"],["fr","French"],["frsb","French sentence builder"],["frdr","French table drills"],["eng","English essay"],["annot","Poem annotator"],["legal","Legal practice"],["tr","Translate"]];
+const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const ks=SUBJ_CFG[curSub].tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};return `<div class="tools">${ks.map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`).join("")}</div><div id="tool"></div>`}return TOOL_GROUPS.map(g=>`<div class="mut" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:6px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),eng:toolEng,annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
-function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),eng:toolEng,annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
  if(k==="eng")return {name:"English poetry terms",cards:ANKI.english.map(c=>({q:c.q,a:c.a,k:"e"+hash(c.q)}))};
@@ -6277,7 +6656,7 @@ document.addEventListener("change",e=>{const t=e.target;const a=t.dataset.act;if
  else if(a==="tb"){const d=+t.dataset.d;if(t.checked)S.tb[d]=true;else delete S.tb[d];save();render()}
  else if(a==="exam"){if(t.value)S.exam[t.dataset.i]=t.value;else delete S.exam[t.dataset.i];save()}
 });
-document.addEventListener("input",e=>{const t=e.target;if(t.dataset.act==="err"){S.err[t.dataset.id]=t.value;save()}else if(t.dataset.act==="rsearch"){window.__rq=t.value;render();const i=document.getElementById("rsearch");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}else if(t.dataset.act==="ffilter"){const q=t.value.toLowerCase().trim();document.querySelectorAll(".frow").forEach(r=>{r.hidden=!!q&&!r.dataset.t.includes(q)})}else if(t.dataset.act==="dscore"){S.diag=S.diag||{};S.diag[t.dataset.id]=t.value;save()}else if(t.dataset.act==="goals"){S.goals[t.dataset.d]=t.value;save()}});
+document.addEventListener("input",e=>{const t=e.target;if(t.dataset.act==="err"){S.err[t.dataset.id]=t.value;save()}else if(t.dataset.act==="rsearch"){window.__rq=t.value;render();const i=document.getElementById("rsearch");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}else if(t.dataset.act==="ffilter"){const q=t.value.toLowerCase().trim();document.querySelectorAll(".frow,.fsx").forEach(r=>{r.hidden=!!q&&!r.dataset.t.includes(q)});document.querySelectorAll("details").forEach(d=>{const x=d.querySelectorAll(".frow,.fsx");if(!x.length)return;const any=[...x].some(r=>!r.hidden);d.hidden=!!q&&!any;if(q&&any)d.open=true})}else if(t.dataset.act==="dscore"){S.diag=S.diag||{};S.diag[t.dataset.id]=t.value;save()}else if(t.dataset.act==="goals"){S.goals[t.dataset.d]=t.value;save()}});
 document.addEventListener("toggle",e=>{const d=e.target;if(d.tagName==="DETAILS"&&d.dataset.oid&&d.open)openId=d.dataset.oid},true);
 // ---------- clock refresh ----------
 function everySec(){if(focus)return;const c=$("#clk");if(!c)return;const t=nowD();const real=dayOf(t);const d=viewDay!==null?viewDay:curDayIdx();if(real!==d||tab!=="today")return;const sl=applySwap(d);const min=t.getHours()*60+t.getMinutes();const x=sl.find(x=>min>=x.s&&min<x.s+x.d);if(!x){render();return}const ns=t.getHours()*3600+t.getMinutes()*60+t.getSeconds();const se=x.kind==="study"?studyEnd(x):null;const inStudy=se&&ns<se*60;const left=(x.s+x.d)*60-ns;c.textContent=mmss(left*1000);const key=x.s+(inStudy?0:1000);if(window.__lastS!==key){window.__lastS=key;if(!(document.activeElement&&/TEXTAREA|INPUT/.test(document.activeElement.tagName)))render()}}
