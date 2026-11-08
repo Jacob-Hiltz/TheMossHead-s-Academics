@@ -5300,6 +5300,93 @@ function toolFrDr(el){
 window.toolFrDr=toolFrDr;window.FRDR_SETS=SETS;window.frdrGrade=grade;
 })();
 
+/* fr_exam.js: French practice exam (frex): Part A grammar (25), Part B reading (6), Part C writing (8 given words). Uses FRE. */
+(function(){
+const F=window.FRE;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const GS=[0,2,4,5,7,9,13,14];
+const W=()=>window.FRDR_WORDS||{AD:[["petit","petite","petits","petites"]],V:["parler"],N:["la maison"]};
+const NP=[["Le garçon est",0],["La fille est",1],["Les garçons sont",2],["Les filles sont",3]];
+const VK=Object.keys(F.V),plain=VK.filter(k=>!F.V[k].refl&&!["être","avoir"].includes(k));
+function adjQ(){for(;;){const a=rnd(W().AD),n=rnd(NP);const opts=[...new Set(a)];if(opts.length<3)continue;return {topic:"Adjectives",lab:`${n[0]} ___ (${a[0]})`,opts:shuf(opts),ans:a[n[1]]}}}
+function presQ(){const v=rnd(W().V.filter(k=>F.V[k])),s=rnd(GS);const T=F.split(F.build({s,v,t:"pres"}));
+  const idx=T.map((x,i)=>["verb","refl"].includes(x.r)?i:-1).filter(i=>i>=0);const a=idx[0],b=idx[idx.length-1];
+  return {topic:"Present tense",lab:`${cap(F.SUBJ[s].w)} ___ (${F.V[v].inf})${F.join(T.slice(b+1))?" "+F.join(T.slice(b+1)):""}`,ans:F.join(T.slice(a,b+1))}}
+function pcQ(){for(let g=0;g<50;g++){const v=rnd(plain.concat(VK.filter(k=>F.V[k].refl&&!F.V[k].noAgr))),s=rnd(GS);const V=F.V[v],S=F.SUBJ[s];
+  const T=F.split(F.build({s,v,t:"pc"}));const idx=T.map((x,i)=>["refl","aux","part"].includes(x.r)?i:-1).filter(i=>i>=0);if(idx.length<2)continue;const a=idx[0],b=idx[idx.length-1];
+  const good=F.join(T.slice(a,b+1));const ia=T.findIndex(x=>x.r==="aux"),ip=T.findIndex(x=>x.r==="part");if(ia<0||ip<0)continue;
+  const other=V.aux==="etre"?"avoir":"etre";const mod=f=>{const T2=T.map(x=>({w:x.w,r:x.r}));f(T2);return F.join(T2.slice(a,b+1))};
+  const d1=mod(t=>{t[ia].w=F.AUXF[other][S.p]});
+  const d2=mod(t=>{t[ip].w=V.refl||V.aux==="etre"?V.pp:V.pp+"e"});
+  const d3=mod(t=>{t[ip].w=V.inf.replace(/^se\s+|^s'/,"")});
+  const opts=[...new Set([good,d1,d2,d3])];if(opts.length<3)continue;
+  const rest=F.join(T.slice(b+1));
+  return {topic:"Passé composé (avoir or être)",lab:`${cap(S.w)} ___ (${V.inf})${rest?" "+rest:""}`,opts:shuf(opts),ans:good}}
+  return adjQ()}
+function fpQ(){for(;;){const v=rnd(plain),s=rnd(GS);const p=F.join(F.build({s,v,t:"pres"})),q=F.join(F.build({s,v,t:"futproche"}));if(p===q)continue;return {topic:"Futur proche",lab:`${cap(p)}.`,ans:q}}}
+const READ=[
+{title:"Un samedi difficile",text:"Samedi dernier, il faisait beau, alors Thomas et ses amis sont allés au parc. Ils ont joué au foot pendant deux heures. Tout à coup, Thomas est tombé et il s'est fait mal à la cheville. Ses amis ont appelé sa mère et elle est venue le chercher en voiture. Chez le médecin, Thomas a appris que ce n'était pas grave, mais il ne peut pas jouer au foot pendant une semaine. Dimanche, il est resté sur le canapé dans le salon et il a regardé la télé. Sa sœur Léa a joué aux cartes avec lui. L'anniversaire de Léa est le quatorze février.",
+ qs:[["Why did Thomas and his friends go to the park?",["The weather was nice","It was Thomas's birthday","They had no homework","Their mother asked them"],0],["How long did they play football?",["Ten minutes","One hour","Two hours","All afternoon"],2],["What happened to Thomas?",["He lost his bag","He fell and hurt his ankle","He argued with a friend","He had a stomach ache"],1],["Who came to get him?",["His sister","His friend","His mother","The doctor"],2],["What did Thomas do on Sunday?",["Played cards outside","Went to school","Stayed on the sofa and watched TV","Went to the cinema"],2],["When is Léa's birthday?",["14 February","4 February","14 July","9 February"],0]]},
+{title:"Ma nouvelle maison",text:"Je m'appelle Camille. Avant, nous habitions dans un petit appartement, mais maintenant nous avons une grande maison avec un jardin. Dans ma chambre, il y a un lit, une chaise et un placard bleu. Dans la cuisine, il y a un frigo blanc et une table. Le salon est ma pièce préférée parce qu'il y a un grand canapé et une télé. Hier, je me suis disputée avec mon frère parce qu'il ne voulait pas ranger sa chambre. Il était fâché, alors il est sorti avec ses amis. Ce soir, nous allons manger une pizza ensemble et nous allons nous réconcilier.",
+ qs:[["Where did Camille live before?",["In a big house","In a small flat","In a different country","With her grandmother"],1],["What colour is the cupboard in her bedroom?",["White","Red","Blue","Black"],2],["Which is her favourite room?",["The kitchen","The living room","Her bedroom","The garden"],1],["Why did she argue with her brother?",["He took her TV","He was late for school","He did not want to tidy his room","He ate her pizza"],2],["What did her brother do after the argument?",["Went out with friends","Went to bed","Left home","Played cards"],0],["What are they going to do tonight?",["Go to the cinema","Eat pizza and make up","Visit their grandmother","Do homework"],1]]},
+{title:"Une sortie au cinéma",text:"Le vendredi soir, Inès et sa cousine Julie vont au cinéma avec leurs amis. D'habitude, elles prennent le bus, mais hier le bus était en retard, alors elles sont arrivées après le début du film. Inès portait un pull rouge et un jean, et Julie portait une jolie robe noire. Après le film, elles ont mangé une glace au parc. Julie a dit que le film était ennuyeux, mais Inès l'a trouvé très drôle. Samedi prochain, le vingt-huit novembre, elles vont jouer au tennis ensemble.",
+ qs:[["How do Inès and Julie usually get to the cinema?",["By car","By bus","On foot","By bike"],1],["Why did they arrive late yesterday?",["They lost their tickets","They were ill","The bus was late","They went to the park first"],2],["What was Inès wearing?",["A red jumper and jeans","A black dress","A blue shirt","A red dress"],0],["What did they do after the film?",["Went home","Played tennis","Ate an ice cream in the park","Did their homework"],2],["What did Julie think of the film?",["It was funny","It was boring","It was too long","It was scary"],1],["When are they going to play tennis?",["Friday 28 November","Saturday 28 November","Saturday 18 November","Sunday 28 November"],1]]},
+{title:"Lucas est malade",text:"Lucas est malade depuis lundi. Il avait mal à la gorge et il avait de la fièvre, alors sa mère l'a emmené chez le médecin. Le médecin a dit que Lucas devait rester au lit pendant trois jours. Lucas n'aime pas rester à la maison, mais sa chambre est confortable : il y a un grand lit, une chaise et une télé. Hier, son ami Hugo est venu le voir et il lui a donné un livre. Maintenant, Lucas va mieux et il va retourner à l'école jeudi.",
+ qs:[["Since when has Lucas been ill?",["Sunday","Monday","Thursday","Yesterday"],1],["What were his symptoms?",["A sore throat and a fever","A headache and a cough","A broken arm","A stomach ache"],0],["How long must he stay in bed?",["One day","Two days","Three days","A week"],2],["What is in his bedroom?",["A small bed and a desk","A big bed, a chair and a TV","A sofa and a TV","A bed and a cupboard"],1],["Who visited him yesterday?",["His mother","His doctor","Hugo","His cousin"],2],["When will he go back to school?",["Monday","Tuesday","Wednesday","Thursday"],3]]}];
+const NEWST=(mode)=>{window.__frexmode=mode||window.__frexmode||"full";const w=W();const pick=(a,n)=>shuf(a).slice(0,n);
+  return {t0:Date.now(),done:false,
+  A1:Array.from({length:7},adjQ),A2:(()=>{const o=[],seen=new Set();let g=0;while(o.length<8&&g++<200){const q=presQ();const k=q.lab.replace(/^.*\(/,"(");if(seen.has(k))continue;seen.add(k);o.push(q)}return o})(),A3:Array.from({length:6},pcQ),A4:Array.from({length:4},fpQ),
+  R:shuf(READ).slice(0,2),mode:(window.__frexmode||"full"),ans:{},wd:pick(w.V.filter(k=>F.V[k]),4).concat(pick(w.N,2),pick(w.AD.map(x=>x[0]),2)),txt:"",chk:{}}};
+const ST=window.__frex||(window.__frex=NEWST());
+const norm=s=>String(s).toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
+const noacc=s=>norm(s).normalize("NFD").replace(/[̀-ͯ]/g,"");
+const strip=s=>norm(s).replace(/^(je|tu|il|elle|on|nous|vous|ils|elles)\s+/,"").replace(/^j'/,"");
+function typedOk(inp,ans){const Is=[norm(inp),strip(inp),strip(strip(inp))].filter(Boolean),As=[norm(ans),strip(ans)];if(Is.some(i=>As.includes(i)))return {ok:1};if(Is.some(i=>As.some(a=>noacc(i)===noacc(a))))return {ok:1,note:1};return {ok:0}}
+function wc(t){return t.trim()?t.trim().split(/\s+/).length:0}
+function wordHits(){const T=" "+noacc(ST.txt).replace(/[^a-z0-9' ]/g," ")+" ";return ST.wd.map(x=>{let b=noacc(x).replace(/^(se|s'|le|la|les|l'|un|une|des)\s*/,"").trim();let stem=b;if(/(er|ir|re)$/.test(b)&&b.length>4)stem=b.slice(0,-2);if(stem.length>5)stem=stem.slice(0,Math.max(4,stem.length-2));return [x,T.includes(stem)]})}
+const LIMS={full:90,A:28,B:28,C:34};const LIM=()=>(LIMS[ST.mode]||90)*60;
+function mmss(){const e=Math.floor((((ST.t1||Date.now())-ST.t0))/1000);const s=Math.abs(ST.done?e:LIM()-e);return (!ST.done&&LIM()-e<0?"-":"")+String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+let iv=null;
+function qHtml(sec,list,mcq){return list.map((q,i)=>{const k=sec+i;const a=ST.ans[k];let mark="";
+  if(ST.done){const ok=mcq?a===q.ans:typedOk(a||"",q.ans).ok;q.ok=!!ok;mark=`<span style="color:${ok?"#6fd18b":"#ff7b7b"}">${ok?"✓":"✗"}</span> `+(ok?"":`<span style="font-size:13px">answer: <b>${esc(q.ans)}</b></span>`)}
+  const body=mcq?`<div>${q.opts.map(o=>`<label style="display:inline-block;margin:3px 10px 3px 0"><input type="radio" name="${k}" data-k="${k}" value="${esc(o)}" ${a===o?"checked":""} ${ST.done?"disabled":""}> ${esc(o)}</label>`).join("")}</div>`
+   :`<input data-k="${k}" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(a||"")}" ${ST.done?"disabled":""} style="width:100%;margin-top:4px">`;
+  return `<div style="margin:10px 0"><div>${i+1}. ${esc(q.lab)} ${mark}</div>${body}</div>`}).join("")}
+function render(el){const hits=wordHits();const M=ST.mode||"full";const sh=x=>M==="full"||M===x;
+  let res="";
+  if(ST.done){const PF={A1:["a",1],A2:["b",0],A3:["c",1],A4:["d",0]};const A=[["Adjectives",ST.A1,"A1"],["Present tense",ST.A2,"A2"],["Passé composé (avoir or être)",ST.A3,"A3"],["Futur proche",ST.A4,"A4"]];const sc=(l,nm)=>l.filter((q,i)=>PF[nm][1]?ST.ans[PF[nm][0]+i]===q.ans:typedOk(ST.ans[PF[nm][0]+i]||"",q.ans).ok).length;
+    const tot=A.reduce((n,x)=>n+sc(x[1],x[2]),0);const rd=ST.R.reduce((n,P,pi)=>n+P.qs.filter((q,i)=>ST.ans["R"+pi+"_"+i]===q[2]).length,0),rt=ST.R.reduce((n,P)=>n+P.qs.length,0);
+    const lost=A.filter(x=>sc(x[1],x[2])<x[1].length);
+    const pa=`<p style="margin:4px 0"><b>Part A: ${tot} / 25</b></p><ul style="margin:6px 0 0 18px">${A.map(x=>`<li>${x[0]}: ${sc(x[1],x[2])} / ${x[1].length}</li>`).join("")}</ul><p style="margin:8px 0 0">${lost.length?"Marks lost in: <b>"+lost.map(x=>x[0]).join(", ")+"</b>. Do those in Table drills (Exam practice) before the exam.":"Full marks in Part A."}</p>`;
+    const pb=`<p style="margin:8px 0 4px"><b>Part B: ${rd} / ${rt}</b> (about ${Math.round(rd/rt*25)} / 25 scaled). Wrong answers are marked in the passages above.</p>`;
+    const pc=`<p class="mut" style="font-size:13px;margin:8px 0 0">Part C: ${wc(ST.txt)} words (aim for 150 to 175); ${hits.filter(h=>h[1]).length} of 8 required words found (a guide only). Mark your own writing with the checklist below.</p>`;
+    res=`<div class="card" style="border-color:#6aa8ff"><h3>Results</h3><p class="mut" style="margin:0">Time used ${mmss()}</p>${sh("A")?pa:""}${sh("B")?pb:""}${sh("C")?pc:""}</div>`}
+  el.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">French practice exam</h3><span class="mono" id="frxt">${mmss()}</span></div>
+  <p class="mut" style="font-size:13px;margin:4px 0 0">Built in the format your teacher described: Part A grammar (25 marks), Part B reading, Part C writing. From the school timetable: 11:20 to 13:00, 1 h 30 of writing (so about 10 minutes of reading first), with Grammar 25, Reading 25 and Writing 30 marks. The clock counts down from 90:00 and keeps going if you run over. A rough guide is about 28 min grammar, 28 min reading, 34 min writing. Reading passages and questions are my own, not from your teacher.</p><div class="row" style="margin-top:8px">${[["full","Full exam"],["A","Part A only"],["B","Part B only"],["C","Part C only"]].map(m=>`<button class="${M===m[0]?"pri":"sm"}" data-mode="${m[0]}">${m[1]}</button>`).join("")}</div></div>${res}
+  ${sh("A")?`<div class="card" style="margin-top:8px"><h3>Part A: Grammar (25 marks)</h3>
+  <b>1. Adjectives (7 marks)</b> <span class="mut" style="font-size:13px">choose the correct form</span>${qHtml("a",ST.A1,1)}
+  <b>2. Present tense (8 marks)</b> <span class="mut" style="font-size:13px">write the verb in the present</span>${qHtml("b",ST.A2,0)}
+  <b>3. Passé composé (6 marks)</b> <span class="mut" style="font-size:13px">choose the correct form</span>${qHtml("c",ST.A3,1)}
+  <b>4. Futur proche (4 marks)</b> <span class="mut" style="font-size:13px">rewrite in the near future</span>${qHtml("d",ST.A4,0)}</div>`:""}
+  ${sh("B")?`<div class="card" style="margin-top:8px"><h3>Part B: Reading (25 marks in the real exam)</h3><p class="mut" style="font-size:13px;margin:0">Here: two short passages, 12 questions, scaled to 25 in the results.</p>${ST.R.map((R,pi)=>`<div style="margin-top:10px"><b>${esc(R.title)}</b><p style="line-height:1.6">${esc(R.text)}</p>${R.qs.map((q,i)=>{const k="R"+pi+"_"+i;const a=ST.ans[k];const ok=ST.done&&a===q[2];return `<div style="margin:10px 0"><div>${i+1}. ${esc(q[0])} ${ST.done?`<span style="color:${ok?"#6fd18b":"#ff7b7b"}">${ok?"✓":"✗ "+esc(q[1][q[2]])}</span>`:""}</div>${q[1].map((o,j)=>`<label style="display:block;margin:2px 0"><input type="radio" name="${k}" data-k="${k}" value="${j}" ${a===j?"checked":""} ${ST.done?"disabled":""}> ${esc(o)}</label>`).join("")}</div>`}).join("")}</div>`).join("")}</div>`:""}
+  ${sh("C")?`<div class="card" style="margin-top:8px"><h3>Part C: Writing (30 marks in the real exam; 150 to 175 words)</h3><p style="margin:0 0 6px">Write about a day or an event in your life. You must use all 8 words:</p><div style="font-size:16px;margin-bottom:8px">${ST.wd.map((w,i)=>`<b style="margin-right:10px;color:${hits[i][1]?"#6fd18b":"inherit"}">${esc(w)}</b>`).join("")}</div>
+  <textarea id="frxw" style="min-height:220px" placeholder="Écrivez ici..." ${ST.done?"":""}>${esc(ST.txt)}</textarea><div class="mono mut" id="frxc" style="margin-top:4px">${wc(ST.txt)} words</div>
+  ${ST.done?`<div style="margin-top:8px"><b>Self-mark checklist</b>${["All 8 words used","150 to 175 words","Past, present and future all used","Avoir or être correct, participles agree with être","Adjectives agree and sit in the right place","Accents and spelling checked"].map((c,i)=>`<label style="display:block"><input type="checkbox" data-c="${i}" ${ST.chk[i]?"checked":""}> ${c}</label>`).join("")}</div>`:""}</div>`:""}
+  <div class="row" style="margin-top:10px">${ST.done?"":`<button class="pri" id="frxs">Submit and mark</button>`}<button class="sm" id="frxn">New exam</button></div>`;
+  el.querySelectorAll("[data-k]").forEach(x=>{x.addEventListener("input",e=>{const k=x.dataset.k;ST.ans[k]=k[0]==="R"?+x.value:x.value});x.addEventListener("change",e=>{const k=x.dataset.k;if(x.type==="radio")ST.ans[k]=k[0]==="R"?+x.value:x.value})});
+  el.querySelectorAll("[data-c]").forEach(x=>x.onchange=()=>{ST.chk[x.dataset.c]=x.checked});
+  el.querySelectorAll("[data-mode]").forEach(x=>x.onclick=()=>{Object.keys(ST).forEach(k=>delete ST[k]);Object.assign(ST,NEWST(x.dataset.mode));render(el)});
+  const w=$("#frxw");if(w)w.oninput=()=>{ST.txt=w.value;$("#frxc").textContent=wc(w.value)+" words"};
+  if($("#frxs"))$("#frxs").onclick=()=>{if(w)ST.txt=w.value;ST.done=true;ST.t1=Date.now();clearInterval(iv);render(el);window.scrollTo(0,0);if(el.scrollIntoView)el.scrollIntoView()};
+  $("#frxn").onclick=()=>{const m=ST.mode;Object.keys(ST).forEach(k=>delete ST[k]);Object.assign(ST,NEWST(m));render(el)};
+  clearInterval(iv);if(!ST.done)iv=setInterval(()=>{const t=$("#frxt");if(!t){clearInterval(iv);return}t.textContent=mmss()},1000)}
+window.toolFrEx=render;
+})();
+
 /* Flashcard -> cheat-sheet "learn this" links: match a card to the best section of the sheets for its subject. */
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
 function llTok(t){const o=[];(String(t||"").toLowerCase().match(/[a-z][a-z0-9]*|\d+/g)||[]).forEach(w=>{if(w.length<2||LL.STOP.has(w))return;if(w.length>4){w=w.replace(/(ing|ed|es|s)$/,"")}o.push(w)});return o}
@@ -5937,8 +6024,11 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.datase
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
 // ---------- update log ----------
-const APP_VER=41;
+const APP_VER=44;
 const APP_LOG=[
+[44,"2026-11-09 06:25","French practice exam: Part A only, Part B only and Part C only modes (each with its own countdown and marking), and four reading passages instead of two."],
+[43,"2026-11-09 06:45","French practice exam now follows the school timetable: 90-minute countdown, reading section with both passages scaled to 25, writing worth 30."],
+[42,"2026-11-09 06:20","French practice exam: Part A grammar (25 marks) in the teacher's format, Part B reading with questions, Part C writing with 8 random words, a timer, automatic marking and a list of where marks were lost."],
 [41,"2026-11-09 05:40","French: 10 memorisable all-purpose sentences for Section C, with English, in the French writing tool and the Word order sheet."],
 [40,"2026-11-09 06:05","French sentence builder: 70 real, varied sentences (leisure, routine, injuries, arguments, house, clothes, dates, longer past stories) with English prompts and grammar notes, themed topics, and more variety in the generated sentences (different endings and time words)."],
 [39,"2026-11-08 20:42","Front page: new \"Wondering where to start or how to use this? Click me!\" guide. Version history now shows the time of each update (from this version on)."],
@@ -6016,7 +6106,7 @@ const SUBJ_CFG={
  M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
  S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
- F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","fr","frsb","frdr","tr"],exam:["French"],drill:["fr","Practice and translate","French drills and a translator"]},
+ F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","tr"],exam:["French"],drill:["fr","Practice and translate","French drills and a translator"]},
  L:{n:"Legal Studies",c:"#d99a8a",flash:"legal:all",tools:["flash","legal"],exam:["Legal Studies"],drill:["legal","Case studies","Practice case studies and mock questions"]}
 };
 const SUBJ_PAGES=["learn","sheets","tools","qb","lc"];
@@ -6417,11 +6507,11 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
 // ---------- tools ----------
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["sci","Science"],["fr","French"],["frsb","French sentence builder"],["frdr","French table drills"],["eng","English essay"],["annot","Poem annotator"],["legal","Legal practice"],["tr","Translate"]];
-const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["sci","Science"],["fr","French"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["eng","English essay"],["annot","Poem annotator"],["legal","Legal practice"],["tr","Translate"]];
+const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const ks=SUBJ_CFG[curSub].tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};return `<div class="tools">${ks.map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`).join("")}</div><div id="tool"></div>`}return TOOL_GROUPS.map(g=>`<div class="mut" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:6px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),eng:toolEng,annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
-function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),eng:toolEng,annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
  if(k==="eng")return {name:"English poetry terms",cards:ANKI.english.map(c=>({q:c.q,a:c.a,k:"e"+hash(c.q)}))};
