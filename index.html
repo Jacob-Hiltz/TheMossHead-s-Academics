@@ -4825,6 +4825,80 @@ function table(vn,t,subs){const v=V[vn];return (subs||[0,2,4,7,9,13]).map(i=>say
 window.FRE={SUBJ,V,build,say,join,split,negComp,neg_ok,infOf,REFL,AUXF,NEGS};
 })();
 
+/* fr_bank.js: real French sentences for the sentence builder. [theme, French, English, grammar note, wrong-on-purpose tiles] */
+window.FR_BANK=[
+["leisure","Le samedi, je joue au foot avec mes amis.","On Saturdays I play football with my friends.","Present of jouer (je joue). Sports take jouer + à + le = au.",["jouons","joues"]],
+["leisure","Après l'école, mes amis et moi, nous allons au parc.","After school, my friends and I go to the park.","'Mes amis et moi' is replaced by nous, so the verb is nous allons. à + le = au.",["vont","sommes"]],
+["leisure","Ma sœur ne regarde jamais la télé le week-end.","My sister never watches TV at the weekend.","ne ... jamais wraps the verb: ne regarde jamais.",["regardes","pas"]],
+["leisure","Hier, nous sommes allés au cinéma avec des amis.","Yesterday we went to the cinema with some friends.","Aller takes être, so the participle agrees with nous: allés.",["avons","allé"]],
+["leisure","Dimanche dernier, ils ont joué au tennis pendant deux heures.","Last Sunday they played tennis for two hours.","Jouer takes avoir: ils ont joué, with no agreement.",["sont","joués"]],
+["leisure","Demain, je vais jouer au basket avec mon frère.","Tomorrow I am going to play basketball with my brother.","Futur proche: aller (je vais) + infinitive (jouer).",["joue","vas"]],
+["leisure","Est-ce que tu veux aller au parc avec nous?","Do you want to go to the park with us?","Est-ce que + normal word order. vouloir: tu veux, then the infinitive aller.",["voulez","allé"]],
+["leisure","Qu'est-ce que vous avez fait pendant le week-end?","What did you do over the weekend?","Qu'est-ce que + passé composé of faire: vous avez fait.",["faites","êtes"]],
+["leisure","Quand j'étais petit, je jouais dehors tous les jours.","When I was little, I played outside every day.","Imparfait for a habit in the past: nous jouons gives je jouais.",["jouer","ai joué"]],
+["leisure","Mon père lit le journal pendant que ma mère prépare le dîner.","My father reads the newspaper while my mother makes dinner.","Present of lire (il lit) and of préparer (elle prépare).",["lisent","préparent"]],
+["leisure","Samedi soir, on a regardé un film et on a mangé de la pizza.","On Saturday evening we watched a film and ate pizza.","On = we, with avoir in the passé composé: on a regardé, on a mangé.",["sommes","mangée"]],
+["leisure","Elle aime écouter de la musique quand elle fait ses devoirs.","She likes listening to music when she does her homework.","aimer + infinitive. faire in the present: elle fait.",["écoute","font"]],
+["leisure","Je n'aime pas faire du sport quand il pleut.","I don't like doing sport when it rains.","n'aime pas wraps the verb; faire du sport.",["ne","pleuvait"]],
+["leisure","Ce week-end, nous allons passer du temps avec nos amis.","This weekend we are going to spend time with our friends.","Futur proche: nous allons + passer.",["passons","allez"]],
+["routine","Le matin, je me réveille à sept heures et je me lève tout de suite.","In the morning I wake up at seven and get up straight away.","Reflexive verbs: the pronoun me comes before the verb.",["te","levé"]],
+["routine","Après le petit déjeuner, je me brosse les dents et je m'habille.","After breakfast I brush my teeth and get dressed.","Reflexive: je me brosse, je m'habille (me becomes m' before a vowel or h).",["te","brosses"]],
+["routine","Ma sœur se prépare pendant une heure avant d'aller à l'école.","My sister gets ready for an hour before going to school.","Il/elle form: se prépare. avant de + infinitive.",["prépares","vas"]],
+["routine","Le soir, nous nous couchons vers dix heures.","In the evening we go to bed around ten o'clock.","Nous takes the pronoun nous: nous nous couchons.",["me","couchez"]],
+["routine","Hier, je me suis levé à six heures parce que j'avais un examen.","Yesterday I got up at six because I had an exam.","Reflexive verbs take être in the passé composé; the reason (j'avais) is in the imparfait.",["ai","étais"]],
+["routine","Elle s'est réveillée en retard et elle a manqué le bus.","She woke up late and missed the bus.","Se réveiller takes être and agrees (réveillée); manquer takes avoir.",["a","réveillé"]],
+["routine","Demain, je vais me lever plus tôt pour étudier.","Tomorrow I am going to get up earlier to study.","Futur proche of a reflexive: je vais me lever (the pronoun goes before the infinitive).",["lève","te"]],
+["routine","Tu t'endors toujours devant la télé.","You always fall asleep in front of the TV.","S'endormir: tu t'endors. Toujours goes after the verb.",["m'","endormir"]],
+["routine","Nous ne nous sommes pas couchés tard hier soir.","We did not go to bed late last night.","Negative wraps the pronoun and the auxiliary: ne nous sommes pas. Agreement with nous: couchés.",["avons","couchée"]],
+["injury","Hier, je suis tombé dans l'escalier et je me suis blessé au pied.","Yesterday I fell down the stairs and hurt my foot.","Tomber and se blesser both take être.",["ai","blessée"]],
+["injury","Mon frère s'est foulé la cheville pendant le match de foot.","My brother sprained his ankle during the football match.","The participle does not agree here because the direct object (la cheville) comes after it.",["foulée","a"]],
+["injury","Elle s'est fait mal au bras en jouant au basket.","She hurt her arm playing basketball.","Se faire mal à: s'est fait mal, and fait stays unchanged.",["a","faite"]],
+["injury","J'ai mal à la tête et j'ai de la fièvre.","I have a headache and a fever.","Avoir mal à + part of the body. Avoir is used, not être.",["suis","au"]],
+["injury","Ma mère est malade depuis lundi, alors elle reste au lit.","My mother has been ill since Monday, so she is staying in bed.","Present with depuis: it is still going on.",["a","restes"]],
+["injury","Il avait mal au ventre, donc il n'est pas allé à l'école.","He had a stomach ache, so he did not go to school.","Imparfait for the state (avait mal), passé composé for the event (n'est pas allé).",["a","allée"]],
+["injury","Nous sommes allés chez le médecin parce que ma petite sœur était malade.","We went to the doctor because my little sister was ill.","Aller with être (allés); était (imparfait) for the background reason.",["avons","malades"]],
+["injury","Après son accident, elle ne peut plus jouer au tennis.","After her accident she can no longer play tennis.","ne ... plus: no longer. pouvoir: elle peut.",["pas","peuvent"]],
+["injury","Pendant le match, un joueur est tombé et il s'est cassé la jambe.","During the match a player fell and broke his leg.","Tomber with être; se casser with être, with no agreement before la jambe.",["a","cassée"]],
+["injury","Je me suis fait mal quand je suis tombé du vélo.","I hurt myself when I fell off my bike.","Both parts of the sentence are in the passé composé with être.",["ai","tombée"]],
+["argument","Hier, je me suis disputé avec mon meilleur ami.","Yesterday I argued with my best friend.","Se disputer is reflexive, so it takes être: je me suis disputé.",["a","disputée"]],
+["argument","Mes deux frères se disputent tout le temps à la maison.","My two brothers argue all the time at home.","Ils form of the reflexive: se disputent.",["dispute","te"]],
+["argument","Il n'a pas voulu s'excuser et elle était très fâchée.","He did not want to apologise and she was very angry.","Vouloir takes avoir (a voulu); the description (était fâchée) is in the imparfait.",["est","fâché"]],
+["argument","Nous nous sommes réconciliés après quelques jours.","We made up after a few days.","Reflexive, être, and the participle agrees with nous.",["avons","réconcilier"]],
+["argument","Ils se sont battus parce qu'ils voulaient le même ballon.","They fought because they wanted the same ball.","Se battre takes être (battus); voulaient is the imparfait for the reason.",["ont","battu"]],
+["house","Dans ma chambre, il y a un lit, une chaise et un grand placard.","In my bedroom there is a bed, a chair and a big cupboard.","Il y a = there is / there are. Grand goes before the noun.",["sont","grande"]],
+["house","Le canapé est devant la télé dans le salon.","The sofa is in front of the TV in the living room.","Être + prepositions of place: devant, dans.",["sont","au"]],
+["house","Nous avons une petite cuisine avec un frigo blanc.","We have a small kitchen with a white fridge.","Petit goes before the noun, the colour after it; blanc stays masculine for le frigo.",["petit","blanche"]],
+["house","Ma maison est grande et les chambres sont très jolies.","My house is big and the bedrooms are very pretty.","Adjectives agree: grande (feminine singular), jolies (feminine plural).",["grand","joli"]],
+["house","Chaque soir, mon père sort la poubelle.","Every evening my father takes out the rubbish bin.","Sortir used with a direct object: il sort.",["sortent","sorti"]],
+["house","Dans la salle de bains, il y a une baignoire mais il n'y a pas de douche.","In the bathroom there is a bath but there is no shower.","After a negative, une becomes de: pas de douche.",["une","du"]],
+["house","Avant, nous habitions dans un appartement, mais maintenant nous avons une maison avec un jardin.","We used to live in a flat, but now we have a house with a garden.","Imparfait for the past situation (habitions), present for now (avons).",["habitons","avions"]],
+["house","Quand j'étais petit, je dormais dans une chambre avec mon frère.","When I was little I slept in a room with my brother.","Imparfait of dormir: je dormais.",["dors","chambres"]],
+["clothes","Aujourd'hui, elle porte une robe rouge et des chaussures noires.","Today she is wearing a red dress and black shoes.","Colours go after the noun and agree: noires (feminine plural). Rouge keeps the same form in the feminine.",["rouges","noirs"]],
+["clothes","Hier, j'ai acheté un nouveau pantalon et une jolie chemise.","Yesterday I bought new trousers and a pretty shirt.","Nouveau and joli come before the noun and agree with it.",["nouvelle","joli"]],
+["clothes","Il fait froid, alors je mets mon manteau et mes gants.","It is cold, so I am putting on my coat and gloves.","Mettre: je mets. Il fait froid is the weather expression.",["mettent","ma"]],
+["clothes","Ma cousine a perdu sa veste neuve dans le bus.","My cousin lost her new jacket on the bus.","Perdre takes avoir (a perdu). Veste is feminine, so sa and neuve.",["son","neuf"]],
+["clothes","Pour la fête, nous allons porter des vêtements élégants.","For the party we are going to wear elegant clothes.","Futur proche. Vêtements is masculine plural, so élégants.",["élégantes","portons"]],
+["dates","Mon anniversaire est le neuf février.","My birthday is on the ninth of February.","Dates use le + a cardinal number + the month (le premier for the 1st).",["neuvième","en"]],
+["dates","Nous sommes partis en vacances le premier juillet.","We left on holiday on the first of July.","Partir takes être; nous partis agrees. Le premier for the 1st.",["un","avons"]],
+["dates","L'examen de français a lieu le lundi neuf novembre à onze heures vingt.","The French exam is on Monday the ninth of November at 11:20.","Avoir lieu = to take place. Time: onze heures vingt.",["en","dix"]],
+["dates","Le quatorze juillet, il y a un grand défilé à Paris.","On the fourteenth of July there is a big parade in Paris.","Le + number + month. Grand goes before the noun.",["quatrième","des"]],
+["adj","Ma nouvelle voisine est très sportive et elle est aussi généreuse.","My new neighbour is very sporty and she is also generous.","Feminine forms: nouvelle, sportive (-if gives -ive), généreuse (-eux gives -euse).",["nouveau","sportif"]],
+["adj","Ces garçons sont paresseux, mais leurs sœurs sont sérieuses.","These boys are lazy, but their sisters are serious.","Paresseux does not change in the masculine plural; sérieuses is feminine plural.",["paresseuses","sérieux"]],
+["adj","Le nouvel élève est gentil, mais il est un peu timide.","The new pupil is kind, but he is a bit shy.","Nouvel is used before a vowel (élève).",["nouveau","gentille"]],
+["adj","Ce film est ennuyeux, mais l'actrice est belle.","This film is boring, but the actress is beautiful.","Ennuyeux (-eux) is masculine for le film; belle is feminine for l'actrice.",["ennuyeuse","beau"]],
+["adj","Elle a de longs cheveux gris et un grand sourire.","She has long grey hair and a big smile.","Long goes before the noun and agrees with masculine plural cheveux (longs); gris stays gris in the plural.",["longues","grise"]],
+["narr","Samedi dernier, il pleuvait, alors nous sommes restés à la maison et nous avons joué aux cartes.","Last Saturday it was raining, so we stayed at home and played cards.","Weather as background uses the imparfait; the finished actions are in the passé composé.",["pleut","restée"]],
+["narr","Il faisait beau, donc ils sont allés au parc, mais ils sont rentrés tôt.","The weather was nice, so they went to the park, but they came home early.","Imparfait for the weather, passé composé with être for aller and rentrer.",["fait","rentré"]],
+["narr","Quand je suis arrivé au stade, mes amis jouaient déjà.","When I arrived at the stadium, my friends were already playing.","A single event (suis arrivé) interrupts an ongoing action (jouaient).",["arrivée","jouent"]],
+["narr","Si tu es malade demain, tu ne vas pas jouer au foot.","If you are ill tomorrow, you are not going to play football.","Si + present, then the futur proche.",["seras","joues"]],
+["narr","Je voudrais aller au cinéma, mais je dois finir mes devoirs d'abord.","I would like to go to the cinema, but I have to finish my homework first.","Devoir: je dois, then the infinitive finir.",["devons","finis"]],
+["narr","Elle ne sait pas nager, donc elle ne va jamais à la piscine.","She cannot swim, so she never goes to the pool.","Savoir + infinitive; ne ... jamais around va.",["sais","vais"]],
+["narr","Tu peux me dire où tu as mis mon sac?","Can you tell me where you put my bag?","Pouvoir + infinitive (tu peux me dire); the participle of mettre is mis.",["peut","mettu"]],
+["narr","Il tient la porte pour sa grand-mère.","He holds the door for his grandmother.","Tenir: il tient.",["tiens","tenons"]],
+["narr","Je me suis amusé au parc avec mes amis, mais je me suis couché tard.","I had fun at the park with my friends, but I went to bed late.","Two reflexive verbs in the passé composé: both take être.",["ai","amusés"]],
+["narr","S'il fait beau samedi, nous allons faire un pique-nique.","If the weather is nice on Saturday, we are going to have a picnic.","Si + present, then the futur proche; il fait beau is the weather expression.",["faisons","fera"]]
+];
+
 /* fr_builder.js: French sentence builder tool ("frsb"): Build (tap tiles), Maker (pick parts), Rules (word-order sheet). */
 (function(){
 const F=window.FRE;
@@ -4834,7 +4908,7 @@ const TENSE=[["pres","Present"],["pc","Passé composé"],["imp","Imparfait"],["f
 const TN=Object.fromEntries(TENSE);
 const NEGL=[["","(none)"],["pas","ne … pas"],["jamais","ne … jamais"],["plus","ne … plus"],["rien","ne … rien"],["personne","ne … personne"],["pas encore","ne … pas encore"]];
 const QL=[["","(statement)"],["est","est-ce que"],["inv","inversion"],["est|où","où + est-ce que"],["inv|où","où + inversion"],["est|quand","quand + est-ce que"],["est|pourquoi","pourquoi + est-ce que"],["est|comment","comment + est-ce que"]];
-const TOPICS=[["pres","Present tense (regular and irregular)"],["pc","Passé composé (avoir and être)"],["refl","Reflexive verbs"],["imp","Imparfait"],["fut","Futur proche and simple"],["neg","Negative expressions"],["q","Question words and questions"],["all","Everything mixed"]];
+const TOPICS=[["pres","Present tense (regular and irregular)"],["pc","Passé composé (avoir and être)"],["refl","Reflexive verbs"],["imp","Imparfait"],["fut","Futur proche and simple"],["neg","Negative expressions"],["q","Question words and questions"],["real","Real sentences: all themes"],["real:leisure","Real: leisure and social"],["real:routine","Real: daily routine"],["real:injury","Real: injuries and illness"],["real:argument","Real: arguments"],["real:house","Real: house and furniture"],["real:clothes","Real: clothes"],["real:dates","Real: dates"],["real:adj","Real: describing people and things"],["real:narr","Real: longer stories in the past"],["all","Everything mixed (generated + real)"]];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -4844,6 +4918,21 @@ const reflV=VK.filter(k=>F.V[k].refl),plainV=VK.filter(k=>!F.V[k].refl);
 const ST=window.__frsb||(window.__frsb={tab:"build",topic:"all",cur:null,pick:[],fb:null,n:0,ok:0,mk:{s:0,v:"aller",t:"pc",neg:"",q:""}});
 function mkChip(x,sm){return `<span style="display:inline-block;border:1.5px solid ${COL[x.r]||"#888"};border-radius:8px;padding:${sm?"3px 7px":"6px 10px"};margin:2px;font-size:${sm?14:16}px">${esc(x.w)}</span>`}
 function legend(){return Object.keys(LAB).map(k=>`<span style="display:inline-block;margin:2px 8px 2px 0;font-size:12px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${COL[k]};margin-right:4px"></span>${LAB[k]}</span>`).join("")}
+
+const COMPS={parler:["français","anglais avec mes amis","à ma mère au téléphone"],regarder:["un film","la télé","un match de foot","un documentaire"],aimer:["le chocolat","la musique","le sport","les jeux vidéo"],travailler:["à la maison","dans un magasin","avec mon père","tard le soir"],jouer:["au tennis","au foot avec mes amis","de la guitare","aux cartes"],habiter:["à Paris","dans une grande maison","près du parc","en France"],écouter:["de la musique","la radio","mon professeur"],danser:["avec mes amis","toute la nuit","à la fête"],chanter:["une chanson","dans la douche","avec ma sœur"],donner:["un cadeau à ma mère","un livre à mon ami","de l'aide à mon frère"],trouver:["mon sac","la réponse","ce film ennuyeux"],arriver:["à midi","en retard","à la gare","chez moi"],entrer:["dans la classe","dans la cuisine","dans le salon"],rester:["à la maison","au lit","chez ma grand-mère"],tomber:["par terre","dans l'escalier","du vélo"],rentrer:["à la maison","tard","après l'école"],monter:["dans le bus","dans ma chambre","au premier étage"],manger:["une pizza","du fromage","au restaurant","avec ma famille"],commencer:["à huit heures","mes devoirs","un nouveau livre"],acheter:["un livre","une robe rouge","des chaussures","un nouveau pantalon"],finir:["mes devoirs","le match","avant midi"],choisir:["une robe","un film","un cadeau pour ma sœur"],vendre:["des livres","ma vieille veste","des gâteaux"],attendre:["le bus","mon ami devant l'école","ma mère"],répondre:["à la question","à mon ami","à mon professeur"],perdre:["mon portable","mon sac","le match"],entendre:["un bruit","la musique","mes voisins"],descendre:["à la cave","dans le jardin","du bus"],être:["en retard","à la maison","au parc"],avoir:["un chien","de la chance","mal à la tête","quinze ans"],aller:["au cinéma","au parc","à l'école","chez le médecin"],faire:["du sport","mes devoirs","un gâteau","une promenade"],prendre:["le bus","un café","mon manteau"],apprendre:["le français","une chanson","à nager"],comprendre:["la leçon","mon ami","la question"],venir:["à la fête","chez moi","avec nous"],revenir:["à la maison","demain","tard"],vouloir:["un café","un nouveau téléphone","aller au parc"],pouvoir:["aider mon frère","venir ce soir","jouer dehors"],devoir:["finir mes devoirs","rester à la maison","partir tôt"],savoir:["la réponse","nager","jouer au foot"],voir:["un film","mes amis","un accident"],dire:["la vérité","bonjour à tout le monde","non"],mettre:["la table","mon manteau","un pull rouge"],partir:["à huit heures","en vacances","avec mes parents"],sortir:["avec mes amis","ce soir","du cinéma"],dormir:["bien","jusqu'à midi","dans le salon"],lire:["un livre","le journal","une lettre"],écrire:["une lettre","un message à mon ami","une histoire"],boire:["de l'eau","du lait","un jus d'orange"],ouvrir:["la porte","la fenêtre","mon sac"],retourner:["à l'école","chez moi","au parc"],tenir:["la porte","la main de ma sœur"],rendre:["le livre","mon stylo","visite à ma tante"]};
+const PRE={pres:["d'habitude","le samedi","chaque matin","en ce moment","souvent"],pc:["hier","samedi dernier","ce matin","la semaine dernière","hier soir"],imp:["autrefois","chaque été","quand j'étais petit","souvent"],futproche:["demain","ce soir","samedi prochain","dans une heure"],futsimple:["un jour","l'année prochaine","plus tard","dans dix ans"]};
+const BANK=window.FR_BANK||[];
+function bankPool(topic){const th=topic.indexOf(":")>0?topic.split(":")[1]:null;return BANK.filter(b=>!th||b[0]===th)}
+const THEME={leisure:"leisure and social",routine:"daily routine",injury:"injuries and illness",argument:"arguments",house:"house and furniture",clothes:"clothes",dates:"dates",adj:"describing people and things",narr:"longer past story"};
+function tok(s){const out=[];s.split(" ").forEach(w=>{let m;while((m=w.match(/^((?:qu|[cdjlmnst])')(.+)$/i))){out.push(m[1]);w=m[2]}out.push(w)});return out}
+let bq=[];
+function newBank(topic){const pool=bankPool(topic);if(!pool.length)return false;
+  if(!bq.length||bq._t!==topic){bq=shuf(pool);bq._t=topic}
+  let b=bq.pop();if(ST.cur&&ST.cur.bank===b&&bq.length)b=bq.pop();
+  const w=tok(b[1]);const T=w.map(x=>({w:x,r:"comp"}));const have=new Set(w);
+  const d=b[4].filter(x=>!have.has(x)).map(x=>({w:x,d:1,r:"x"}));
+  const tiles=shuf(T.map(x=>({w:x.w,r:"comp",d:0})).concat(d));tiles.forEach((x,i)=>x.i=i);
+  ST.cur={o:null,bank:b,T,tiles,ans:F.join(T)};ST.pick=[];ST.fb=null;return true}
 function pickOpts(topic){
   const t=topic==="all"?rnd(["pres","pc","refl","imp","fut","neg","q"]):topic;let o;
   const subj=()=>rnd([0,1,2,3,4,5,6,7,8,9,10,13,14]);
@@ -4872,20 +4961,24 @@ function distract(o,T){
   if(v.refl){const r=F.REFL[(p+1)%6];add(F.REFL[p]===r?F.REFL[(p+2)%6]:r)}
   return out.slice(0,3)}
 function newQ(){
+  if((ST.topic==='real'||ST.topic.indexOf('real:')===0||(ST.topic==='all'&&Math.random()<.5))&&newBank(ST.topic==='all'?'real':ST.topic))return;
   let o,T,tries=0;
-  do{o=pickOpts(ST.topic);T=F.split(F.build(o));tries++}while(tries<30&&ST.cur&&F.join(T)===ST.cur.ans);
+  do{o=pickOpts(ST.topic);if(!o.q&&COMPS[o.v]&&!F.V[o.v].refl)o.comp=rnd(COMPS[o.v]);if(!o.q&&o.neg!=="rien"&&o.neg!=="personne"&&PRE[o.t]&&Math.random()<.55)o.pre=rnd(PRE[o.t]);T=F.split(F.build(o));if(o.pre)T=o.pre.split(" ").map((x,i,a)=>({w:i===a.length-1?x+",":x,r:"comp"})).concat(T);tries++}while(tries<30&&ST.cur&&F.join(T)===ST.cur.ans);
   const d=distract(o,T);
   const tiles=shuf(T.map((x,i)=>({w:x.w,r:x.r,d:0})).concat(d.map(w=>({w,r:"x",d:1}))));
   tiles.forEach((x,i)=>x.i=i);
   ST.cur={o,T,tiles,ans:F.join(T)};ST.pick=[];ST.fb=null}
 function promptText(o){
+  if(!o){const b=ST.cur.bank;return `Translate into French: <b>${esc(b[2])}</b> &nbsp;·&nbsp; Theme: ${esc(THEME[b[0]]||b[0])}`}
   const v=F.V[o.v],S=F.SUBJ[o.s];const bits=[`Subject: <b>${esc(S.l)}</b>`,`Verb: <b>${esc(v.inf)}</b> (${esc(v.gloss)})`,`Tense: <b>${TN[o.t]}</b>`];
   if(o.neg)bits.push(`Negative: <b>ne … ${esc(o.neg)}</b>`);
   if(o.q){const w=o.q.w;bits.push(`Question: <b>${w?esc(w)+" + ":""}${o.q.k==="inv"?"inversion":"est-ce que"}</b>`)}
   const c=(o.neg==="rien"||o.neg==="personne"||(o.q&&(o.q.w==="où"))) ?"":(v.comp?`Finish with: <i>${esc(o.neg&&o.neg!=="personne"?F.negComp(v.comp):v.comp)}</i>`:"");
   if(c)bits.push(c);
+  if(o.pre)bits.push(`Begin with: <i>${esc(o.pre)},</i>`);
   return bits.join(" &nbsp;·&nbsp; ")}
 function why(o){
+  if(!o)return `<li>${esc(ST.cur.bank[3])}</li><li>Meaning: ${esc(ST.cur.bank[2])}</li>`;
   const v=F.V[o.v],S=F.SUBJ[o.s],p=S.p,w=[];
   if(o.t==="pres")w.push(`Present of <b>${esc(v.inf)}</b> with ${S.w}: <b>${esc(v.pres[p])}</b>.`);
   if(o.t==="pc"){w.push(`Passé composé = auxiliary + past participle. <b>${esc(v.inf)}</b> takes <b>${v.aux==="etre"?"être":"avoir"}</b>: <b>${F.AUXF[v.aux==="etre"?"etre":"avoir"][p]}</b> + <b>${esc(v.pp)}</b>.`);
@@ -4894,6 +4987,7 @@ function why(o){
   if(o.t==="futproche")w.push(`Futur proche = <b>aller</b> in the present (${F.V.aller.pres[p]}) + the infinitive.`);
   if(o.t==="futsimple")w.push(`Futur simple = future stem <b>${esc(v.fut)}</b> + <b>${["ai","as","a","ons","ez","ont"][p]}</b>.`);
   if(v.refl)w.push(`Reflexive: the pronoun <b>${F.REFL[p]}</b> matches the subject and goes ${o.t==="futproche"?"before the infinitive":"right before the verb (before the auxiliary in the passé composé)"}.`);
+  if(o.pre)w.push(`Time words like <b>${esc(o.pre)}</b> go at the start; the rest of the order does not change.`);
   if(o.neg){w.push(o.neg==="personne"?`ne goes before the conjugated verb or auxiliary; <b>personne</b> goes after the whole verb (after the participle in the passé composé).`:`Negative: <b>ne</b> goes before, <b>${esc(o.neg)}</b> goes after the conjugated verb (or auxiliary).`);
     if(o.neg!=="rien"&&o.neg!=="personne"&&/^(un|une|des|du|de la)\s/.test(v.comp||""))w.push("After a negative, un / une / des / du / de la becomes de (d' before a vowel).")}
   if(o.q)w.push(o.q.k==="inv"?`Inversion: verb (or auxiliary) + hyphen + subject pronoun${/[ae]$/.test(F.build(o)[0].w)?"":""}. With il, elle, on add <b>-t-</b> when the verb ends in a vowel.`:`Est-ce que goes before the normal subject + verb order.`);
@@ -4917,7 +5011,7 @@ function viewBuild(el){
   const g=id=>document.getElementById(id);
   if(g("sbclr"))g("sbclr").onclick=()=>{ST.pick=[];viewBuild(el)};
   if(g("sbskip"))g("sbskip").onclick=()=>{newQ();viewBuild(el)};
-  if(g("sbhint"))g("sbhint").onclick=()=>{const nx=c.T[ST.pick.length];g("sbh").innerHTML=nx?`Next part is the <b>${LAB[nx.r]}</b>.`:"You have every part. Press Check."};
+  if(g("sbhint"))g("sbhint").onclick=()=>{const nx=c.T[ST.pick.length];g("sbh").innerHTML=nx?(c.bank?`The next word starts with <b>${esc(nx.w.charAt(0))}</b>.`:`Next part is the <b>${LAB[nx.r]}</b>.`):"You have every part. Press Check."};
   if(g("sbchk"))g("sbchk").onclick=()=>{const got=F.join(ST.pick.map(i=>({w:c.tiles[i].w})));ST.n++;if(got===c.ans){ST.ok++;ST.fb="ok"}else ST.fb="bad";viewBuild(el)};
   if(g("sbnext"))g("sbnext").onclick=()=>{newQ();viewBuild(el)};
 }
@@ -5830,8 +5924,9 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.datase
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
 // ---------- update log ----------
-const APP_VER=39;
+const APP_VER=40;
 const APP_LOG=[
+[40,"2026-11-09 06:05","French sentence builder: 70 real, varied sentences (leisure, routine, injuries, arguments, house, clothes, dates, longer past stories) with English prompts and grammar notes, themed topics, and more variety in the generated sentences (different endings and time words)."],
 [39,"2026-11-08 20:42","Front page: new \"Wondering where to start or how to use this? Click me!\" guide. Version history now shows the time of each update (from this version on)."],
 [38,"2026-11-08","French: weak-spot tracker (a Fix my weak spots button in Table drills and a weak-spots list in Word order), Spot the mistake drill, Listen and type dictation mode, and Random 8 words plus a Build my skeleton planner in the French writing tool."],
 [37,"2026-11-08","French: exam practice built from the teacher's exam notes. Table drills gain five Exam practice buttons (a 25-mark mock grammar section, the teacher's verbs, house and furniture, leisure/clothes/dates, routine and injuries), new drill sets, more verbs and adjectives, an exam-format sheet in Word order, and the writing tool now takes the 8 required words and counts to 150-175."],
