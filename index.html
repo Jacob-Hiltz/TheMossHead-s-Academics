@@ -5387,6 +5387,128 @@ function render(el){const hits=wordHits();const M=ST.mode||"full";const sh=x=>M=
 window.toolFrEx=render;
 })();
 
+/* legal_new.js: Legal extras: IRAC builder + element spotter, Section C planner with timer, last-look sheet, flowcharts.
+   Content beyond the class notes is marked "(check with your teacher)". Uses LEGAL_SCEN and DEFAM_C from legal_cases.js when present. */
+(function(){
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const ld=(k,d)=>{try{const v=localStorage.getItem("lgn:"+k);return v==null?d:v}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem("lgn:"+k,v)}catch(e){}};
+const mm=ms=>{ms=Math.max(0,ms);const s=Math.ceil(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")};
+const SC=()=>(typeof LEGAL_SCEN!=="undefined"&&LEGAL_SCEN.contract)||[];
+const DC=()=>(typeof DEFAM_C!=="undefined"&&DEFAM_C)||{areas:[],prompts:[]};
+const st={sc:0,q:0,sub:"build",spot:null,prompt:"",show:false,iv:null};
+const EL=["Offer","Acceptance","Consideration","Intention to create legal relations","Capacity","Genuine consent","Legality","Invitation to treat"];
+const SPOT=[
+["A shop window shows a jacket with a $50 price tag.","Invitation to treat","The display only invites customers to make an offer. The shop has not offered yet."],
+["Sam emails: 'Yes, I will buy your bike for $200.'","Acceptance","Agreeing to the exact terms of an offer is acceptance."],
+["Ava promises to give her friend her old bike for nothing, expecting nothing back.","Consideration","A promise with nothing given in return has no consideration."],
+["A 12-year-old signs a contract to buy a $2000 phone on credit.","Capacity","Minors have limited capacity, so the contract may not bind them."],
+["Ben signs a contract only after being threatened.","Genuine consent","Duress removes genuine consent."],
+["Two people agree to sell stolen goods.","Legality","A contract for an illegal purpose cannot be enforced."],
+["Two friends casually agree to meet for dinner next week.","Intention to create legal relations","Social and family agreements are presumed not to be meant as legally binding."],
+["A seller falsely says a car has never been in an accident, to get the sale.","Genuine consent","A misrepresentation can undermine genuine consent."],
+["An advertisement promises $100 to anyone who uses a product as directed and still catches the flu (Carlill v Carbolic Smoke Ball).","Offer","The advertisement was an offer to the world, and using the product as directed was the acceptance."]
+];
+const IR=[["Issue","The issue is whether…","What is the legal question? One sentence, using the key term."],["Rule","The rule is… (case or Act)","State the law: the elements, the case or the section."],["Application","In this case, …","Match each element to a fact from the scenario. Use the names."],["Conclusion","Therefore, …","Answer the question directly and say the outcome or remedy."]];
+const STAGES=[["Plan",3],["Introduction",3],["Body 1",6],["Body 2",6],["Body 3",6],["Conclusion",3],["Check",3]];
+const LINKS=["This demonstrates that…","However, it could be argued that…","As a result,","In contrast, the United States…","Therefore, Victorian law…","This is significant because…","On balance,","For example, in [case],"];
+
+function clearTimer(){if(st.iv){clearInterval(st.iv);st.iv=null}}
+function chips(list,target){return `<div class="row" style="flex-wrap:wrap;gap:6px;margin:6px 0">${list.map(x=>`<button class="sm ghost" data-ins="${esc(x)}">${esc(x)}</button>`).join("")}</div>`}
+function bindIns(el){let last=null;el.querySelectorAll("textarea").forEach(t=>{t.addEventListener("focus",()=>last=t)});
+  el.querySelectorAll("[data-ins]").forEach(b=>b.onclick=()=>{const t=last||el.querySelector("textarea");if(!t)return;const s=b.dataset.ins,p=t.selectionStart==null?t.value.length:t.selectionStart;t.value=t.value.slice(0,p)+(p&&!/\s$/.test(t.value.slice(0,p))?" ":"")+s+" "+t.value.slice(p);t.focus();t.dispatchEvent(new Event("input"))})}
+function wc(s){return (s.trim().match(/\S+/g)||[]).length}
+
+function irac(el,menu,rebind){
+  const list=SC();const sc=list[st.sc%Math.max(1,list.length)]||{t:"",s:"",qs:[],m:[]};
+  const tabs=`<div class="row" style="gap:6px;margin:8px 0"><button class="sm" data-sub="build" aria-pressed="${st.sub==="build"}">IRAC builder</button><button class="sm" data-sub="spot" aria-pressed="${st.sub==="spot"}">Spot the element</button></div>`;
+  if(st.sub==="spot"){
+    if(!st.spot)st.spot={o:shuf(SPOT.map((_,i)=>i)),i:0,s:0,ans:null};
+    const S=st.spot;
+    if(S.i>=S.o.length){el.innerHTML=menu+`<div class="card"><h3>Spot the element</h3>${tabs}<p style="font-size:20px"><b>${S.s} / ${S.o.length}</b></p><p class="mut">${S.s>=8?"Strong. You can name the element from the facts.":"Go again. For each fact, ask which element it proves or breaks."}</p><button class="pri" id="again">Go again</button></div>`;
+      rebind();$("#again").onclick=()=>{st.spot=null;irac(el,menu,rebind)};sub(el,menu,rebind);return}
+    const it=SPOT[S.o[S.i]];
+    el.innerHTML=menu+`<div class="card"><h3>Spot the element</h3>${tabs}<div class="row"><span class="mut mono">${S.i+1} of ${S.o.length}</span><span class="sp"></span><span class="mut mono">score ${S.s}</span></div><p style="font-size:17px;margin:10px 0"><b>${esc(it[0])}</b></p><div class="row" style="flex-wrap:wrap;gap:8px">${EL.map(e=>`<button class="sm" data-a="${esc(e)}" ${S.ans?"disabled":""}>${esc(e)}</button>`).join("")}</div>${S.ans?`<p style="margin-top:12px"><b>${S.ans===it[1]?"Correct.":"Not quite. The answer is "+esc(it[1])+"."}</b><br><span class="qa">${esc(it[2])}</span></p><button class="pri" id="nx">${S.i+1>=S.o.length?"See score":"Next"}</button>`:""}<p class="mut" style="font-size:12px;margin-top:12px">Explanations are my summary of the standard elements (check with your teacher).</p></div>`;
+    rebind();sub(el,menu,rebind);
+    el.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{if(S.ans)return;S.ans=b.dataset.a;if(S.ans===it[1])S.s++;irac(el,menu,rebind)});
+    const nx=$("#nx");if(nx)nx.onclick=()=>{S.i++;S.ans=null;irac(el,menu,rebind)};return}
+  const key="irac"+st.sc+"_"+st.q;
+  el.innerHTML=menu+`<div class="card"><h3>Section B: IRAC builder</h3>${tabs}
+  <div class="row" style="flex-wrap:wrap;gap:6px">${list.map((x,i)=>`<button class="sm" data-sc="${i}" aria-pressed="${i===st.sc}">${esc(x.t)}</button>`).join("")}</div>
+  <p style="margin:10px 0"><b>${esc(sc.t)}.</b> ${esc(sc.s)}</p>
+  <div class="row" style="flex-wrap:wrap;gap:6px">${(sc.qs||[]).map((q,i)=>`<button class="sm ghost" data-q="${i}" aria-pressed="${i===st.q}">Q${i+1}</button>`).join("")}</div>
+  <p class="qa" style="margin:8px 0"><b>${esc((sc.qs||[])[st.q]||"")}</b></p>
+  ${IR.map((r,i)=>`<div style="margin-top:10px"><b>${r[0]}</b> <span class="mut" style="font-size:12px">${esc(r[2])}</span><textarea id="ir${i}" style="min-height:70px" placeholder="${esc(r[1])}">${esc(ld(key+"_"+i,""))}</textarea><div class="mut mono" style="font-size:11px" id="wc${i}"></div></div>`).join("")}
+  ${chips(IR.map(r=>r[1].split("(")[0].trim()).concat(["Offer and acceptance are met because…","There is consideration because…","However, the contract may be void because…","The remedy available is…"]))}
+  <div class="row" style="margin-top:8px"><button class="pri" id="lsh">${st.show?"Hide":"Show"} model points</button></div>
+  ${st.show?`<div style="margin-top:8px">${(sc.m||[]).map(x=>`<div style="margin-top:6px"><b>${esc(x[0])}</b><div class="qa">${esc(x[1])}</div></div>`).join("")}</div>`:""}
+  <p class="mut" style="font-size:12px;margin-top:10px">Write one IRAC cycle per question. In the exam, repeat the cycle for each part of the scenario.</p></div>`;
+  rebind();sub(el,menu,rebind);bindIns(el);
+  IR.forEach((_,i)=>{const t=$("#ir"+i),w=$("#wc"+i);const f=()=>{w.textContent=wc(t.value)+" words"};f();t.oninput=()=>{sv(key+"_"+i,t.value);f()}});
+  el.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{st.sc=+b.dataset.sc;st.q=0;st.show=false;irac(el,menu,rebind)});
+  el.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{st.q=+b.dataset.q;st.show=false;irac(el,menu,rebind)});
+  $("#lsh").onclick=()=>{st.show=!st.show;irac(el,menu,rebind)};
+}
+function sub(el,menu,rebind){el.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>{st.sub=b.dataset.sub;irac(el,menu,rebind)})}
+
+function plan(el,menu,rebind){
+  clearTimer();
+  const D=DC();const q=ld("c_q","");
+  el.innerHTML=menu+`<div class="card"><h3>Section C planner</h3>
+  <p class="mut" style="font-size:13px">About 3 pages in 30 minutes. Paste the quote or question, plan the frame, then run the timer.</p>
+  <div class="row" style="flex-wrap:wrap;gap:6px">${(D.prompts||[]).map((p,i)=>`<button class="sm ghost" data-p="${i}">Prompt ${i+1}</button>`).join("")}</div>
+  <textarea id="cq" style="min-height:60px;margin-top:8px" placeholder="Paste the quote or question here">${esc(q)}</textarea>
+  <div class="card" style="margin-top:10px"><div class="row"><b id="stn">Ready</b><span class="sp"></span><span class="big mono" id="stt">30:00</span></div><div class="mut mono" style="font-size:12px" id="stl">Plan 3 · Intro 3 · Body 6+6+6 · Conclusion 3 · Check 3</div><div class="row" style="margin-top:8px;gap:8px"><button class="pri" id="go">Start 30:00</button><button class="ghost" id="stop">Stop</button></div></div>
+  <div style="margin-top:10px"><b>Introduction</b> <span class="mut" style="font-size:12px">Restate the question. Give your view in one sentence. Name your 3 points.</span><textarea id="pi" style="min-height:70px"></textarea></div>
+  ${[1,2,3].map(n=>`<div style="margin-top:10px"><b>Body ${n}</b> <span class="mut" style="font-size:12px">Point, explain, case or example, link back to the question.</span><textarea id="pb${n}" style="min-height:90px"></textarea></div>`).join("")}
+  <div style="margin-top:10px"><b>Conclusion</b> <span class="mut" style="font-size:12px">Answer the question directly. Finish on your strongest point.</span><textarea id="pc" style="min-height:70px"></textarea></div>
+  <div style="margin-top:10px"><b>Linking phrases</b> (tap to insert)</div>${chips(LINKS)}
+  <details style="margin-top:8px"><summary><b>Ideas bank (from your notes)</b></summary>${(D.areas||[]).map(a=>`<div style="margin-top:6px"><b>${esc(a[0])}</b><div class="qa">${esc(a[1])}</div></div>`).join("")}</details></div>`;
+  rebind();bindIns(el);
+  ["pi","pb1","pb2","pb3","pc"].forEach(id=>{const t=$("#"+id);t.value=ld("c_"+id,"");t.oninput=()=>sv("c_"+id,t.value)});
+  const cq=$("#cq");cq.oninput=()=>sv("c_q",cq.value);
+  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{cq.value=(D.prompts||[])[+b.dataset.p]||"";sv("c_q",cq.value)});
+  $("#stop").onclick=()=>{clearTimer();$("#stn").textContent="Stopped";$("#stt").textContent="30:00"};
+  $("#go").onclick=()=>{clearTimer();const t0=Date.now(),tot=30*60000;let lastIdx=-1;
+    const tick=()=>{const n=$("#stn");if(!n){clearTimer();return}const e=Date.now()-t0;let acc=0,idx=STAGES.length-1,left=0;
+      for(let i=0;i<STAGES.length;i++){const d=STAGES[i][1]*60000;if(e<acc+d){idx=i;left=acc+d-e;break}acc+=d;if(i===STAGES.length-1)idx=-1}
+      if(idx<0||e>=tot){clearTimer();n.textContent="Time up";$("#stt").textContent="00:00";try{navigator.vibrate&&navigator.vibrate(500)}catch(x){}return}
+      n.textContent=STAGES[idx][0]+" · stage "+mm(left);$("#stt").textContent=mm(tot-e);
+      $("#stl").textContent=STAGES.map((s,i)=>(i===idx?"▶ ":"")+s[0]+" "+s[1]).join(" · ");
+      if(idx!==lastIdx){lastIdx=idx;try{navigator.vibrate&&navigator.vibrate(150)}catch(x){}}};
+    tick();st.iv=setInterval(tick,500)};
+}
+
+const SHEET=[
+["Contract: valid? (class notes + common law, check with your teacher)",["Agreement: offer + acceptance (an advertisement or shop display is usually an invitation to treat; Carlill v Carbolic Smoke Ball: an ad can be an offer to the world)","Intention to create legal relations (social and family: presumed no; business: presumed yes)","Consideration: something given in return (a promise for nothing has none)","Capacity (minors, mental incapacity)","Genuine consent (no duress, misrepresentation, mistake)","Legality: legal purpose"]],
+["Contract: breach and remedies",["Express terms (stated), implied terms (fit for purpose, free from defects)","Australian Consumer Law: guarantees such as acceptable quality and matching the description","Causation, then loss","Remedies: damages (money), refund or replacement, termination; court or VCAT. Limitation: 6 years"]],
+["Negligence",["Duty of care (Donoghue v Stevenson: the neighbour principle)","Breach: a reasonable person would have acted differently","Causation: but for the breach, would the harm have happened?","Damage that is not too remote","Defences: contributory negligence (reduces damages), voluntary assumption of risk"]],
+["Defamation (Victoria)",["Defamation Act 2005 (Vic)","Elements: defamatory, refers to the plaintiff, published to someone else, serious harm (s 10A, from 2021)","Defences: truth, honest opinion, qualified privilege, public interest (s 29A, 2021), innocent dissemination (check the exact list with your teacher)","2024 reforms: platform safe harbour and police-report privilege","Case: Singh v Singh Homes (viral comments count toward serious harm)","US contrast: strong free speech protection; New York Times v Sullivan (actual malice for public officials)"]],
+["Answer frames",["IRAC for Section B: Issue, Rule, Application, Conclusion, repeat for each part","Section C: intro (view + 3 points), 3 body paragraphs (point, explain, case, link), conclusion","Command words: explain = what + why; evaluate = judge how well; discuss = both sides; to what extent = how far, then a verdict"]],
+["Linking phrases",LINKS]
+];
+function sheet(el,menu,rebind){clearTimer();
+  el.innerHTML=menu+`<div class="card"><h3>Last-look sheet</h3><p class="mut" style="font-size:13px">One screen of the essentials. Anything beyond your class notes is marked (check with your teacher).</p>${SHEET.map(s=>`<div style="margin-top:12px"><b>${esc(s[0])}</b><ul style="margin:4px 0 0">${s[1].map(x=>`<li class="qa">${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>`;rebind()}
+
+const FLOWS={
+"Negligence":[["q","Did the defendant owe a duty of care?","Reasonably foreseeable harm to a neighbour (Donoghue v Stevenson)","No negligence"],["q","Was the duty breached?","A reasonable person in the same position would have acted differently","No negligence"],["q","Did the breach cause the harm?","But for the breach, the harm would not have happened","Not liable"],["q","Is the harm of a kind that was foreseeable (not too remote)?","","Not liable"],["s","Negligence is established","Check the defences: contributory negligence (reduces damages), voluntary assumption of risk. Remedy: damages."]],
+"Defamation (Vic)":[["q","Is the matter defamatory?","Would it lower the person's reputation in the eyes of an ordinary reasonable person?","No claim"],["q","Does it identify the plaintiff?","","No claim"],["q","Was it published to at least one other person?","","No claim"],["q","Has it caused or is it likely to cause serious harm? (s 10A)","","No claim"],["s","Plaintiff has a case","Now check the defences: truth, honest opinion, qualified privilege, public interest (s 29A) (check the exact list with your teacher). Remedy: damages."]],
+"Contract":[["q","Is there an agreement? (offer and acceptance)","An ad or shop display may only be an invitation to treat","No contract"],["q","Was there intention to create legal relations?","","No contract"],["q","Is there consideration?","","No contract"],["q","Did both parties have capacity?","","Contract may not bind"],["q","Was there genuine consent?","No duress, misrepresentation or mistake","Contract may be voidable"],["q","Is the purpose legal?","","Contract cannot be enforced"],["s","Valid contract","Then ask: was a term breached (express, implied, ACL guarantee)? Did it cause loss? Remedy: damages, refund or replacement, termination."]]
+};
+function flow(el,menu,rebind){clearTimer();
+  const names=Object.keys(FLOWS);const cur=names.includes(st.flow)?st.flow:names[0];st.flow=cur;
+  const box="border:1px solid rgba(128,128,128,.55);border-radius:10px;padding:10px 12px";
+  const nodes=FLOWS[cur].map((n,i)=>n[0]==="q"?`<div style="${box}"><b>${i+1}. ${esc(n[1])}</b>${n[2]?`<div class="mut" style="font-size:13px">${esc(n[2])}</div>`:""}<div style="font-size:13px;margin-top:4px"><b>No</b> → ${esc(n[3])} &nbsp;|&nbsp; <b>Yes</b> → next</div></div>`:`<div style="${box};border-width:2px"><b>${esc(n[1])}</b><div class="qa" style="font-size:13px">${esc(n[2])}</div></div>`);
+  el.innerHTML=menu+`<div class="card"><h3>Flowcharts</h3><div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${names.map(n=>`<button class="sm" data-fl="${esc(n)}" aria-pressed="${n===cur}">${esc(n)}</button>`).join("")}</div>${nodes.join('<div style="text-align:center;opacity:.6;line-height:1.4">▼</div>')}<p class="mut" style="font-size:12px;margin-top:10px">Simplified from your notes (check with your teacher).</p></div>`;
+  rebind();el.querySelectorAll("[data-fl]").forEach(b=>b.onclick=()=>{st.flow=b.dataset.fl;flow(el,menu,rebind)})}
+
+window.toolLegalNew=function(el,arg,menu,rebind){
+  if(arg!=="plan")clearTimer();
+  ({irac,plan,sheet,flow})[arg](el,menu,rebind)};
+})();
+
 /* Flashcard -> cheat-sheet "learn this" links: match a card to the best section of the sheets for its subject. */
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
 function llTok(t){const o=[];(String(t||"").toLowerCase().match(/[a-z][a-z0-9]*|\d+/g)||[]).forEach(w=>{if(w.length<2||LL.STOP.has(w))return;if(w.length>4){w=w.replace(/(ing|ed|es|s)$/,"")}o.push(w)});return o}
@@ -6024,8 +6146,11 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.datase
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
 // ---------- update log ----------
-const APP_VER=44;
+const APP_VER=47;
 const APP_LOG=[
+[47,"2026-11-09 18:55","Buttons now match what they open: Legal splits into Section practice, Mock exam and Quick revision (last-look sheet and flowcharts), French gets its own Practice exam tile, and the French drills tile and French questions button are renamed."],
+[46,"2026-11-09 18:50","Legal: new IRAC builder with a spot-the-element drill (Section B), Section C planner with a 30-minute stage timer, a one-screen last-look sheet and flowcharts for negligence, defamation and contract."],
+[45,"2026-11-09 06:40","French: the writing tool (8 required words and the 10 Section C sentences) now has its own button under Practice and translate."],
 [44,"2026-11-09 06:25","French practice exam: Part A only, Part B only and Part C only modes (each with its own countdown and marking), and four reading passages instead of two."],
 [43,"2026-11-09 06:45","French practice exam now follows the school timetable: 90-minute countdown, reading section with both passages scaled to 25, writing worth 30."],
 [42,"2026-11-09 06:20","French practice exam: Part A grammar (25 marks) in the teacher's format, Part B reading with questions, Part C writing with 8 random words, a timer, automatic marking and a list of where marks were lost."],
@@ -6106,8 +6231,8 @@ const SUBJ_CFG={
  M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
  S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
- F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","tr"],exam:["French"],drill:["fr","Practice and translate","French drills and a translator"]},
- L:{n:"Legal Studies",c:"#d99a8a",flash:"legal:all",tools:["flash","legal"],exam:["Legal Studies"],drill:["legal","Case studies","Practice case studies and mock questions"]}
+ F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","frw","tr"],exam:["French"],drill:["fr","Drills, writing and translate","Tables, sentence builder, Section C sentences and a translator"]},
+ L:{n:"Legal Studies",c:"#d99a8a",flash:"legal:all",tools:["flash","legal"],exam:["Legal Studies"],drill:["legal","Section practice","Sections A, B and C: scenarios, IRAC builder and planner"]}
 };
 const SUBJ_PAGES=["learn","sheets","tools","qb","lc"];
 function subExams(c){return EXAM_TT.filter(e=>c.exam.indexOf(e.s)>=0)}
@@ -6116,7 +6241,8 @@ function viewSubjects(){
   return `<section class="sj"><h2 class="sj-h">Pick a subject</h2><div class="sj-grid">${Object.keys(SUBJ_CFG).map(k=>{const c=SUBJ_CFG[k],ex=subExams(c);const nx=ex.map(e=>({e,w:exWhen(e)})).find(x=>x.w.c!=="done");return `<button class="sj-card" style="--c:${c.c}" data-act="subopen" data-v="${k}"><i></i><b>${c.n}</b><span>${ex.map(e=>exLabel(e).replace(/^(\w{3})\w*day /,"$1 ").replace(" November"," Nov")).join(" and ")}</span><em>${nx?nx.w.t:"Done"}</em></button>`}).join("")}</div></section>`}
  const c=SUBJ_CFG[curSub],ex=subExams(c);
  const tiles=[["learn","Learn","Plain-word essays for every topic"],["sheets","Sheets","Short revision sheets"],["cards","Flashcards","Test yourself on "+c.n],["drill",c.drill[1],c.drill[2]],["qb","Question bank","Exam-style questions"]];
- if(curSub==="L")tiles.push(["lc","Section C essays","Model essays and key points for the long-answer section"]);
+ if(curSub==="L"){tiles.splice(2,0,["lrev","Quick revision","Last-look sheet and flowcharts"]);tiles.splice(5,0,["lmock","Mock exam","Full 15 + 90 minute paper with timers"]);tiles.push(["lc","Section C essays","Model essays and key points for the long-answer section"])}
+ if(curSub==="F")tiles.splice(4,0,["fmock","Practice exam","Timed French paper: Parts A, B and C"]);
  return `<section class="sj"><button class="sj-back" data-act="subhome">&lsaquo; All subjects</button><div class="sj-top" style="--c:${c.c}"><i></i><h2>${c.n}</h2></div>
  <div class="sj-ex">${ex.map(e=>{const w=exWhen(e);return `<div><b>${e.s}</b><span>${exLabel(e)} &middot; ${exT(e.st)} &middot; ${e.loc}</span><em class="${w.c}">${w.t}</em></div>`}).join("")}</div>
  <div class="sj-tiles">${tiles.map(t=>`<button class="sj-tile" data-act="subgo" data-v="${t[0]}"><b>${t[1]}</b><span>${t[2]}</span></button>`).join("")}</div></section>`}
@@ -6125,7 +6251,10 @@ function subGo(w){const c=SUBJ_CFG[curSub];if(!c)return;
  if(w==="learn"){ln.sj=curSub;tab="learn"}
  else if(w==="sheets"){shUI.sj=curSub;shUI.q="";tab="sheets"}
  else if(w==="cards"){tab="tools";usetool("flash:"+c.flash)}
- else if(w==="drill"){tab="tools";tool={k:c.drill[0],arg:""}}
+ else if(w==="drill"){tab="tools";if(curSub==="L")lgGrp="sec";tool={k:c.drill[0],arg:""}}
+ else if(w==="lmock"){tab="tools";lgGrp="mock";tool={k:"legal",arg:"mock"}}
+ else if(w==="lrev"){tab="tools";lgGrp="rev";tool={k:"legal",arg:"sheet"}}
+ else if(w==="fmock"){tab="tools";tool={k:"frex",arg:""}}
  else if(w==="qb"){qbUI.sj=curSub;try{qbUI.deck=null;qbUI.i=0}catch(e){}tab="qb"}
  else if(w==="lc"){tab="lc"}
  render();window.scrollTo(0,0)}
@@ -6507,11 +6636,11 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
 // ---------- tools ----------
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["sci","Science"],["fr","French"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["eng","English essay"],["annot","Poem annotator"],["legal","Legal practice"],["tr","Translate"]];
-const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["legal","Legal practice"],["tr","Translate"]];
+const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const ks=SUBJ_CFG[curSub].tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};return `<div class="tools">${ks.map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`).join("")}</div><div id="tool"></div>`}return TOOL_GROUPS.map(g=>`<div class="mut" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:6px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),eng:toolEng,annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
-function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
  if(k==="eng")return {name:"English poetry terms",cards:ANKI.english.map(c=>({q:c.q,a:c.a,k:"e"+hash(c.q)}))};
@@ -6747,9 +6876,11 @@ function toolEng(el){const E=S.essay;const sel=E.stmt||0;
  $("#es").onchange=e=>{E.stmt=+e.target.value;save()};
  for(let i=0;i<3;i++){const r=$("#mk"+i);r.oninput=()=>{E["m"+i]=+r.value;$("#mv"+i).textContent=r.value;$("#mtot").textContent=(E.m0|0)+(E.m1|0)+(E.m2|0);save()}}
  el.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{const [m,l]=b.dataset.m.split(":");clearInterval(mt.iv);if(+m===0){$("#mtv").textContent="--:--";$("#mtl").textContent="";return}mt.t=Date.now()+m*60000;$("#mtl").textContent=l;const f=()=>{const e=$("#mtv");if(!e){clearInterval(mt.iv);return}const r=mt.t-Date.now();e.textContent=mmss(r);if(r<=0){clearInterval(mt.iv);try{navigator.vibrate&&navigator.vibrate(400)}catch(x){}}};f();mt.iv=setInterval(f,500)})}
-let lg={};
-function toolLegal(el){const arg=tool.arg||"menu";const modes=[["mock","Full mock (15 + 90 min)"],["contract","Section B: contract case study"],["tort","Negligence + defamation scenarios"],["seca","Section A: short answers"],["defam","Section C: Vic vs US extended response"]];
- const menu=`<div class="tools">${modes.map(m=>`<button data-lg="${m[0]}" aria-pressed="${arg===m[0]}">${m[1]}</button>`).join("")}</div>`;
+let lg={};let lgGrp="sec";
+function toolLegal(el){const arg=tool.arg||"menu";const modes=[["mock","Full mock (15 + 90 min)"],["contract","Section B: contract case study"],["tort","Negligence + defamation scenarios"],["seca","Section A: short answers"],["defam","Section C: Vic vs US extended response"],["irac","Section B: IRAC builder"],["plan","Section C planner and timer"],["sheet","Last-look sheet"],["flow","Flowcharts"]];
+ const GRP={mock:"mock",seca:"sec",contract:"sec",tort:"sec",defam:"sec",irac:"sec",plan:"sec",sheet:"rev",flow:"rev"};if(GRP[arg])lgGrp=GRP[arg];const gm=modes.filter(m=>GRP[m[0]]===lgGrp);
+ const menu=`<div class="tools">${gm.map(m=>`<button data-lg="${m[0]}" aria-pressed="${arg===m[0]}">${m[1]}</button>`).join("")}</div>`;
+ if(["irac","plan","sheet","flow"].includes(arg)){window.toolLegalNew(el,arg,menu,()=>lgBind(el));return}
  if(arg==="menu"||!modes.some(m=>m[0]===arg)){el.innerHTML=menu+`<div class="card"><p>Practice scenarios were written for revision from your notes and the textbook. They are not from your exam. Civil law only.</p><p class="mut">Exam format you gave: 15 min reading, 90 min writing. Section A short answers 25 marks (about 35 min). Section B contract case study, 30 marks (about 25 min). Section C extended response on your oral topic, 20 marks (about 30 min).</p></div>`;lgBind(el);return}
  if(arg==="mock"){const st=lg.mock||(lg.mock=legalMockGen());const sc=LEGAL_SCEN.contract[st.B],cp=DEFAM_C.prompts[st.C];const ta=(id,ph,h)=>`<textarea id="${id}" style="min-height:${h}px" placeholder="${ph}">${esc(S.drafts["mock"+id]||"")}</textarea>`;
   el.innerHTML=menu+`<div class="card"><h3>Legal full mock</h3><p class="mut" style="font-size:13px">Structure you gave: 15 min reading, then 90 min: Section A short answers (25 marks, about 35 min), Section B contract case study (30 marks, about 25 min), Section C extended response on your oral topic (20 marks, about 30 min). These are practice questions, not the real exam's. Section A below totals ${st.tot} marks.</p><div class="row"><button data-m="15:Reading time">Reading 15</button><button data-m="35:Section A">A 35</button><button data-m="25:Section B">B 25</button><button data-m="30:Section C">C 30</button><button class="ghost" data-m="0:stop">Stop</button><button class="sm" id="mnew">New mock</button></div><div class="big" id="mtv" style="margin:10px 0">--:--</div><div class="mut" id="mtl"></div></div>
