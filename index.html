@@ -5453,30 +5453,37 @@ function irac(el,menu,rebind){
 }
 function sub(el,menu,rebind){el.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>{st.sub=b.dataset.sub;irac(el,menu,rebind)})}
 
+const TQ="Pressure groups argue for rights in controversial areas of law, and parliament must strike the right balance between competing views. Discuss the extent to which you agree. (From your teacher's practice paper: choose one controversial issue you researched in Unit Two.)";
+const FR={
+ t:{boxes:[["t_d1","1. Definitions","Define the key concepts in your chosen issue."],["t_d2","2. Present law and comparison","Key features of the law in Victoria/Australia, compared with another country (for you, the United States)."],["t_d3","3. Arguments for and against","Include named individuals or organisations who campaigned on the issue."],["t_d4","4. Effectiveness today","How well does the present law represent contemporary attitudes?"],["t_d5","5. Amendments","What changes would you make, and why?"]],stages:[["Plan",3],["Definitions",3],["Law + comparison",7],["For and against",7],["Effectiveness + changes",7],["Check",3]]},
+ g:{boxes:[["pi","Introduction","Restate the question. Give your view in one sentence. Name your 3 points."],["pb1","Body 1","Point, explain, case or example, link back to the question."],["pb2","Body 2","Point, explain, case or example, link back to the question."],["pb3","Body 3","Point, explain, case or example, link back to the question."],["pc","Conclusion","Answer the question directly. Finish on your strongest point."]],stages:STAGES}
+};
 function plan(el,menu,rebind){
   clearTimer();
-  const D=DC();const q=ld("c_q","");
+  const D=DC();const q=ld("c_q","");const fr=st.frame==="g"?"g":"t";const F=FR[fr];
+  const prompts=[TQ].concat(D.prompts||[]);
   el.innerHTML=menu+`<div class="card"><h3>Section C planner</h3>
-  <p class="mut" style="font-size:13px">About 3 pages in 30 minutes. Paste the quote or question, plan the frame, then run the timer.</p>
-  <div class="row" style="flex-wrap:wrap;gap:6px">${(D.prompts||[]).map((p,i)=>`<button class="sm ghost" data-p="${i}">Prompt ${i+1}</button>`).join("")}</div>
+  <p class="mut" style="font-size:13px">Your teacher's practice paper says to write 3 to 4 pages. Use her five-part structure, or switch to the general frame for other questions.</p>
+  <div class="row" style="gap:6px;margin:6px 0"><button class="sm" data-fr="t" aria-pressed="${fr==="t"}">Teacher's five parts</button><button class="sm" data-fr="g" aria-pressed="${fr==="g"}">General frame</button></div>
+  <div class="row" style="flex-wrap:wrap;gap:6px">${prompts.map((p,i)=>`<button class="sm ghost" data-p="${i}">${i===0?"Teacher's question":"Prompt "+i}</button>`).join("")}</div>
   <textarea id="cq" style="min-height:60px;margin-top:8px" placeholder="Paste the quote or question here">${esc(q)}</textarea>
-  <div class="card" style="margin-top:10px"><div class="row"><b id="stn">Ready</b><span class="sp"></span><span class="big mono" id="stt">30:00</span></div><div class="mut mono" style="font-size:12px" id="stl">Plan 3 · Intro 3 · Body 6+6+6 · Conclusion 3 · Check 3</div><div class="row" style="margin-top:8px;gap:8px"><button class="pri" id="go">Start 30:00</button><button class="ghost" id="stop">Stop</button></div></div>
-  <div style="margin-top:10px"><b>Introduction</b> <span class="mut" style="font-size:12px">Restate the question. Give your view in one sentence. Name your 3 points.</span><textarea id="pi" style="min-height:70px"></textarea></div>
-  ${[1,2,3].map(n=>`<div style="margin-top:10px"><b>Body ${n}</b> <span class="mut" style="font-size:12px">Point, explain, case or example, link back to the question.</span><textarea id="pb${n}" style="min-height:90px"></textarea></div>`).join("")}
-  <div style="margin-top:10px"><b>Conclusion</b> <span class="mut" style="font-size:12px">Answer the question directly. Finish on your strongest point.</span><textarea id="pc" style="min-height:70px"></textarea></div>
+  <div class="card" style="margin-top:10px"><div class="row"><b id="stn">Ready</b><span class="sp"></span><span class="big mono" id="stt">30:00</span></div><div class="mut mono" style="font-size:12px" id="stl">${F.stages.map(s=>s[0]+" "+s[1]).join(" · ")}</div><div class="row" style="margin-top:8px;gap:8px"><button class="pri" id="go">Start 30:00</button><button class="ghost" id="stop">Stop</button></div></div>
+  ${F.boxes.map(b=>`<div style="margin-top:10px"><b>${esc(b[1])}</b> <span class="mut" style="font-size:12px">${esc(b[2])}</span><textarea id="${b[0]}" style="min-height:80px"></textarea></div>`).join("")}
   <div style="margin-top:10px"><b>Linking phrases</b> (tap to insert)</div>${chips(LINKS)}
+  <details style="margin-top:8px"><summary><b>Using defamation as your issue (your oral)</b></summary><div class="qa" style="margin-top:6px">1 Definitions: Introduction and history, plus the elements of defamation. 2 Present law and comparison: Current law in Victoria, then the United States. 3 For and against: arguments and pressure groups. 4 Effectiveness: reforms of 2021 and 2024. 5 Amendments: further reform. Confirm with your teacher that defamation counts as your chosen issue (check with your teacher).</div></details>
   <details style="margin-top:8px"><summary><b>Ideas bank (from your notes)</b></summary>${(D.areas||[]).map(a=>`<div style="margin-top:6px"><b>${esc(a[0])}</b><div class="qa">${esc(a[1])}</div></div>`).join("")}</details></div>`;
   rebind();bindIns(el);
-  ["pi","pb1","pb2","pb3","pc"].forEach(id=>{const t=$("#"+id);t.value=ld("c_"+id,"");t.oninput=()=>sv("c_"+id,t.value)});
+  F.boxes.forEach(b=>{const t=$("#"+b[0]);t.value=ld("c_"+b[0],"");t.oninput=()=>sv("c_"+b[0],t.value)});
   const cq=$("#cq");cq.oninput=()=>sv("c_q",cq.value);
-  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{cq.value=(D.prompts||[])[+b.dataset.p]||"";sv("c_q",cq.value)});
+  el.querySelectorAll("[data-fr]").forEach(b=>b.onclick=()=>{st.frame=b.dataset.fr;plan(el,menu,rebind)});
+  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{cq.value=prompts[+b.dataset.p]||"";sv("c_q",cq.value)});
   $("#stop").onclick=()=>{clearTimer();$("#stn").textContent="Stopped";$("#stt").textContent="30:00"};
-  $("#go").onclick=()=>{clearTimer();const t0=Date.now(),tot=30*60000;let lastIdx=-1;
-    const tick=()=>{const n=$("#stn");if(!n){clearTimer();return}const e=Date.now()-t0;let acc=0,idx=STAGES.length-1,left=0;
-      for(let i=0;i<STAGES.length;i++){const d=STAGES[i][1]*60000;if(e<acc+d){idx=i;left=acc+d-e;break}acc+=d;if(i===STAGES.length-1)idx=-1}
+  $("#go").onclick=()=>{clearTimer();const T=F.stages,t0=Date.now(),tot=T.reduce((a,s)=>a+s[1],0)*60000;let lastIdx=-1;
+    const tick=()=>{const n=$("#stn");if(!n){clearTimer();return}const e=Date.now()-t0;let acc=0,idx=-1,left=0;
+      for(let i=0;i<T.length;i++){const d=T[i][1]*60000;if(e<acc+d){idx=i;left=acc+d-e;break}acc+=d}
       if(idx<0||e>=tot){clearTimer();n.textContent="Time up";$("#stt").textContent="00:00";try{navigator.vibrate&&navigator.vibrate(500)}catch(x){}return}
-      n.textContent=STAGES[idx][0]+" · stage "+mm(left);$("#stt").textContent=mm(tot-e);
-      $("#stl").textContent=STAGES.map((s,i)=>(i===idx?"▶ ":"")+s[0]+" "+s[1]).join(" · ");
+      n.textContent=T[idx][0]+" · stage "+mm(left);$("#stt").textContent=mm(tot-e);
+      $("#stl").textContent=T.map((s,i)=>(i===idx?"▶ ":"")+s[0]+" "+s[1]).join(" · ");
       if(idx!==lastIdx){lastIdx=idx;try{navigator.vibrate&&navigator.vibrate(150)}catch(x){}}};
     tick();st.iv=setInterval(tick,500)};
 }
@@ -5507,6 +5514,100 @@ function flow(el,menu,rebind){clearTimer();
 window.toolLegalNew=function(el,arg,menu,rebind){
   if(arg!=="plan")clearTimer();
   ({irac,plan,sheet,flow})[arg](el,menu,rebind)};
+})();
+
+/* legal_paper.js: the teacher's Unit Two practice paper in her own question formats.
+   Section A (Q1 terms, written questions, true/false) and Section B Part One (The Car Deal).
+   Question wording and facts come from the teacher's paper; the key points are my own summary (check with your teacher). */
+(function(){
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ld=(k,d)=>{try{const v=localStorage.getItem("lgp:"+k);return v==null?d:v}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem("lgp:"+k,v)}catch(e){}};
+const mm=ms=>{ms=Math.max(0,ms);const s=Math.ceil(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")};
+let iv=null,show={};
+const A1=[
+["The party whose rights have been infringed and who has suffered loss.",["plaintiff","aggrieved"],"plaintiff"],
+["The degree to which claims made need to be proved in a civil court.",["standard of proof","balance of probabilities"],"standard of proof (balance of probabilities)"],
+["The time limit that applies for the party bringing a complaint to take legal action.",["limitation"],"limitation period"],
+["The term that applies where the plaintiff must prove the harm was directly attributable to the actions of the wrongdoer.",["causation","causal"],"causation"],
+["The area of civil law in which it is alleged a duty of care was not observed.",["negligence"],"negligence"],
+["The term for the wrongdoer failing to observe an obligation imposed on them in civil law.",["breach"],"breach (of duty)"],
+["The term for property damage or personal injury suffered by the party bringing the complaint.",["damage","loss","harm","injury"],"damage (loss or harm)"],
+["The party who brings an action against another party in a civil case.",["plaintiff","claimant","applicant"],"plaintiff"],
+["The responsibility the party bringing a complaint has to substantiate their claims before a civil court.",["onus","burden"],"onus (burden) of proof"],
+["The legal responsibility a third party may carry for the wrongful acts of another under their control.",["vicarious"],"vicarious liability"],
+["The publication of material which may harm another's reputation.",["defamation","libel","slander"],"defamation"],
+["An area of civil law meaning a wrongful act which results in an infringement of a right leading to legal liability.",["tort"],"tort"],
+["The means by which a civil court enforces that a right must be upheld.",["remed"],"remedy"],
+["To institute legal proceedings against another party in a civil court.",["sue","commence","institut","initiat","issue","proceed","action"],"sue (commence or initiate a civil action)"]
+];
+const WQ=[
+["2","Identify and explain four reasons why there is a court hierarchy for civil cases.","2 x 4 = 8",["Jurisdiction: cases are sorted by seriousness, complexity and amount, so simple claims go to the Magistrates' Court and bigger ones to the County or Supreme Court","Appeals: a higher court can review a lower court's decision for error","Precedent: lower courts follow higher courts, giving consistency and predictability","Efficiency and cost: simple matters are heard quickly and cheaply; judges build expertise at each level"]],
+["3","Explain what is meant by a counter-claim. Provide an example.","4",["A counter-claim is the defendant's own claim against the plaintiff, made in the same proceeding","Usually arises from the same facts or relationship","Example: a builder sues for unpaid fees; the owner counter-claims for faulty work","It saves running two cases and lets the court settle everything at once"]],
+["4","How do the purposes of civil law differ from those of criminal law? Provide two examples.","4",["Civil: resolve disputes between private parties and give the plaintiff a remedy (compensate, restore, uphold rights)","Criminal: punish the offender, deter, and protect society; the State prosecutes","Different standard: balance of probabilities (civil) vs beyond reasonable doubt (criminal)","Examples: negligence or defamation claim (civil); assault or theft (criminal)"]],
+["5","For each method of dispute resolution (mediation, conciliation, arbitration, judicial determination): define it, describe one strength and one weakness.","3 x 4 = 12",["Mediation: neutral mediator helps the parties reach their own agreement but does not decide. Strength: private, cheaper, keeps relationships. Weakness: not binding unless signed; no guaranteed outcome","Conciliation: neutral conciliator can give advice and suggest terms. Strength: expert input helps stuck parties. Weakness: suggestions are not binding; may feel pushed","Arbitration: arbitrator hears both sides and makes a decision (award). Strength: faster and cheaper than court, usually binding. Weakness: limited appeal; parties lose control of the outcome","Judicial determination: a judge (sometimes a jury) decides after a formal hearing. Strength: binding, enforceable, procedural fairness. Weakness: costly, slow, formal, public"]],
+["6","Distinguish between general and special (specific) damages. Provide an example of each.","4",["General: compensate losses that cannot be exactly calculated, such as pain and suffering, loss of enjoyment, future loss","Special: compensate losses that can be calculated up to the trial, such as medical bills and lost wages","Example general: pain and suffering from a scar","Example special: $12,000 of medical bills"]],
+["7","Identify and explain two different types of injunctions. Describe a circumstance in which each may be imposed.","4 x 2 = 8",["Restrictive (prohibitory): orders a party to stop or not do something. Example: stop publishing defamatory material or stop a noisy activity","Mandatory: orders a party to do something. Example: take down a defamatory post or remove a structure","Also: interim (temporary until trial) and permanent (final). Accept whichever pair your class used"]],
+["8","List four roles of a jury in a civil trial.","1 x 4 = 4",["Listen to the evidence impartially","Decide the facts in dispute","Apply the law as directed by the judge and decide whether the defendant is liable","Decide the amount of damages (where the jury sets it)","Keep deliberations confidential and deliver a verdict"]],
+["9","Outline two purposes of civil remedies.","1 x 2 = 2",["Restore the plaintiff, as far as possible, to the position before the wrong","Uphold the plaintiff's rights and compensate loss","Deter or stop the wrong continuing (and sometimes punish)"]],
+["10","Distinguish between exemplary and contemptuous damages.","2",["Exemplary: extra money to punish the defendant for outrageous conduct and deter others","Contemptuous: a token amount (such as 1 cent) when the plaintiff won technically but the claim was worthless or improper, showing the court's disapproval","Nominal damages (a small amount where no real loss) is a different type"]],
+["12","Compare the effectiveness of mediation with that of arbitration as methods of dispute resolution.","6",["Outcome: mediation outcome is agreed and only binding if signed; arbitration decision (award) is imposed and binding","Control: parties control mediation; the arbitrator decides in arbitration","Cost and time: both are cheaper and quicker than court; mediation is usually cheapest","Relationships and privacy: mediation preserves relationships better; both are private","Certainty: arbitration gives a certain result; mediation may fail and then court is needed","Conclusion: say which is more effective and why (certainty vs control and relationships)"]],
+["13","Give one reason conciliation may be more effective than mediation and one reason it may be less effective.","4",["More effective: the conciliator can advise and suggest terms, helping stuck parties reach agreement","Less effective: parties may feel pushed by the conciliator's suggestions, and the outcome is still not binding unless agreed"]]
+];
+const TF=[
+["Nominal damages occurs when a court awards a very small amount of compensation because the plaintiff was in the right but did not suffer any actual loss.",true,"True. Nominal damages recognise that a right was infringed without real loss."],
+["The plaintiff will usually win a civil case because they have the advantage of bringing their claim, which pressures the defendant to disprove it.",false,"False. The plaintiff carries the onus of proof on the balance of probabilities."],
+["The County Court hears civil appeals from the Magistrates' Court on a point of law.",false,"False. Appeals on a point of law go to the Supreme Court (check with your teacher)."],
+["Civil claims under $10 000 are referred by the Magistrates' Court to arbitration.",true,"True. Small claims are referred to arbitration (check with your teacher)."],
+["The Court of Appeal is the highest court that a party can appeal to.",false,"False. The High Court of Australia is the highest."],
+["Compensatory damages can be further divided into special (specific) damages, general damages and aggravated damages.",true,"Probably true. Aggravated damages are extra compensation for hurt feelings caused by the defendant's conduct. Some texts only list special and general (check with your teacher)."],
+["The fundamental purpose of civil remedies is to ensure that the defendant's rights are properly upheld.",false,"False. It is to uphold the plaintiff's rights and restore their position."],
+["One of the major weaknesses of taking civil action is the cost of pursuing a matter in court.",true,"True. Cost and delay are the main weaknesses."]
+];
+const CD=[
+["What statement or action constituted the offer in this situation? Explain why.","2",["The advertisement ($12,000, 'excellent condition') is most likely an invitation to treat, not an offer","Daniel's statement that he would sell the car for $11,500 if Sophie signed that day was the offer: clear, definite terms, intended to be bound once accepted"]],
+["Identify how Sophie communicated acceptance. Was her acceptance sufficiently clear?","2",["She said 'I accept your offer', signed the written contract and paid a $1,000 deposit","Clear and unconditional, communicated to the offeror in words and in writing"]],
+["What issue arises because Sophie is 17? What factors might be relevant to whether the contract is enforceable against her?","2",["Capacity: she is a minor, so the contract may not bind her (it may be voidable at her option)","Factors: whether the car is a necessary or beneficial contract, the fairness of the terms, her age and maturity, whether she tried to cancel promptly"]],
+["Did both parties genuinely consent to the same agreement? Explain using the facts.","2",["No. Sophie's consent was induced by false statements: she believed the car had never been in an accident and the engine was in perfect order","Daniel hid the truth, so there was no genuine consent (misrepresentation)"]],
+["Identify the statements that may constitute fraudulent misrepresentation. What evidence suggests that Daniel knew they were false?","2",["Statements: 'never been in an accident' and the engine 'in perfect working order' (also the advertisement)","Evidence: Daniel knew of the earlier major collision and deliberately did not tell Sophie; the dealership had repaired the car before selling it; the mechanic found evidence of the repairs"]],
+["Identify what each party promised or provided as consideration.","2",["Sophie: $11,500 ($1,000 deposit now, $10,500 within seven days)","Metro Motors: the car (transfer of ownership and possession)"]],
+["Consider the terms excluding responsibility for mechanical problems and preventing cancellation. Are there any legal issues concerning these terms?","4",["Australian Consumer Law: consumer guarantees (acceptable quality, matches description) cannot be excluded, and misleading or deceptive conduct cannot be contracted out of","Unfair contract terms: a one-sided standard-form clause with a significant imbalance may be void","An exclusion clause cannot protect a seller from fraud","The no-cancellation clause cannot stop Sophie avoiding the contract for misrepresentation, or because of her age"]],
+["Identify which facts are most important in determining whether Sophie can avoid the contract or obtain another legal remedy.","4",["Sophie's age (17)","Daniel's false statements and his knowledge of the collision","The engine failing two days later, linked to the accident, with evidence of earlier repairs","The exclusion and no-cancellation terms","Remedies: rescission (avoid the contract) and return of the deposit, damages, or ACL remedies such as a refund; claim through VCAT or a court"]]
+];
+const CASE="Sophie, aged 17, wanted to buy her first car. Metro Motors advertised a 2018 sedan at $12,000: 'Excellent condition, never involved in an accident, perfect for a first-time driver.' Sophie spoke to a salesperson, Daniel, who said the car had 'never been in an accident' and that its engine was 'in perfect working order'. In fact, Daniel knew the car had been in a major collision and had needed significant repairs, and he deliberately did not tell her. Daniel offered to sell it for $11,500 if she signed that day. Sophie said, 'I accept your offer', signed the written contract, paid a $1,000 deposit and agreed to pay the remaining $10,500 within seven days. The contract said the dealership would not be responsible for any mechanical problems, even ones that existed at the time of sale, and that Sophie could not cancel for any reason. Two days later the engine failed. A mechanic said the problems were likely connected to the previous accident and found evidence the dealership had repaired the car before selling it. Sophie asked to cancel and get her deposit back; Daniel refused because she had signed. Her parents questioned whether she had capacity to contract at 17, and said she had not made a fully informed decision because Daniel gave false information.";
+
+function timer(mins,label){return `<div class="card" style="margin-top:8px"><div class="row"><b id="pt-l">${esc(label)}</b><span class="sp"></span><span class="big mono" id="pt-v">${String(mins).padStart(2,"0")}:00</span></div><div class="row" style="gap:8px;margin-top:6px"><button class="pri" id="pt-go">Start ${mins}:00</button><button class="ghost" id="pt-st">Stop</button></div></div>`}
+function bindTimer(mins){if(iv){clearInterval(iv);iv=null}
+  $("#pt-go").onclick=()=>{if(iv)clearInterval(iv);const t0=Date.now(),tot=mins*60000;const f=()=>{const e=$("#pt-v");if(!e){clearInterval(iv);iv=null;return}const r=tot-(Date.now()-t0);e.textContent=mm(r);if(r<=0){clearInterval(iv);iv=null;try{navigator.vibrate&&navigator.vibrate(500)}catch(x){}}};f();iv=setInterval(f,500)};
+  $("#pt-st").onclick=()=>{if(iv){clearInterval(iv);iv=null}$("#pt-v").textContent=String(mins).padStart(2,"0")+":00"}}
+function ta(id,h){return `<textarea id="${id}" style="min-height:${h}px" placeholder="Your answer">${esc(ld(id,""))}</textarea>`}
+function bindTa(el){el.querySelectorAll("textarea").forEach(t=>{t.oninput=()=>sv(t.id,t.value)})}
+
+function secA(el,menu,rebind){
+  const norm=s=>String(s||"").toLowerCase();
+  el.innerHTML=menu+`<div class="card"><h3>Teacher's paper: Section A</h3>
+  <p class="mut" style="font-size:13px">The questions are your teacher's own, in her formats. The real Section A is 30 marks; this paper has extra questions for practice. Key points are my summary (check with your teacher).</p>${timer(35,"Section A")}</div>
+  <div class="card" style="margin-top:12px"><h3>Question 1: name the term (14 x 1)</h3>${A1.map((a,i)=>`<div style="margin-top:8px"><span class="qa">${String.fromCharCode(97+i)}) ${esc(a[0])}</span><input id="a1_${i}" style="width:100%;margin-top:4px" value="${esc(ld("a1_"+i,""))}" placeholder="Term"><div class="mut" style="font-size:13px" id="a1r_${i}"></div></div>`).join("")}
+  <div class="row" style="margin-top:10px;gap:8px"><button class="pri" id="a1chk">Check Question 1</button><b id="a1sc"></b></div></div>
+  ${WQ.map((q,i)=>`<div class="card" style="margin-top:12px"><b>Question ${q[0]}</b> <span class="mut">(${q[2]} marks)</span><p style="margin:6px 0">${esc(q[1])}</p>${ta("wq_"+q[0],q[0]==="5"?200:90)}<button class="sm" data-k="${i}">${show[q[0]]?"Hide":"Show"} key points</button>${show[q[0]]?`<ul>${q[3].map(k=>`<li class="qa">${esc(k)}</li>`).join("")}</ul>`:""}</div>`).join("")}
+  <div class="card" style="margin-top:12px"><h3>Question 11: true or false (8 x 1)</h3>${TF.map((t,i)=>`<div style="margin-top:10px"><span class="qa">${String.fromCharCode(97+i)}) ${esc(t[0])}</span><div class="row" style="gap:8px;margin-top:4px"><button class="sm" data-tf="${i}:1">True</button><button class="sm" data-tf="${i}:0">False</button></div><div class="qa" id="tfr${i}" style="font-size:13px"></div></div>`).join("")}<b id="tfsc" style="display:block;margin-top:10px"></b></div>`;
+  rebind();bindTa(el);bindTimer(35);
+  A1.forEach((a,i)=>{$("#a1_"+i).oninput=e=>sv("a1_"+i,e.target.value)});
+  $("#a1chk").onclick=()=>{let s=0;A1.forEach((a,i)=>{const v=norm($("#a1_"+i).value);const ok=v&&a[1].some(k=>v.includes(k));if(ok)s++;$("#a1r_"+i).innerHTML=(ok?"✔ ":"✘ ")+esc(a[2])});$("#a1sc").textContent=s+" / "+A1.length;};
+  el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const q=WQ[+b.dataset.k][0];show[q]=!show[q];const y=window.scrollY;secA(el,menu,rebind);window.scrollTo(0,y)});
+  let score=0,done={};
+  el.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{const [i,v]=b.dataset.tf.split(":").map(Number);if(done[i]!==undefined)return;const ok=(!!v)===TF[i][1];done[i]=ok;if(ok)score++;$("#tfr"+i).innerHTML=(ok?"✔ ":"✘ ")+esc(TF[i][2]);$("#tfsc").textContent=score+" / "+Object.keys(done).length+" answered"});
+}
+function secB(el,menu,rebind){
+  el.innerHTML=menu+`<div class="card"><h3>Teacher's paper: Section B, Part One (Mr Dowling's class)</h3>
+  <p class="mut" style="font-size:13px">Case Study One: The Car Deal (20 marks in the practice paper). The real Section B is 30 marks and about 25 minutes. Facts are summarised from your teacher's paper; key points are my summary (check with your teacher).</p>${timer(25,"Section B")}
+  <details open style="margin-top:8px"><summary><b>The Car Deal</b></summary><p class="qa" style="margin-top:6px">${esc(CASE)}</p></details></div>
+  ${CD.map((q,i)=>`<div class="card" style="margin-top:12px"><b>${i+1}.</b> <span class="mut">(${q[1]} marks)</span><p style="margin:6px 0">${esc(q[0])}</p>${ta("cd_"+i,80)}<button class="sm" data-k="${i}">${show["cd"+i]?"Hide":"Show"} key points</button>${show["cd"+i]?`<ul>${q[2].map(k=>`<li class="qa">${esc(k)}</li>`).join("")}</ul>`:""}</div>`).join("")}`;
+  rebind();bindTa(el);bindTimer(25);
+  el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const k="cd"+b.dataset.k;show[k]=!show[k];const y=window.scrollY;secB(el,menu,rebind);window.scrollTo(0,y)});
+}
+window.legalPaper=function(el,arg,menu,rebind){if(iv){clearInterval(iv);iv=null}(arg==="pa"?secA:secB)(el,menu,rebind)};
 })();
 
 /* Flashcard -> cheat-sheet "learn this" links: match a card to the best section of the sheets for its subject. */
@@ -6146,8 +6247,9 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.datase
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
 // ---------- update log ----------
-const APP_VER=47;
+const APP_VER=48;
 const APP_LOG=[
+[48,"2026-11-09 22:10","Legal: your teacher's practice paper added in her own question formats (Section A terms, written questions and true/false; Section B The Car Deal), and the Section C planner now follows her five-part structure."],
 [47,"2026-11-09 18:55","Buttons now match what they open: Legal splits into Section practice, Mock exam and Quick revision (last-look sheet and flowcharts), French gets its own Practice exam tile, and the French drills tile and French questions button are renamed."],
 [46,"2026-11-09 18:50","Legal: new IRAC builder with a spot-the-element drill (Section B), Section C planner with a 30-minute stage timer, a one-screen last-look sheet and flowcharts for negligence, defamation and contract."],
 [45,"2026-11-09 06:40","French: the writing tool (8 required words and the 10 Section C sentences) now has its own button under Practice and translate."],
@@ -6241,7 +6343,7 @@ function viewSubjects(){
   return `<section class="sj"><h2 class="sj-h">Pick a subject</h2><div class="sj-grid">${Object.keys(SUBJ_CFG).map(k=>{const c=SUBJ_CFG[k],ex=subExams(c);const nx=ex.map(e=>({e,w:exWhen(e)})).find(x=>x.w.c!=="done");return `<button class="sj-card" style="--c:${c.c}" data-act="subopen" data-v="${k}"><i></i><b>${c.n}</b><span>${ex.map(e=>exLabel(e).replace(/^(\w{3})\w*day /,"$1 ").replace(" November"," Nov")).join(" and ")}</span><em>${nx?nx.w.t:"Done"}</em></button>`}).join("")}</div></section>`}
  const c=SUBJ_CFG[curSub],ex=subExams(c);
  const tiles=[["learn","Learn","Plain-word essays for every topic"],["sheets","Sheets","Short revision sheets"],["cards","Flashcards","Test yourself on "+c.n],["drill",c.drill[1],c.drill[2]],["qb","Question bank","Exam-style questions"]];
- if(curSub==="L"){tiles.splice(2,0,["lrev","Quick revision","Last-look sheet and flowcharts"]);tiles.splice(5,0,["lmock","Mock exam","Full 15 + 90 minute paper with timers"]);tiles.push(["lc","Section C essays","Model essays and key points for the long-answer section"])}
+ if(curSub==="L"){tiles.splice(2,0,["lrev","Quick revision","Last-look sheet and flowcharts"]);tiles.splice(5,0,["lmock","Mock exam","Your teacher's practice paper, plus a timed 15 + 90 minute mock"]);tiles.push(["lc","Section C essays","Model essays and key points for the long-answer section"])}
  if(curSub==="F")tiles.splice(4,0,["fmock","Practice exam","Timed French paper: Parts A, B and C"]);
  return `<section class="sj"><button class="sj-back" data-act="subhome">&lsaquo; All subjects</button><div class="sj-top" style="--c:${c.c}"><i></i><h2>${c.n}</h2></div>
  <div class="sj-ex">${ex.map(e=>{const w=exWhen(e);return `<div><b>${e.s}</b><span>${exLabel(e)} &middot; ${exT(e.st)} &middot; ${e.loc}</span><em class="${w.c}">${w.t}</em></div>`}).join("")}</div>
@@ -6877,10 +6979,11 @@ function toolEng(el){const E=S.essay;const sel=E.stmt||0;
  for(let i=0;i<3;i++){const r=$("#mk"+i);r.oninput=()=>{E["m"+i]=+r.value;$("#mv"+i).textContent=r.value;$("#mtot").textContent=(E.m0|0)+(E.m1|0)+(E.m2|0);save()}}
  el.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{const [m,l]=b.dataset.m.split(":");clearInterval(mt.iv);if(+m===0){$("#mtv").textContent="--:--";$("#mtl").textContent="";return}mt.t=Date.now()+m*60000;$("#mtl").textContent=l;const f=()=>{const e=$("#mtv");if(!e){clearInterval(mt.iv);return}const r=mt.t-Date.now();e.textContent=mmss(r);if(r<=0){clearInterval(mt.iv);try{navigator.vibrate&&navigator.vibrate(400)}catch(x){}}};f();mt.iv=setInterval(f,500)})}
 let lg={};let lgGrp="sec";
-function toolLegal(el){const arg=tool.arg||"menu";const modes=[["mock","Full mock (15 + 90 min)"],["contract","Section B: contract case study"],["tort","Negligence + defamation scenarios"],["seca","Section A: short answers"],["defam","Section C: Vic vs US extended response"],["irac","Section B: IRAC builder"],["plan","Section C planner and timer"],["sheet","Last-look sheet"],["flow","Flowcharts"]];
- const GRP={mock:"mock",seca:"sec",contract:"sec",tort:"sec",defam:"sec",irac:"sec",plan:"sec",sheet:"rev",flow:"rev"};if(GRP[arg])lgGrp=GRP[arg];const gm=modes.filter(m=>GRP[m[0]]===lgGrp);
+function toolLegal(el){const arg=tool.arg||"menu";const modes=[["mock","Full mock (15 + 90 min)"],["contract","Section B: contract case study"],["tort","Negligence + defamation scenarios"],["seca","Section A: short answers"],["defam","Section C: Vic vs US extended response"],["irac","Section B: IRAC builder"],["plan","Section C planner and timer"],["sheet","Last-look sheet"],["flow","Flowcharts"],["pa","Teacher's paper: Section A"],["pb","Teacher's paper: Section B (Car Deal)"]];
+ const GRP={mock:"mock",seca:"sec",contract:"sec",tort:"sec",defam:"sec",irac:"sec",plan:"sec",sheet:"rev",flow:"rev",pa:"mock",pb:"mock"};if(GRP[arg])lgGrp=GRP[arg];const gm=modes.filter(m=>GRP[m[0]]===lgGrp);
  const menu=`<div class="tools">${gm.map(m=>`<button data-lg="${m[0]}" aria-pressed="${arg===m[0]}">${m[1]}</button>`).join("")}</div>`;
  if(["irac","plan","sheet","flow"].includes(arg)){window.toolLegalNew(el,arg,menu,()=>lgBind(el));return}
+ if(arg==="pa"||arg==="pb"){window.legalPaper(el,arg,menu,()=>lgBind(el));return}
  if(arg==="menu"||!modes.some(m=>m[0]===arg)){el.innerHTML=menu+`<div class="card"><p>Practice scenarios were written for revision from your notes and the textbook. They are not from your exam. Civil law only.</p><p class="mut">Exam format you gave: 15 min reading, 90 min writing. Section A short answers 25 marks (about 35 min). Section B contract case study, 30 marks (about 25 min). Section C extended response on your oral topic, 20 marks (about 30 min).</p></div>`;lgBind(el);return}
  if(arg==="mock"){const st=lg.mock||(lg.mock=legalMockGen());const sc=LEGAL_SCEN.contract[st.B],cp=DEFAM_C.prompts[st.C];const ta=(id,ph,h)=>`<textarea id="${id}" style="min-height:${h}px" placeholder="${ph}">${esc(S.drafts["mock"+id]||"")}</textarea>`;
   el.innerHTML=menu+`<div class="card"><h3>Legal full mock</h3><p class="mut" style="font-size:13px">Structure you gave: 15 min reading, then 90 min: Section A short answers (25 marks, about 35 min), Section B contract case study (30 marks, about 25 min), Section C extended response on your oral topic (20 marks, about 30 min). These are practice questions, not the real exam's. Section A below totals ${st.tot} marks.</p><div class="row"><button data-m="15:Reading time">Reading 15</button><button data-m="35:Section A">A 35</button><button data-m="25:Section B">B 25</button><button data-m="30:Section C">C 30</button><button class="ghost" data-m="0:stop">Stop</button><button class="sm" id="mnew">New mock</button></div><div class="big" id="mtv" style="margin:10px 0">--:--</div><div class="mut" id="mtl"></div></div>
