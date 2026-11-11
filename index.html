@@ -70,11 +70,16 @@ dl.spec dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .fc{min-height:160px;display:flex;flex-direction:column;justify-content:center;gap:10px;white-space:pre-wrap;overflow-wrap:anywhere}
 .qa{white-space:pre-wrap;overflow-wrap:anywhere}
 .ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}
-.tools{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));margin-bottom:18px}
-.tools button{padding:14px 12px;font-size:13.5px;line-height:1.25;font-weight:500}
-.tools button[aria-pressed="true"]{border-color:var(--acc);background:var(--soft);font-weight:700;box-shadow:0 0 0 1px var(--acc)}
-.qbig{text-align:center;font-size:22px;font-weight:600;line-height:1.45;padding:26px 14px;min-height:96px;display:flex;align-items:center;justify-content:center;white-space:pre-line}
-@media (max-width:480px){.qbig{font-size:19px;padding:20px 10px}}
+.tools{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.tools button{padding:15px 12px;font-size:13.5px;line-height:1.25;font-weight:500;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tools button[aria-pressed="true"]{border-color:var(--acc);background:var(--soft);font-weight:700;box-shadow:0 0 0 2px var(--acc)}
+.toolpanel{margin-bottom:22px}
+.toolpanel.more{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;margin-top:2px}
+.toolpanel-h{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);font-weight:700;margin-bottom:10px}
+.qbig{text-align:center;font-size:clamp(24px,5vw,34px);font-weight:600;line-height:1.4;padding:48px 18px;min-height:240px;display:flex;align-items:center;justify-content:center;white-space:pre-line}
+@media (max-width:480px){.qbig{font-size:clamp(21px,6.2vw,28px);padding:32px 12px;min-height:180px}}
+.qhead{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700;text-align:center;margin-bottom:2px}
+.qblurb{font-size:11.5px;color:var(--mut);text-align:center;margin:0 0 4px;opacity:.75}
 .pill{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--soft)}
 .warnbox{border:1px dashed var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--fg)}
 table{border-collapse:collapse;width:100%}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
@@ -6246,12 +6251,12 @@ function quizUI(pfx,title,blurb,bank){
   const score=ld(pfx+"sc",[0,0]),revealed=ld(pfx+"rv",false);
   let q=ld(pfx+"cur",null);
   if(!q){q=P(bank)();sv(pfx+"cur",q);sv(pfx+"rv",false)}
-  el.innerHTML=`<div class="card"><h3 style="text-align:center">${esc(title)}</h3><p class="mut" style="font-size:13px;text-align:center">${blurb}</p>
-  <div style="border:1px solid var(--line);border-radius:12px;margin-top:10px;background:var(--soft)">
+  el.innerHTML=`<div class="card"><div class="qhead">${esc(title)}</div><p class="qblurb">${blurb}</p>
+  <div style="border:1px solid var(--line);border-radius:14px;margin-top:8px;background:var(--soft)">
   <div class="qbig">${q.q}</div>
-  ${revealed?`<div style="padding:0 14px 20px;text-align:center;border-top:1px dashed var(--line);margin-top:0;padding-top:16px"><b>Answer</b><div style="font-size:18px;white-space:pre-line;margin-top:6px">${q.a}</div></div>`:""}
+  ${revealed?`<div style="padding:0 16px 24px;text-align:center;border-top:1px dashed var(--line);margin-top:0;padding-top:18px"><b style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)">Answer</b><div style="font-size:22px;font-weight:600;white-space:pre-line;margin-top:8px">${q.a}</div></div>`:""}
   </div>
-  <p class="mut" style="font-size:12.5px;margin-top:6px;text-align:center">Score: ${score[0]} / ${score[0]+score[1]} correct</p>
+  <p class="mut" style="font-size:12.5px;margin-top:8px;text-align:center">Score: ${score[0]} / ${score[0]+score[1]} correct</p>
   <div class="mvr" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center">
   ${revealed?`<button class="btn" data-q="right">I got it right</button><button class="btn ghost" data-q="wrong">I got it wrong</button>`:`<button class="btn" data-q="show">Show answer</button>`}
   <button class="btn ghost" data-q="skip">Skip</button>
@@ -7205,8 +7210,10 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=87;
+const APP_VER=89;
 const APP_LOG=[
+[89,"2026-11-12 07:17","The v87 \"big question\" size was too timid — genuinely undersized against Flashcards. Fixed: the question is now ~34px, a much taller card, and the title/blurb above it are shrunk right down so the question is actually what your eye lands on, matching Flashcards' scale. Applies to Exact value drill, Quadratics & surds, Tech-free practice, Worded application, and Maths/Science/French Practice questions."],
+[88,"2026-11-12 07:16","The v87 tab-bar fix wasn't actually visible — fixed properly this time: every subject's tools are now split into two real, separate panels — Flashcards/main practice/Exam topics in one row up top, everything else boxed off below in its own shaded \"More tools\" panel with a label, a border and real gap between them. Not just a wider CSS gap this time."],
 [87,"2026-11-12 06:45","Decluttered the tool tabs at the top of every subject (more spacing, bigger buttons, not jammed together) and made the question itself the big, centered focus — like Flashcards — on the main question-and-answer tools: Maths' Exact value drill, Quadratics & surds, Tech-free practice, Worded application, and the Practice questions drill shared by Maths, Science and French. Editors like the essay planner, poem annotator, Legal practice builder and French writing weren't changed — they aren't question cards, and forcing that layout onto them would break how they actually work."],
 [86,"2026-11-12 06:39","Tech-free practice now covers every sub-topic on the exam scope, not just one per topic: added box plots & outliers, scatterplot/correlation, line of best fit, time-series, inequalities, direct & inverse variation, bearings, 3D Pythagoras, solving trig equations, Venn diagrams, two-way tables, conditional probability, hyperbola asymptotes, graph transformations, surface area, and composite-solid volume. 18 new generators, each checked by hand and run 1500 times for crashes or wrong answers before shipping."],
 [85,"2026-11-11 22:25","New Maths tab: Exam topics. Every one of the 8 Tech Free exam topics in one place — what's examinable in each, worked example questions, and buttons that jump straight to the right tool to revise it (Formula recall, Exact value drill, Quadratics & surds, Tech-free practice, Worded application, Printable pack)."],
@@ -7755,7 +7762,13 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
 const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
 const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
-function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const ks=SUBJ_CFG[curSub].tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};return `<div class="tools">${ks.filter(k=>k!=="engx"&&!(curSub==="E"&&(k==="flash"||true))).map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`).join("")}</div><div id="tool"></div>`}return TOOL_GROUPS.map(g=>`<div class="mut" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:6px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div>`).join("")+`<div id="tool"></div>`}
+function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const c=SUBJ_CFG[curSub];const ks=c.tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};
+ const ksf=ks.filter(k=>k!=="engx"&&!(curSub==="E"&&(k==="flash"||true)));
+ const primKeys=["flash",c.drill[0],"mscope"].filter(k=>ksf.indexOf(k)>=0);
+ const moreKeys=ksf.filter(k=>primKeys.indexOf(k)<0);
+ const btn=k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`;
+ return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div></div>${moreKeys.length?`<div class="toolpanel more"><div class="toolpanel-h">More tools</div><div class="tools">${moreKeys.map(btn).join("")}</div></div>`:""}<div id="tool"></div>`}
+ return TOOL_GROUPS.map(g=>`<div class="toolpanel more"><div class="toolpanel-h">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:10px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div></div>`).join("")+`<div id="tool"></div>`}
 function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
 function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
