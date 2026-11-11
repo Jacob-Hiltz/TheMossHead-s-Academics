@@ -6374,6 +6374,63 @@ window.toolMathsQuad=quizUI("qd","Quadratics & surds","Quadratic formula, comple
 window.toolMathsGen=quizUI("tg","Tech-free practice","Fresh no-calculator questions across every Maths 1 exam topic: stats, linear, simultaneous, quadratics, trig, exponentials, probability, measurement, circles.",TFGENQ);
 window.toolMathsApp=quizUI("ap","Worded application","Apply the formulas to short word problems, the way they actually show up in the exam. No calculator.",APPQ);
 window.toolMathsPack=pack;
+
+const SCOPE=[
+ {n:"Statistics",covers:["Summary statistics (mean, median, mode, range)","Five-number summary & box plots, IQR and outliers","Scatterplots & correlation","Bivariate data & line of best fit","Time-series data & trend"],
+  ex:[["Find the mean, median, mode and range of: 3, 7, 7, 9, 12, 15, 20.","Mean = 73/7 ≈ 10.4. Median = 9. Mode = 7. Range = 20 − 3 = 17."],
+      ["A data set has five-number summary Min = 4, Q1 = 9, Median = 13, Q3 = 18, Max = 30. Find the IQR and state whether 30 is an outlier (1.5×IQR rule).","IQR = 18 − 9 = 9. Upper fence = 18 + 1.5×9 = 31.5. Since 30 < 31.5, it is not an outlier."],
+      ["A scatterplot of hours studied vs test score rises left to right and sits close to a straight line. Describe the correlation.","Strong, positive correlation."]],
+  rv:[["mtfgen","Tech-free practice"],["mapp","Worded application"],["flash","Flashcards"]]},
+ {n:"Linear algebra & coordinate geometry",covers:["Linear equations and inequalities","Simultaneous equations","Straight-line graphs","Coordinate geometry (gradient, midpoint, distance)","Direct and inverse variation"],
+  ex:[["Solve for x: 3(x − 2) + 5 = 2x + 7","3x − 6 + 5 = 2x + 7 → 3x − 1 = 2x + 7 → x = 8"],
+      ["Solve simultaneously: 2x + y = 11, x − y = 1","Add the equations: 3x = 12 → x = 4, so y = 11 − 2(4) = 3. (x, y) = (4, 3)"],
+      ["Find the gradient and equation of the line through (1, 4) and (3, 10).","Gradient = (10 − 4)/(3 − 1) = 3. y − 4 = 3(x − 1) → y = 3x + 1"],
+      ["y varies directly as x. When x = 4, y = 20. Find y when x = 7.","y = kx → 20 = 4k → k = 5. When x = 7, y = 35"]],
+  rv:[["mrecall","Formula recall"],["mtfgen","Tech-free practice"],["mapp","Worded application"]]},
+ {n:"Quadratics",covers:["Factorising and solving (including completing the square)","The quadratic formula, exact (surd) answers","Graphing parabolas","Applications (projectiles, area, etc.)"],
+  ex:[["Factorise and solve: x² − 5x + 6 = 0","(x − 2)(x − 3) = 0 → x = 2 or x = 3"],
+      ["Solve by completing the square: x² + 6x − 2 = 0, exact answer.","x² + 6x = 2 → (x + 3)² = 11 → x = −3 ± √11"],
+      ["A ball's height is h = −t² + 4t + 1 (metres, t in seconds). Find when it lands (h = 0), exact then to one decimal place.","t² − 4t − 1 = 0 → t = (4 ± √20)/2 = 2 ± √5. Taking the positive root: t = 2 + √5 ≈ 4.2 s"]],
+  rv:[["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"]]},
+ {n:"Trigonometry",covers:["Pythagoras & right-angle trig, including 3D","Bearings","Exact values (30°, 45°, 60°, etc.)","Solving trig equations in degrees"],
+  ex:[["A right triangle has legs 5 cm and 12 cm. Find the hypotenuse.","√(5² + 12²) = √169 = 13 cm"],
+      ["From point A, a tower is on a bearing of 065°. What bearing gets you from the tower back to A?","065° + 180° = 245°"],
+      ["State the exact value of sin(60°).","√3/2"],
+      ["Solve for 0° ≤ x ≤ 360°: 2sin(x) = 1","sin(x) = 1/2 → x = 30° or x = 150° (sine is positive in quadrants 1 and 2)"]],
+  rv:[["mexact","Exact value drill"],["mrecall","Formula recall"],["mtfgen","Tech-free practice"],["mapp","Worded application"]]},
+ {n:"Exponentials & logarithms",covers:["Index laws and log laws","Exponential and basic log equations","Exponential growth and decay","Compound interest"],
+  ex:[["Simplify: 2³ × 2⁵ ÷ 2⁴","2^(3+5−4) = 2⁴ = 16"],
+      ["Solve for x: 2^x = 32","2^x = 2⁵ → x = 5"],
+      ["Evaluate log₃(81).","3⁴ = 81, so log₃(81) = 4"],
+      ["A population of 200 grows at 10% p.a. Find the population after 2 years.","P = 200 × 1.1² = 200 × 1.21 = 242"]],
+  rv:[["mexact","Exact value drill"],["mrecall","Formula recall"],["mtfgen","Tech-free practice"],["mapp","Worded application"]]},
+ {n:"Probability",covers:["Venn diagrams","Two-way tables","Tree diagrams","Conditional probability","Independent vs dependent events"],
+  ex:[["In a class of 30, 18 play sport, 12 play music, 6 play both. Find P(plays neither).","Plays at least one = 18 + 12 − 6 = 24. Neither = 30 − 24 = 6. P(neither) = 6/30 = 1/5"],
+      ["A bag has 4 red and 6 blue marbles. Two are drawn without replacement. Find P(both red).","4/10 × 3/9 = 12/90 = 2/15"],
+      ["Given P(A) = 0.4, P(B) = 0.3, P(A∩B) = 0.12 — are A and B independent?","P(A)×P(B) = 0.4 × 0.3 = 0.12 = P(A∩B), so A and B are independent."]],
+  rv:[["mrecall","Formula recall"],["mtfgen","Tech-free practice"],["mapp","Worded application"]]},
+ {n:"Rates & conics",covers:["Hyperbolas: graphs and key features (asymptotes)","Circles: graphs, centre and radius","Transformations of both (shifts, stretches)"],
+  ex:[["Sketch y = 1/x. State its asymptotes.","Vertical asymptote x = 0; horizontal asymptote y = 0"],
+      ["Sketch x² + y² = 25. State the centre and radius.","Centre (0, 0), radius 5"],
+      ["Describe the transformation from y = 1/x to y = 1/(x − 2) + 3.","Shift 2 units right and 3 units up"]],
+  rv:[["mrecall","Formula recall"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"]]},
+ {n:"Measurement",covers:["Surface area of 3D composite shapes","Volume of 3D composite shapes"],
+  ex:[["Find the volume of a cylinder with radius 4 cm and height 10 cm, in terms of π.","V = πr²h = π × 16 × 10 = 160π cm³"],
+      ["A solid is a cone (height 5 cm) on top of a cylinder (same radius 3 cm, height 8 cm). Find the total volume in terms of π.","Cylinder: π×9×8 = 72π. Cone: (1/3)×π×9×5 = 15π. Total = 87π cm³"],
+      ["Find the surface area of a rectangular prism 4 cm × 5 cm × 6 cm.","2(4×5 + 4×6 + 5×6) = 2(20+24+30) = 148 cm²"]],
+  rv:[["mrecall","Formula recall"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mpack","Printable pack"]]}
+];
+function scope(el){
+ el.innerHTML=`<div class="card"><h3>Tech Free exam — every topic</h3>
+ <p class="mut" style="font-size:13px">All 8 topics on Maths 1 (Tech Free, no calculator). Each card: what's examinable, example questions with worked answers, and buttons that jump straight to where to revise it.</p></div>
+ ${SCOPE.map(t=>`<div class="card" style="margin-top:10px">
+  <h4 style="margin:0 0 6px">${esc(t.n)}</h4>
+  <p class="mut" style="font-size:12.5px;margin:0 0 8px">${t.covers.map(esc).join(" &middot; ")}</p>
+  ${t.ex.map(([q,a])=>`<details style="margin-bottom:6px"><summary style="cursor:pointer;font-size:13.5px">${esc(q)}</summary><div class="mut" style="font-size:13px;padding:6px 2px 2px">${esc(a)}</div></details>`).join("")}
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${t.rv.map(([k,n])=>`<button class="btn" style="font-size:12.5px;padding:5px 10px" data-act="toolk" data-k="${k}">${esc(n)} &rsaquo;</button>`).join("")}</div>
+ </div>`).join("")}`;
+}
+window.toolMathsScope=scope;
 })();
 
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
@@ -7077,8 +7134,9 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=84;
+const APP_VER=85;
 const APP_LOG=[
+[85,"2026-11-11 22:25","New Maths tab: Exam topics. Every one of the 8 Tech Free exam topics in one place — what's examinable in each, worked example questions, and buttons that jump straight to the right tool to revise it (Formula recall, Exact value drill, Quadratics & surds, Tech-free practice, Worded application, Printable pack)."],
 [84,"2026-11-11 22:04","The User input section (133 files): 132 already had the Download/Print code lock (same fix as the past papers, since they share the same viewer). The 1 remaining file (original PDF only, no extracted text) opens through a separate PDF viewer that had no lock at all — added Download and Print there too, both behind the code, plus a print fix so printing it doesn't also print the rest of the app underneath."],
 [83,"2026-11-11 21:37","Fixed a slip: the code for the study-file Download/Print lock was written out in plain text in this very Version history entry for v82. Removed it from the visible changelog."],
 [82,"2026-11-11 21:19","Past-paper study files (the full exam PDFs): fixed printing, which was cutting off text at the page edge because the paper's text was a raw pre-formatted block that doesn't wrap. Now wraps properly on print. Also added Download and Print buttons on every study file, both locked behind a code."],
@@ -7194,7 +7252,7 @@ studyHtml=function(n){let h=_studyHtmlBase(n);if(!h)return h;
 
 let curSub=null;
 const SUBJ_CFG={
- M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math","mrecall","mexact","mquad","mtfgen","mapp","mvid","mpack"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
+ M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math","mrecall","mexact","mquad","mtfgen","mapp","mvid","mpack","mscope"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
  S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot","engx"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
  F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","frw","tr"],exam:["French"],drill:["fr","Drills, writing and translate","Tables, sentence builder, Section C sentences and a translator"]},
@@ -7216,7 +7274,8 @@ function viewSubjects(){
   ["mtfgen","Tech-free practice","Fresh no-calculator questions across every exam topic"],
   ["mapp","Worded application","Apply the formulas to word problems, no calculator"],
   ["mvid","Maths videos","Tech free and tech active videos, by topic"],
-  ["mpack","Printable pack","Formula sheet, blank recall sheet and mistake log, ready to print"]
+  ["mpack","Printable pack","Formula sheet, blank recall sheet and mistake log, ready to print"],
+  ["mscope","Exam topics","Every Tech Free topic: what's in it, example questions, where to revise"]
  );
  if(curSub==="F")tiles.splice(4,0,["fmock","Practice exam","Timed French paper: Parts A, B and C"]);
  return `<section class="sj"><button class="sj-back" data-act="subhome">&lsaquo; All subjects</button><div class="sj-top" style="--c:${c.c}"><i></i><h2>${c.n}</h2></div>
@@ -7250,6 +7309,7 @@ function subGo(w){const c=SUBJ_CFG[curSub];if(!c)return;
  else if(w==="mtfgen"){tab="tools";tool={k:"mtfgen",arg:""}}
  else if(w==="mapp"){tab="tools";tool={k:"mapp",arg:""}}
  else if(w==="mpack"){tab="tools";tool={k:"mpack",arg:""}}
+ else if(w==="mscope"){tab="tools";tool={k:"mscope",arg:""}}
  else if(w==="lblitz"){tab="tools";lgGrp="blitz";tool={k:"legal",arg:"ba"}}
  else if(w==="ldef"){tab="tools";lgGrp="def";tool={k:"legal",arg:"dmem"}}
  else if(w==="lrev"){tab="tools";lgGrp="rev";tool={k:"legal",arg:"sheet"}}
@@ -7620,10 +7680,10 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <dl class="spec" style="grid-template-columns:100px 1fr"><dt>Task</dt><dd>${esc(b.task)}</dd><dt>Goal</dt><dd>${esc(b.goal)}</dd><dt>Success check</dt><dd>${esc(b.check)}</dd><dt>Use</dt><dd>${esc(b.res)}</dd></dl>${detailHtml(b0)}
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mvid","Maths videos"],["mpack","Printable pack"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
 const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const ks=SUBJ_CFG[curSub].tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};return `<div class="tools">${ks.filter(k=>k!=="engx"&&!(curSub==="E"&&(k==="flash"||true))).map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`).join("")}</div><div id="tool"></div>`}return TOOL_GROUPS.map(g=>`<div class="mut" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 2px">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:6px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mpack:()=>window.toolMathsPack(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
 function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
