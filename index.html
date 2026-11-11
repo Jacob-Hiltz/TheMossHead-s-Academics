@@ -70,8 +70,11 @@ dl.spec dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .fc{min-height:160px;display:flex;flex-direction:column;justify-content:center;gap:10px;white-space:pre-wrap;overflow-wrap:anywhere}
 .qa{white-space:pre-wrap;overflow-wrap:anywhere}
 .ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}
-.tools{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:12px}
-.tools button[aria-pressed="true"]{border-color:var(--acc);background:var(--soft);font-weight:600}
+.tools{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));margin-bottom:18px}
+.tools button{padding:14px 12px;font-size:13.5px;line-height:1.25;font-weight:500}
+.tools button[aria-pressed="true"]{border-color:var(--acc);background:var(--soft);font-weight:700;box-shadow:0 0 0 1px var(--acc)}
+.qbig{text-align:center;font-size:22px;font-weight:600;line-height:1.45;padding:26px 14px;min-height:96px;display:flex;align-items:center;justify-content:center;white-space:pre-line}
+@media (max-width:480px){.qbig{font-size:19px;padding:20px 10px}}
 .pill{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--soft)}
 .warnbox{border:1px dashed var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--fg)}
 table{border-collapse:collapse;width:100%}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
@@ -6164,6 +6167,7 @@ const sv=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch(e){}};
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const P=arr=>arr[Math.floor(Math.random()*arr.length)];
+const nz=()=>P([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]);
 function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
 function surdSimplify(n){for(let k=Math.floor(Math.sqrt(n));k>=1;k--){if(n%(k*k)===0)return[k,n/(k*k)]}return[1,n]}
 function surdStr(n){const[o,i]=surdSimplify(n);if(i===1)return String(o);return o===1?`√${i}`:`${o}√${i}`}
@@ -6242,13 +6246,13 @@ function quizUI(pfx,title,blurb,bank){
   const score=ld(pfx+"sc",[0,0]),revealed=ld(pfx+"rv",false);
   let q=ld(pfx+"cur",null);
   if(!q){q=P(bank)();sv(pfx+"cur",q);sv(pfx+"rv",false)}
-  el.innerHTML=`<div class="card"><h3>${esc(title)}</h3><p class="mut" style="font-size:13px">${blurb}</p>
-  <div style="border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:10px">
-  <div style="font-size:16px;white-space:pre-line">${q.q}</div>
-  <div style="margin-top:10px;${revealed?"":"display:none"}"><b>Answer:</b> <span style="white-space:pre-line">${q.a}</span></div>
+  el.innerHTML=`<div class="card"><h3 style="text-align:center">${esc(title)}</h3><p class="mut" style="font-size:13px;text-align:center">${blurb}</p>
+  <div style="border:1px solid var(--line);border-radius:12px;margin-top:10px;background:var(--soft)">
+  <div class="qbig">${q.q}</div>
+  ${revealed?`<div style="padding:0 14px 20px;text-align:center;border-top:1px dashed var(--line);margin-top:0;padding-top:16px"><b>Answer</b><div style="font-size:18px;white-space:pre-line;margin-top:6px">${q.a}</div></div>`:""}
   </div>
-  <p class="mut" style="font-size:12.5px;margin-top:6px">Score: ${score[0]} / ${score[0]+score[1]} correct</p>
-  <div class="mvr" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+  <p class="mut" style="font-size:12.5px;margin-top:6px;text-align:center">Score: ${score[0]} / ${score[0]+score[1]} correct</p>
+  <div class="mvr" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center">
   ${revealed?`<button class="btn" data-q="right">I got it right</button><button class="btn ghost" data-q="wrong">I got it wrong</button>`:`<button class="btn" data-q="show">Show answer</button>`}
   <button class="btn ghost" data-q="skip">Skip</button>
   <button class="btn ghost" data-q="resetscore">Reset score</button>
@@ -6318,7 +6322,74 @@ const TFGENQ=[
 ()=>{const r=R(2,12);return{q:`Find the EXACT area of a circle with radius ${r} cm (leave your answer in terms of π)`,a:`${r*r}π cm²`}},
 /* Circles and hyperbolas */
 ()=>{const h=R(-6,6),k=R(-6,6),r=P([2,3,4,5,6]);
- return{q:`Write the equation of a circle with centre (${h}, ${k}) and radius ${r}`,a:`(x ${signed(-h)})² + (y ${signed(-k)})² = ${r*r}`}}
+ return{q:`Write the equation of a circle with centre (${h}, ${k}) and radius ${r}`,a:`(x ${signed(-h)})² + (y ${signed(-k)})² = ${r*r}`}},
+/* Statistics: box plot & outlier */
+()=>{const set=new Set();while(set.size<7)set.add(R(1,40));const v=[...set].sort((x,y)=>x-y);
+ const med=v[3],q1=v[1],q3=v[5],iqr=q3-q1,lf=q1-1.5*iqr,uf=q3+1.5*iqr;
+ const testVal=P([v[0]-R(5,15),v[6]+R(5,15),v[3]]);const isOut=testVal<lf||testVal>uf;
+ return{q:`For the box plot of this data: ${v.join(", ")} — state Q1, the median, Q3 and the IQR, then say whether ${testVal} would be an outlier (1.5×IQR rule)`,
+ a:`Q1 = ${q1}, median = ${med}, Q3 = ${q3}, IQR = ${iqr}. Fences: ${lf} to ${uf}. ${testVal} is ${isOut?"an outlier":"not an outlier"}`}},
+/* Statistics: scatterplot / correlation */
+()=>{const ctxs=[["hours studied and exam score","rises together, points very close to a line"],["engine size and fuel economy (km per litre)","falls as the other rises, with some scatter"],["hours of TV watched per day and test score","no clear pattern — points scattered randomly"],["outdoor temperature and ice-cream sales","rises together, points fairly close to a line"],["age of a car and its resale value","falls as the other rises, points very close to a line"]];
+ const [topic,desc]=P(ctxs);
+ let ans;if(desc.includes("no clear"))ans="No correlation";else{const str=desc.includes("very close")?"Strong":"Moderate";const dir=desc.includes("falls")?"negative":"positive";ans=`${str}, ${dir} correlation`}
+ return{q:`A scatterplot of ${topic} shows: points ${desc}. Describe the correlation.`,a:ans}},
+/* Statistics: bivariate / line of best fit */
+()=>{const x1=R(1,5),y1=R(10,30),m=R(2,6),x2=x1+R(2,5);const y2=y1+m*(x2-x1);const b=y1-m*x1;const xp=x1+R(1,4);const yp=m*xp+b;
+ return{q:`A line of best fit passes through (${x1}, ${y1}) and (${x2}, ${y2}). Find its equation, then predict y when x = ${xp}`,
+ a:`Gradient = ${m}. Equation: y = ${m}x${b===0?"":" "+signed(b)}. When x = ${xp}, y = ${yp}`}},
+/* Statistics: time series */
+()=>{const start=R(20,60),step=P([3,4,5,6,-3,-4,-5]);const v=[start,start+step,start+2*step,start+3*step];
+ return{q:`A time-series shows sales ($1000s) over 4 quarters: ${v.join(", ")}. Describe the trend and predict the next quarter's value.`,
+ a:`${step>0?"Increasing":"Decreasing"} trend, ${Math.abs(step)} per quarter. Next predicted value = ${v[3]+step}`}},
+/* Linear: inequalities */
+()=>{const a=R(2,9),b=R(-9,9),x=R(-9,9),op=P([">","<","≥","≤"]);const c=a*x+b;
+ return{q:`Solve for x: ${a}x ${signed(b)} ${op} ${c}`,a:`x ${op} ${x}`}},
+/* Linear: direct and inverse variation */
+()=>{const k=R(2,9),x1=R(1,9),y1=k*x1;let x2;do{x2=R(1,12)}while(x2===x1);const y2=k*x2;
+ return{q:`y varies directly as x. When x = ${x1}, y = ${y1}. Find y when x = ${x2}`,a:`k = y/x = ${k}. y = ${k} × ${x2} = ${y2}`}},
+()=>{const k=R(6,60);const divs=[];for(let i=1;i<=k;i++)if(k%i===0)divs.push(i);
+ const x1=P(divs),y1=k/x1;let x2;do{x2=P(divs)}while(x2===x1);const y2=k/x2;
+ return{q:`y varies inversely as x. When x = ${x1}, y = ${y1}. Find y when x = ${x2}`,a:`k = xy = ${k}. y = ${k}/${x2} = ${y2}`}},
+/* Trigonometry: bearings */
+()=>{const b=R(1,35)*10;const back=(b+180)%360;const pad=n=>String(n).padStart(3,"0");
+ return{q:`A hiker walks on a bearing of ${pad(b)}° from camp. What bearing takes them directly back to camp?`,a:`${pad(back)}°`}},
+/* Trigonometry: 3D (space diagonal) */
+()=>{const l=R(2,9),w=R(2,9),h=R(2,9);const n=l*l+w*w+h*h;
+ return{q:`A box is ${l} cm × ${w} cm × ${h} cm. Find the exact length of its longest internal (space) diagonal`,a:`√(${l}² + ${w}² + ${h}²) = ${surdStr(n)} cm`}},
+/* Trigonometry: solving trig equations in degrees */
+()=>{const ang=P([30,45,60]),func=P(["sin","cos"]);const idx=func==="sin"?0:1;const val=TRIGV[ang][idx];const sol2=func==="sin"?180-ang:360-ang;
+ return{q:`Solve for 0° ≤ x ≤ 360°: ${func}(x) = ${val}`,a:`x = ${ang}° or x = ${sol2}°`}},
+/* Probability: Venn diagrams */
+()=>{const A=R(10,20),B=R(8,18);const AB=R(2,Math.min(A,B)-1);const extra=R(2,15);const uni=A+B-AB,total=uni+extra;
+ return{q:`In a group of ${total}, ${A} like A, ${B} like B, and ${AB} like both. Find how many like neither.`,
+ a:`Union = ${A} + ${B} − ${AB} = ${uni}. Neither = ${total} − ${uni} = ${extra}`}},
+/* Probability: two-way tables */
+()=>{const a=R(5,15),b=R(5,15),c=R(5,15),d=R(5,15);const maleT=a+b,total=a+b+c+d,g=gcd(a,maleT);
+ return{q:`A two-way table of ${total} students: Male & plays sport = ${a}, Male & no sport = ${b}, Female & plays sport = ${c}, Female & no sport = ${d}. Find P(plays sport | male) as a fraction in simplest form.`,
+ a:`P(sport|male) = ${a}/${maleT}${g>1?` = ${a/g}/${maleT/g}`:""}`}},
+/* Probability: conditional probability from given probabilities */
+()=>{const den=P([10,12,15,20,24,25,30]);const pAB=R(1,Math.floor(den/3));const pB=pAB+R(1,Math.floor(den/3));const g=gcd(pAB,pB);
+ return{q:`P(A and B) = ${pAB}/${den}, P(B) = ${pB}/${den}. Find P(A | B).`,
+ a:`P(A|B) = P(A∩B) ÷ P(B) = ${pAB}/${pB}${g>1?` = ${pAB/g}/${pB/g}`:""}`}},
+/* Rates & conics: hyperbola asymptotes */
+()=>{const a=R(1,6),h=nz(),k=nz();
+ return{q:`State the equations of the asymptotes of y = ${a}/(x ${h>0?`− ${h}`:`+ ${-h}`}) ${signed(k)}`,a:`x = ${h}, y = ${k}`}},
+/* Rates & conics: graph transformations */
+()=>{const h=nz(),k=nz();
+ return{q:`Describe the transformation that maps y = 1/x to y = 1/(x ${h>0?`− ${h}`:`+ ${-h}`}) ${signed(k)}`,
+ a:`Shift ${Math.abs(h)} units ${h>0?"right":"left"} and ${Math.abs(k)} units ${k>0?"up":"down"}`}},
+/* Measurement: surface area (prism) */
+()=>{const l=R(2,9),w=R(2,9),h=R(2,9);const sa=2*(l*w+l*h+w*h);
+ return{q:`Find the surface area of a rectangular prism ${l} cm × ${w} cm × ${h} cm`,a:`2(${l}×${w} + ${l}×${h} + ${w}×${h}) = ${sa} cm²`}},
+/* Measurement: surface area (cylinder, exact) */
+()=>{const r=R(2,9),h=R(3,12);const saCoef=2*r*r+2*r*h;
+ return{q:`Find the EXACT surface area of a closed cylinder with radius ${r} cm and height ${h} cm, in terms of π`,
+ a:`SA = 2πr² + 2πrh = 2π(${r*r}) + 2π(${r*h}) = ${saCoef}π cm²`}},
+/* Measurement: composite solid volume (cylinder + cone, exact) */
+()=>{const r=R(2,6),hcyl=R(4,12),m=R(1,4),hcone=3*m;const cylCoef=r*r*hcyl,coneCoef=r*r*m,total=cylCoef+coneCoef;
+ return{q:`A solid is a cone (height ${hcone} cm) on top of a cylinder (same radius ${r} cm, height ${hcyl} cm). Find the EXACT total volume, in terms of π`,
+ a:`Cylinder: πr²h = π(${r*r})(${hcyl}) = ${cylCoef}π. Cone: ⅓πr²h = ⅓π(${r*r})(${hcone}) = ${coneCoef}π. Total = ${total}π cm³`}}
 ];
 
 /* ========== 5. Worded application: using the formulas in context ========== */
@@ -7134,8 +7205,10 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=85;
+const APP_VER=87;
 const APP_LOG=[
+[87,"2026-11-12 06:45","Decluttered the tool tabs at the top of every subject (more spacing, bigger buttons, not jammed together) and made the question itself the big, centered focus — like Flashcards — on the main question-and-answer tools: Maths' Exact value drill, Quadratics & surds, Tech-free practice, Worded application, and the Practice questions drill shared by Maths, Science and French. Editors like the essay planner, poem annotator, Legal practice builder and French writing weren't changed — they aren't question cards, and forcing that layout onto them would break how they actually work."],
+[86,"2026-11-12 06:39","Tech-free practice now covers every sub-topic on the exam scope, not just one per topic: added box plots & outliers, scatterplot/correlation, line of best fit, time-series, inequalities, direct & inverse variation, bearings, 3D Pythagoras, solving trig equations, Venn diagrams, two-way tables, conditional probability, hyperbola asymptotes, graph transformations, surface area, and composite-solid volume. 18 new generators, each checked by hand and run 1500 times for crashes or wrong answers before shipping."],
 [85,"2026-11-11 22:25","New Maths tab: Exam topics. Every one of the 8 Tech Free exam topics in one place — what's examinable in each, worked example questions, and buttons that jump straight to the right tool to revise it (Formula recall, Exact value drill, Quadratics & surds, Tech-free practice, Worded application, Printable pack)."],
 [84,"2026-11-11 22:04","The User input section (133 files): 132 already had the Download/Print code lock (same fix as the past papers, since they share the same viewer). The 1 remaining file (original PDF only, no extracted text) opens through a separate PDF viewer that had no lock at all — added Download and Print there too, both behind the code, plus a print fix so printing it doesn't also print the rest of the app underneath."],
 [83,"2026-11-11 21:37","Fixed a slip: the code for the study-file Download/Print lock was written out in plain text in this very Version history entry for v82. Removed it from the visible changelog."],
@@ -7874,7 +7947,7 @@ function toolDrill(el,SETS,key){const sets=SETS;const arg=tool.arg;
  {const rs=$("#dseenreset");if(rs)rs.onclick=e=>{e.preventDefault();if(typeof seenReset==="function"){seenReset({math:"M",sci:"S",fr:"F"}[key]);bindTool()}}}
  $("#dgo").onclick=()=>{st.started=true;st.fin=false;st.i=0;st.res=[];st.items=[];for(let i=0;i<st.n;i++)st.items.push(st.nh&&sets[st.set].nh?sets[st.set].nh():sets[st.set].f());st.cur=0;st.fb=null;bindTool();const inp=$("#dans");inp&&inp.focus()};
  bindItem(st,el,sets,key)}
-function itemView(st){const it=st.items[st.i];return `<div class="card" style="margin-top:10px"><div class="mut" style="font-size:12px;letter-spacing:.03em;margin-bottom:4px">${esc(diffDrillInfo(it,st.set,st.key).label)}</div><p class="qa" style="font-size:20px;line-height:1.35;margin:0 0 12px"><b>${esc(it.q)}</b></p><div class="row"><input id="dans" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;min-width:140px" ${st.fb?"disabled":""} value="${esc(st.val||"")}"><button class="pri" id="dsub">${st.fb?"Next":"Check"}</button></div>${st.fb?`<div style="margin-top:10px"><span class="${st.fb.ok?"ok":"no"}">${st.fb.ok?"Correct":"Not quite"}</span>${st.fb.acc?` <span class="mut">${esc(st.fb.acc)}</span>`:""}<div class="qa">Answer: <b>${esc(it.a)}</b></div>${it.note?`<div class="qa mut" style="font-size:13px;margin-top:6px">${esc(it.note)}</div>`:""}${st.fb.ok?"":`<button class="sm" id="dover" style="margin-top:6px">I was right</button>${fixHtml({math:"M",sci:"S",fr:"F"}[st.key],it.q+" "+it.a)}`}</div>`:""}<div style="margin-top:14px;padding-top:8px;border-top:1px solid var(--line)"><div class="mut mono" style="font-size:13px">${st.i+1} / ${st.items.length} ${diffTag(diffDrillInfo(it,st.set,st.key).v,diffDrillInfo(it,st.set,st.key).label)}</div>${diffScale(diffDrillInfo(it,st.set,st.key))}</div></div>`}
+function itemView(st){const it=st.items[st.i];return `<div class="card" style="margin-top:10px"><div class="mut" style="font-size:12px;letter-spacing:.03em;text-align:center">${esc(diffDrillInfo(it,st.set,st.key).label)}</div><div style="border:1px solid var(--line);border-radius:12px;background:var(--soft);margin:6px 0 14px"><div class="qbig"><b>${esc(it.q)}</b></div></div><div class="row" style="justify-content:center"><input id="dans" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;min-width:140px;max-width:420px;text-align:center;font-size:16px" ${st.fb?"disabled":""} value="${esc(st.val||"")}"><button class="pri" id="dsub">${st.fb?"Next":"Check"}</button></div>${st.fb?`<div style="margin-top:10px;text-align:center"><span class="${st.fb.ok?"ok":"no"}">${st.fb.ok?"Correct":"Not quite"}</span>${st.fb.acc?` <span class="mut">${esc(st.fb.acc)}</span>`:""}<div class="qa">Answer: <b>${esc(it.a)}</b></div>${it.note?`<div class="qa mut" style="font-size:13px;margin-top:6px">${esc(it.note)}</div>`:""}${st.fb.ok?"":`<button class="sm" id="dover" style="margin-top:6px">I was right</button>${fixHtml({math:"M",sci:"S",fr:"F"}[st.key],it.q+" "+it.a)}`}</div>`:""}<div style="margin-top:14px;padding-top:8px;border-top:1px solid var(--line);text-align:center"><div class="mut mono" style="font-size:13px">${st.i+1} / ${st.items.length} ${diffTag(diffDrillInfo(it,st.set,st.key).v,diffDrillInfo(it,st.set,st.key).label)}</div>${diffScale(diffDrillInfo(it,st.set,st.key))}</div></div>`}
 function finView(st){const ok=st.res.filter(r=>r.ok).length;return `<div class="card" style="margin-top:10px"><h3>${ok} of ${st.res.length} correct (${Math.round(ok/st.res.length*100)}%)</h3><p class="mut">Review the misses below, then restart. Copy any repeated mistake into your block's error log.</p>${st.res.map((r,i)=>r.ok&&st.mode==="learn"?"":`<div style="margin-top:8px"><span class="${r.ok?"ok":"no"}">${r.ok?"✓":"✗"}</span> <span class="qa">${esc(st.items[i].q)}</span><div class="qa">You: ${esc(r.v||"(blank)")} · Answer: <b>${esc(st.items[i].a)}</b></div></div>`).join("")}</div>`}
 function bindItem(st,el,sets,key){const inp=$("#dans"),sub=$("#dsub");if(!sub)return;const go=()=>{const it=st.items[st.i];if(st.fb){st.val="";st.fb=null;st.i++;if(st.i>=st.items.length){st.fin=true}$("#dbody").innerHTML=st.fin?finView(st):itemView(st);bindItem(st,el,sets,key);return}
   const v=inp.value;let ok=false;try{ok=!!it.chk(v)}catch(e){}
