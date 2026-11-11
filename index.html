@@ -7077,9 +7077,10 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=82;
+const APP_VER=83;
 const APP_LOG=[
-[82,"2026-11-11 21:19","Past-paper study files (the full exam PDFs): fixed printing, which was cutting off text at the page edge because the paper's text was a raw pre-formatted block that doesn't wrap. Now wraps properly on print. Also added Download and Print buttons on every study file, both locked behind a code (2022)."],
+[83,"2026-11-11 21:37","Fixed a slip: the code for the study-file Download/Print lock was written out in plain text in this very Version history entry for v82. Removed it from the visible changelog."],
+[82,"2026-11-11 21:19","Past-paper study files (the full exam PDFs): fixed printing, which was cutting off text at the page edge because the paper's text was a raw pre-formatted block that doesn't wrap. Now wraps properly on print. Also added Download and Print buttons on every study file, both locked behind a code."],
 [81,"2026-11-11 21:06","Maths gets 6 new tech-free tabs: Formula recall (flip-quiz memorisation of 37 formulas), Exact value drill, Quadratics & surds, Tech-free practice (fresh questions across every exam topic), Worded application (word problems using the formulas), Printable pack. All self-marking, no calculator, exact answers only. Every generator stress-tested (2000+ runs) for correctness, no hallucinated answers."],
 [80,"2026-11-11 20:54","Fixed 2 bugs in Maths videos: the tab for it was labelled \"undefined\" (a stale tool-name list in app.js never had it added), and videos now play inline on tap instead of just linking out to YouTube."],
 [79,"2026-11-11 18:50","Maths videos: new tile in Maths with 155 videos (97 tech free, 58 tech active), filter Tech free or Tech active, by topic, search, watched ticks, add your own. Every title and channel was returned by YouTube lookup; curriculum fit is unchecked (many are not Victorian)."],
