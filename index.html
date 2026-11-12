@@ -76,6 +76,12 @@ dl.spec dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .toolpanel{margin-bottom:22px}
 .toolpanel.more{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;margin-top:2px}
 .toolpanel-h{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);font-weight:700;margin-bottom:10px}
+summary.toolpanel-h{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+summary.toolpanel-h::-webkit-details-marker{display:none}
+summary.toolpanel-h::before{content:"▸";font-size:10px;transition:transform .15s}
+details[open]>summary.toolpanel-h::before{transform:rotate(90deg)}
+details.toolpanel.more[open]{padding-bottom:18px}
+details.toolpanel.more:not([open])>summary.toolpanel-h{margin-bottom:0}
 .qbig{text-align:center;font-size:clamp(24px,5vw,34px);font-weight:600;line-height:1.4;padding:48px 18px;min-height:240px;display:flex;align-items:center;justify-content:center;white-space:pre-line}
 @media (max-width:480px){.qbig{font-size:clamp(21px,6.2vw,28px);padding:32px 12px;min-height:180px}}
 .qhead{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700;text-align:center;margin-bottom:2px}
@@ -6421,6 +6427,116 @@ const APPQ=[
 ()=>{const A=R(4,30),k=R(2,4);return{q:`A model shape is scaled up by a factor of ${k}. Its original area is ${A} cm². Find the new area`,a:`${A*k*k} cm² (area scale factor = k² = ${k*k})`}}
 ];
 
+/* ========== 5b. CAS practice (Maths 2, calculator allowed, extended-response style) ========== */
+const CASGENQ=[
+()=>{const a=R(2,5),b=R(6,15)*2,c=R(20,80);
+ return{q:`A company's weekly profit ($) from selling x items is P(x) = −${a}x² + ${b}x − ${c}.\n(a) Use CAS (solve or the graph) to find the break-even points (where P(x) = 0), correct to 2 decimal places.\n(b) Find the number of items that maximises profit, and the maximum profit.`,
+  a:(()=>{const disc=b*b-4*a*c;const root=Math.sqrt(Math.max(disc,0));const x1=((b-root)/(2*a)),x2=((b+root)/(2*a));const xv=b/(2*a);const pv=-a*xv*xv+b*xv-c;
+   return `(a) Break-even at x ≈ ${x1.toFixed(2)} and x ≈ ${x2.toFixed(2)} (from solve(${-a}x²+${b}x−${c}=0,x) or reading the graph's x-intercepts).\n(b) Max at x = ${xv.toFixed(2)} items, giving a maximum profit of $${pv.toFixed(2)} (the vertex of the parabola).`})()}},
+
+()=>{const P0=R(2,9)*1000,r=P([4.5,5.5,6.2,7.5,8.1]),n=R(3,8);
+ const A=P0*Math.pow(1+r/100,n);
+ return{q:`$${P0} is invested at ${r}% p.a. compound interest, compounded annually, for ${n} years.\n(a) Use your calculator to find the total amount, correct to the nearest cent.\n(b) Find the total interest earned.`,
+  a:`(a) A = ${P0}(1 + ${r}/100)^${n} ≈ $${A.toFixed(2)}\n(b) Interest = A − P = $${A.toFixed(2)} − $${P0} = $${(A-P0).toFixed(2)}`}},
+
+()=>{let a1,b1,a2,b2;do{a1=R(2,9);b1=R(2,9);a2=R(2,9);b2=R(2,9)}while(a1*b2-a2*b1===0);
+ const x=R(-6,6)||2,y=R(-6,6)||3;const T1=a1*x+b1*y,T2=a2*x+b2*y;
+ return{q:`Solve the simultaneous equations using CAS, then show the algebraic method too:\n${a1}x + ${b1}y = ${T1}\n${a2}x + ${b2}y = ${T2}`,
+  a:`x = ${x}, y = ${y} (check: solve({${a1}x+${b1}y=${T1},${a2}x+${b2}y=${T2}},{x,y}) on CAS, or eliminate algebraically by multiplying/subtracting the two equations.)`}},
+
+()=>{const d1=R(5,12),brg1=P([030,055,070,100,120,145]),d2=R(5,12),brg2=(brg1+P([60,70,80,90,100]))%360;
+ const rad=Math.PI/180;const ang=Math.abs(180-(brg2-brg1));const angRad=ang*rad;
+ const dist=Math.sqrt(d1*d1+d2*d2-2*d1*d2*Math.cos(angRad));
+ return{q:`A hiker walks ${d1}km on a bearing of ${String(brg1).padStart(3,"0")}°, then ${d2}km on a bearing of ${String(brg2).padStart(3,"0")}°.\n(a) Find the angle between the two legs of the journey (at the turning point).\n(b) Use the cosine rule to find the hiker's straight-line distance from the start, correct to 2 decimal places.`,
+  a:`(a) The angle between the two legs is ${ang.toFixed(1)}° (180° minus the change in bearing, or vice versa — sketch it to check).\n(b) distance² = ${d1}² + ${d2}² − 2(${d1})(${d2})cos(${ang.toFixed(1)}°) ≈ ${dist.toFixed(2)}km`}},
+
+()=>{const vals=Array.from({length:8},()=>R(10,40)).sort((a,b)=>a-b);
+ const mean=vals.reduce((s,v)=>s+v,0)/vals.length;
+ const variance=vals.reduce((s,v)=>s+(v-mean)*(v-mean),0)/vals.length;
+ const sd=Math.sqrt(variance);
+ return{q:`A data set (test scores): ${vals.join(", ")}\n(a) Use your calculator's statistics mode to find the mean.\n(b) Find the population standard deviation, correct to 2 decimal places.`,
+  a:`(a) Mean = ${mean.toFixed(2)}\n(b) Standard deviation ≈ ${sd.toFixed(2)} (enter the list into 1-Var Stats on CAS rather than computing by hand)`}},
+
+()=>{const M0=R(80,300),r=P([3,4,5,6,8]),n=R(2,6);
+ const M=M0*Math.pow(1-r/100,n);
+ return{q:`A radioactive sample starts at ${M0}g and decays at ${r}% per hour.\n(a) Write the exponential decay model, M(t) = M₀(1 − r)^t.\n(b) Use CAS to find the mass remaining after ${n} hours, correct to 2 decimal places.\n(c) Use CAS (solve, or graph and trace) to find how many hours until the mass drops below 10g.`,
+  a:(()=>{let t=0,m=M0;while(m>=10&&t<500){t++;m=M0*Math.pow(1-r/100,t)}
+   return `(a) M(t) = ${M0}(1 − ${r}/100)^t = ${M0}(${(1-r/100).toFixed(3)})^t\n(b) M(${n}) ≈ ${M.toFixed(2)}g\n(c) Mass drops below 10g at t ≈ ${t} hours (solve ${M0}(${(1-r/100).toFixed(3)})^t = 10 for t)`})()}},
+
+()=>{const red=R(3,8),blue=R(3,8),tot=red+blue;
+ const p1=red/tot,p2=(red-1)/(tot-1),both=p1*p2;
+ return{q:`A bag has ${red} red and ${blue} blue counters. Two are drawn without replacement.\n(a) Draw the tree diagram (first two branches only needed for working).\n(b) Find P(both red), as a decimal correct to 3 decimal places.\n(c) Find P(at least one red), correct to 3 decimal places.`,
+  a:`(a) First draw: P(red)=${red}/${tot}, P(blue)=${blue}/${tot}. Second draw depends on the first (dependent events).\n(b) P(both red) = (${red}/${tot}) × (${red-1}/${tot-1}) ≈ ${both.toFixed(3)}\n(c) P(at least one red) = 1 − P(no red) = 1 − (${blue}/${tot})×(${blue-1}/${tot-1}) ≈ ${(1-((blue/tot)*((blue-1)/(tot-1)))).toFixed(3)}`}},
+
+()=>{const r=R(3,9),h1=R(8,16),h2=R(2,6);
+ const vcyl=Math.PI*r*r*h1,vcone=(1/3)*Math.PI*r*r*h2,tot=vcyl+vcone;
+ const l=Math.sqrt(r*r+h2*h2),sa=2*Math.PI*r*h1+Math.PI*r*r+Math.PI*r*l;
+ return{q:`A solid is a cylinder (radius ${r}cm, height ${h1}cm) with a cone (same radius, height ${h2}cm) on top.\n(a) Find the total volume, correct to 2 decimal places.\n(b) Find the total surface area, correct to 2 decimal places.`,
+  a:`(a) V = πr²h₁ + ⅓πr²h₂ = ${vcyl.toFixed(2)} + ${vcone.toFixed(2)} ≈ ${tot.toFixed(2)} cm³\n(b) Slant height of cone = √(${r}²+${h2}²) ≈ ${l.toFixed(2)}cm. SA = curved cylinder + base circle + curved cone = ${(2*Math.PI*r*h1).toFixed(2)} + ${(Math.PI*r*r).toFixed(2)} + ${(Math.PI*r*l).toFixed(2)} ≈ ${sa.toFixed(2)} cm²`}},
+
+()=>{const h=R(-6,6)||3,k=R(-6,6)||2,rr=R(9,49);const r=Math.sqrt(rr);
+ const D=-2*h,E=-2*k,F=h*h+k*k-rr;
+ return{q:`A circle has equation x² + y² ${D>=0?"+":"−"} ${Math.abs(D)}x ${E>=0?"+":"−"} ${Math.abs(E)}y ${F>=0?"+":"−"} ${Math.abs(F)} = 0.\n(a) Complete the square to find the centre and radius.\n(b) Confirm your answer by graphing it on CAS.`,
+  a:`(a) Grouping and completing the square gives (x ${h>=0?"−":"+"} ${Math.abs(h)})² + (y ${k>=0?"−":"+"} ${Math.abs(k)})² = ${rr}, so centre = (${h}, ${k}), radius = √${rr} = ${surdStr(rr)} ≈ ${r.toFixed(2)}.\n(b) Graphing x²+y²${D>=0?"+":"−"}${Math.abs(D)}x${E>=0?"+":"−"}${Math.abs(E)}y${F>=0?"+":"−"}${Math.abs(F)}=0 on CAS (or rearranging to solve for y) should show a circle centred at (${h},${k}) with that radius.`}},
+
+()=>{const a=R(4,12),b=R(5,13),C=R(40,110);
+ const rad=C*Math.PI/180;const c=Math.sqrt(a*a+b*b-2*a*b*Math.cos(rad));
+ const sinA=a*Math.sin(rad)/c;const A=Math.asin(Math.min(1,sinA))*180/Math.PI;
+ return{q:`In triangle ABC, side a = ${a}cm, side b = ${b}cm, and the angle between them (angle C) = ${C}°.\n(a) Use the cosine rule to find side c, correct to 2 decimal places.\n(b) Use the sine rule to find angle A, correct to 1 decimal place.`,
+  a:`(a) c² = a² + b² − 2ab·cos(C) = ${a}² + ${b}² − 2(${a})(${b})cos(${C}°) ⟹ c ≈ ${c.toFixed(2)}cm\n(b) sin(A)/a = sin(C)/c ⟹ A = sin⁻¹(${a}×sin(${C}°)/${c.toFixed(2)}) ≈ ${A.toFixed(1)}°`}},
+
+()=>{const P0=R(50,200),r=P([8,10,12,15,20]),target=P0*P([2,3,4]);
+ const t=Math.log(target/P0)/Math.log(1+r/100);
+ return{q:`A population of ${P0} animals grows at ${r}% per year. Using CAS, find how many years until the population reaches ${target}, correct to 2 decimal places.`,
+  a:`Solve ${P0}(1 + ${r}/100)^t = ${target} for t, using logs: t = log(${target}/${P0}) / log(1 + ${r}/100) ≈ ${t.toFixed(2)} years`}}
+];
+window.toolMathsCAS=quizUI("cs","CAS practice","Calculator-allowed, extended-response style questions for Maths 2 — multi-part, use your CAS for solve/graph/stats, but still show method.",CASGENQ);
+
+/* ========== 5c. CAS challenge: genuinely chained, multi-concept problems ========== */
+const CASHARDQ=[
+()=>{let a1,b1,a2,b2;do{a1=R(1,4);b1=R(1,4);a2=R(1,4);b2=R(1,4)}while(a1*b2-a2*b1===0);
+ const x=R(1,5),y=R(1,5);const T1=a1*x+b1*y,T2=a2*x+b2*y;
+ const area=x*y;
+ return{q:`Solve the simultaneous equations ${a1}x + ${b1}y = ${T1} and ${a2}x + ${b2}y = ${T2} for x and y.\nThen, using those values as the length and width of a rectangle (in cm), find its area AND the length of its diagonal, correct to 2 decimal places.`,
+  a:`Solving: x = ${x}, y = ${y}\nArea = x × y = ${x} × ${y} = ${area} cm²\nDiagonal = √(x² + y²) = √(${x*x} + ${y*y}) = √${x*x+y*y} ≈ ${Math.sqrt(x*x+y*y).toFixed(2)} cm`}},
+
+()=>{const P0=R(3,9)*1000,r=P([5,6,7,8]),target=P0*2;
+ const t=Math.log(2)/Math.log(1+r/100);
+ return{q:`$${P0} is invested at ${r}% p.a. compound interest.\n(a) Write the formula for the amount after t years.\n(b) Use CAS to find how many years until the investment DOUBLES, correct to 2 decimal places.\n(c) Using your rounded answer from (b) rounded UP to the next whole year, find the actual amount after that many whole years.`,
+  a:(()=>{const tup=Math.ceil(t);const actual=P0*Math.pow(1+r/100,tup);
+   return `(a) A = ${P0}(1 + ${r}/100)^t\n(b) Solve ${P0}(1+${r}/100)^t = ${target} for t: t ≈ ${t.toFixed(2)} years\n(c) Rounding up to ${tup} whole years: A = ${P0}(1+${r}/100)^${tup} ≈ $${actual.toFixed(2)}`})()}},
+
+()=>{const a=R(2,6),h=R(10,20),vr=R(2,5)*5;
+ const tv=vr/a;const tland=2*tv;const maxh=a*tv*tv;
+ return{q:`A ball is thrown so its height (m) after t seconds is h(t) = ${h} + ${vr}t − ${a}t².\n(a) Find the initial height.\n(b) Use CAS to find the maximum height and when it occurs, correct to 2 decimal places.\n(c) Use CAS to find when the ball hits the ground (h = 0), correct to 2 decimal places.`,
+  a:(()=>{const tv2=vr/(2*a);const maxh2=h+vr*tv2-a*tv2*tv2;const disc=vr*vr+4*a*h;const troot=(vr+Math.sqrt(disc))/(2*a);
+   return `(a) Initial height = h(0) = ${h}m\n(b) Turning point at t = ${tv2.toFixed(2)}s, max height ≈ ${maxh2.toFixed(2)}m (solve for when the derivative/graph's turning point occurs, or use CAS's graph Maximum tool)\n(c) Solve ${h} + ${vr}t − ${a}t² = 0 for t > 0: t ≈ ${troot.toFixed(2)}s`})()}},
+
+()=>{const red=R(4,9),blue=R(4,9),tot=red+blue;
+ const p1=red/tot,p2nored=(blue)/(tot-1);
+ const pExactlyOneRed=2*(red/tot)*(blue/(tot-1));
+ return{q:`A bag has ${red} red and ${blue} blue counters. Two are drawn without replacement.\n(a) Find P(both red), correct to 4 decimal places.\n(b) Find P(exactly one red), correct to 4 decimal places.\n(c) If this experiment (drawing 2 counters) were repeated 150 times, how many times would you EXPECT exactly one red counter?`,
+  a:(()=>{const pboth=(red/tot)*((red-1)/(tot-1));
+   return `(a) P(both red) = (${red}/${tot}) × (${red-1}/${tot-1}) ≈ ${pboth.toFixed(4)}\n(b) P(exactly one red) = 2 × (${red}/${tot}) × (${blue}/${tot-1}) ≈ ${pExactlyOneRed.toFixed(4)}\n(c) Expected count = 150 × P(exactly one red) ≈ ${(150*pExactlyOneRed).toFixed(1)} times`})()}},
+
+()=>{const h=R(-5,5)||2,k=R(-5,5)||3,rr=R(16,64);
+ const D=-2*h,E=-2*k,F=h*h+k*k-rr;
+ const liney=R(-3,3);
+ return{q:`A circle has equation x² + y² ${D>=0?"+":"−"} ${Math.abs(D)}x ${E>=0?"+":"−"} ${Math.abs(E)}y ${F>=0?"+":"−"} ${Math.abs(F)} = 0.\n(a) Find its centre and radius.\n(b) Use CAS to find where this circle crosses the horizontal line y = ${liney} (if it does at all), correct to 2 decimal places.`,
+  a:(()=>{const under=rr-(liney-k)*(liney-k);
+   if(under<0)return `(a) Centre (${h},${k}), radius √${rr} ≈ ${Math.sqrt(rr).toFixed(2)}\n(b) At y = ${liney}, (x−${h})² = ${rr} − (${liney}−${k})² = ${under.toFixed(2)}, which is negative — the line y = ${liney} does not cross this circle.`;
+   const dx=Math.sqrt(under);
+   return `(a) Centre (${h},${k}), radius √${rr} ≈ ${Math.sqrt(rr).toFixed(2)}\n(b) Substituting y = ${liney}: (x−${h})² = ${rr} − (${liney}−${k})² = ${under.toFixed(2)}\nx = ${h} ± ${dx.toFixed(2)} → x ≈ ${(h-dx).toFixed(2)} or x ≈ ${(h+dx).toFixed(2)}`})()}},
+
+()=>{const a=R(10,25),b=R(10,25),C=R(50,120);
+ const rad=C*Math.PI/180;const c=Math.sqrt(a*a+b*b-2*a*b*Math.cos(rad));
+ const s=(a+b+c)/2;const area=Math.sqrt(Math.max(0,s*(s-a)*(s-b)*(s-c)));
+ return{q:`Triangle ABC has side a = ${a}cm, side b = ${b}cm, and the included angle C = ${C}°.\n(a) Use the cosine rule to find side c, correct to 2 decimal places.\n(b) Find the area of the triangle using Area = ½ab·sin(C), correct to 2 decimal places.\n(c) Use Heron's formula to check your area answer is consistent.`,
+  a:(()=>{const area2=0.5*a*b*Math.sin(rad);
+   return `(a) c² = ${a}² + ${b}² − 2(${a})(${b})cos(${C}°) ⟹ c ≈ ${c.toFixed(2)}cm\n(b) Area = ½(${a})(${b})sin(${C}°) ≈ ${area2.toFixed(2)} cm²\n(c) Using Heron's formula with c ≈ ${c.toFixed(2)}: Area ≈ ${area.toFixed(2)} cm² — matches (b), confirming the working.`})()}}
+];
+window.toolMathsCASHard=quizUI("ch","CAS challenge","Genuinely chained, multi-concept problems — the kind that combine two or three skills in one extended-response question. Calculator allowed.",CASHARDQ);
+
 /* ========== 6. Printable Tech Free pack ========== */
 function pack(el){
  el.innerHTML=`<div class="card"><h3>Tech Free printable pack</h3><p class="mut" style="font-size:13px">Opens a clean, printable page: the formula sheet, a blank recall sheet and a mistake-log table. Use your browser's print or save-as-PDF.</p>
@@ -6507,6 +6623,516 @@ function scope(el){
  </div>`).join("")}`;
 }
 window.toolMathsScope=scope;
+})();
+
+(function(){
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const K="cas:";
+const ld=(k,d)=>{try{const v=localStorage.getItem(K+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch(e){}};
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function surdSimplify(n){if(n<0)return[1,n];for(let k=Math.floor(Math.sqrt(n));k>=1;k--){if(n%(k*k)===0)return[k,n/(k*k)]}return[1,n]}
+function surdStr(n){if(n<0)return`√(${n})`;const[o,i]=surdSimplify(n);if(i===1)return String(o);return o===1?`√${i}`:`${o}√${i}`}
+
+/* ---------- tiny expression parser: +,-,*,/,^,sqrt,sin,cos,tan,log,ln,pi,e,() ---------- */
+function evalExpr(str){
+ let s=String(str).toLowerCase().replace(/\s+/g,"");
+ s=s.replace(/pi/g,"(3.141592653589793)").replace(/\be\b/g,"(2.718281828459045)");
+ let i=0;
+ function err(m){throw new Error(m)}
+ function peek(){return s[i]}
+ function num(){
+  let start=i;
+  while(i<s.length&&/[0-9.]/.test(s[i]))i++;
+  if(i===start)err("Expected number near '"+s.slice(i,i+6)+"'");
+  return parseFloat(s.slice(start,i));
+ }
+ function func(name){
+  if(s.slice(i,i+name.length)===name){i+=name.length;return true}
+  return false;
+ }
+ function factor(){
+  if(peek()==="-"){i++;return -factor()}
+  if(peek()==="+"){i++;return factor()}
+  if(func("sqrt")){expect("(");const v=expr();expect(")");return Math.sqrt(v)}
+  if(func("sin")){expect("(");const v=expr();expect(")");return Math.sin(v*Math.PI/180)}
+  if(func("cos")){expect("(");const v=expr();expect(")");return Math.cos(v*Math.PI/180)}
+  if(func("tan")){expect("(");const v=expr();expect(")");return Math.tan(v*Math.PI/180)}
+  if(func("log")){expect("(");const v=expr();expect(")");return Math.log10(v)}
+  if(func("ln")){expect("(");const v=expr();expect(")");return Math.log(v)}
+  if(func("abs")){expect("(");const v=expr();expect(")");return Math.abs(v)}
+  if(peek()==="("){i++;const v=expr();expect(")");return v}
+  return num();
+ }
+ function expect(ch){if(s[i]!==ch)err("Expected '"+ch+"'");i++}
+ function power(){let base=factor();if(peek()==="^"){i++;const exp=power();return Math.pow(base,exp)}return base}
+ function term(){let v=power();while(peek()==="*"||peek()==="/"){
+   if(peek()==="*"){i++;v*=power()}
+   else{i++;v/=power()}
+  }return v}
+ function expr(){let v=term();while(peek()==="+"||peek()==="-"){const op=s[i];i++;const t=term();v=op==="+"?v+t:v-t}return v}
+ const result=expr();
+ if(i<s.length)err("Unexpected character '"+s[i]+"'");
+ return result;
+}
+
+/* ============ 1. Scientific calculator ============ */
+function toolCalc(el){
+ el.innerHTML=`<div class="card"><h3>Scientific calculator</h3>
+ <p class="mut" style="font-size:12.5px">Type an expression — supports + − × ÷ ^ sqrt() sin() cos() tan() log() ln() abs() pi e and brackets. Angles are in degrees.</p>
+ <input id="cexpr" type="text" placeholder="e.g. sqrt(144) + sin(30)*2" style="width:100%;font-size:16px;padding:10px;margin-top:8px">
+ <div id="cresult" class="card" style="margin-top:10px;background:var(--soft);text-align:center;font-size:22px;font-weight:600;padding:16px;min-height:28px"></div>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+ ${["7","8","9","/","4","5","6","*","1","2","3","-","0",".","(",")","+","^","sqrt(","sin(","cos(","tan(","log(","ln("].map(b=>`<button class="btn ghost" data-ins="${esc(b)}" style="min-width:44px">${esc(b)}</button>`).join("")}
+ <button class="btn" id="ccalc">=</button>
+ <button class="btn ghost" id="cclear">Clear</button>
+ </div></div>`;
+ const inp=el.querySelector("#cexpr"),out=el.querySelector("#cresult");
+ const run=()=>{try{const v=evalExpr(inp.value||"0");out.textContent=Number.isFinite(v)?(Math.round(v*1e9)/1e9):"Error";out.style.color="";}catch(e){out.textContent="Error: "+e.message;out.style.color="var(--bad,#c0392b)"}};
+ el.querySelectorAll("[data-ins]").forEach(b=>b.onclick=()=>{inp.value+=b.dataset.ins;inp.focus()});
+ el.querySelector("#ccalc").onclick=run;
+ el.querySelector("#cclear").onclick=()=>{inp.value="";out.textContent=""};
+ inp.addEventListener("keydown",e=>{if(e.key==="Enter")run()});
+}
+
+/* ============ 2. Equation solver ============ */
+function toolSolve(el){
+ el.innerHTML=`<div class="card"><h3>Equation solver</h3>
+ <p class="mut" style="font-size:12.5px">Linear (ax + b = 0) or quadratic (ax² + bx + c = 0), full working shown, exact where possible.</p>
+ <div class="row" style="margin-top:8px"><label><input type="radio" name="etype" value="lin" checked> Linear</label><label><input type="radio" name="etype" value="quad"> Quadratic</label></div>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px" id="ecoef"></div>
+ <button class="btn" id="esolve" style="margin-top:10px">Solve</button>
+ <div id="eout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
+ const coefBox=el.querySelector("#ecoef"),out=el.querySelector("#eout");
+ const draw=()=>{const quad=el.querySelector('input[name="etype"]:checked').value==="quad";
+  coefBox.innerHTML=quad
+   ?`<label>a <input id="ea" type="number" value="1" style="width:70px"></label><label>b <input id="eb" type="number" value="-3" style="width:70px"></label><label>c <input id="ec" type="number" value="-10" style="width:70px"></label>`
+   :`<label>a <input id="ea" type="number" value="2" style="width:70px"></label><label>b <input id="eb" type="number" value="-8" style="width:70px"></label>`;
+ };
+ draw();
+ el.querySelectorAll('input[name="etype"]').forEach(r=>r.onchange=draw);
+ el.querySelector("#esolve").onclick=()=>{
+  const quad=el.querySelector('input[name="etype"]:checked').value==="quad";
+  const a=parseFloat(el.querySelector("#ea").value)||0,b=parseFloat(el.querySelector("#eb").value)||0;
+  if(!quad){
+   if(a===0){out.textContent="a can't be 0 for a linear equation (there'd be no x term).";return}
+   const x=-b/a;
+   out.textContent=`${a}x ${b<0?"− "+Math.abs(b):"+ "+b} = 0\n${a}x = ${-b}\nx = ${-b}/${a} = ${x}`;
+   return;
+  }
+  const c=parseFloat(el.querySelector("#ec").value)||0;
+  if(a===0){out.textContent="a can't be 0 for a quadratic (it wouldn't have an x² term).";return}
+  const disc=b*b-4*a*c;
+  const sgn=(n,withX)=>(n<0?"− ":"+ ")+Math.abs(n)+(withX?"x":"");
+  let body=`${a}x² ${sgn(b,true)} ${c<0?"− "+Math.abs(c):"+ "+c} = 0\nDiscriminant: Δ = b² − 4ac = (${b})² − 4(${a})(${c}) = ${disc}\n`;
+  if(disc<0){body+=`Δ < 0, so there are no real solutions.`}
+  else if(disc===0){const x=-b/(2*a);body+=`Δ = 0, so there is one repeated solution:\nx = −b/(2a) = ${-b}/${2*a} = ${x}`}
+  else{
+   const sq=Math.sqrt(disc);
+   const x1n=-b-sq,x2n=-b+sq,den=2*a;
+   const x1=x1n/den,x2=x2n/den;
+   const sqExact=Number.isInteger(disc)?surdStr(disc):sq.toFixed(4);
+   body+=`x = (−b ± √Δ) / (2a) = (${-b} ± ${sqExact}) / ${den}\nx = ${Number.isInteger(x1)?x1:x1.toFixed(4)} or x = ${Number.isInteger(x2)?x2:x2.toFixed(4)}`;
+  }
+  out.textContent=body;
+ };
+}
+
+/* ============ 3. Function grapher ============ */
+function toolGraph(el){
+ el.innerHTML=`<div class="card"><h3>Function grapher</h3>
+ <p class="mut" style="font-size:12.5px">Enter y = f(x) using x as the variable (e.g. x^2-4, 2x+1, sqrt(x)). Finds approximate x-intercepts and the y-intercept.</p>
+ <input id="gexpr" type="text" placeholder="e.g. x^2 - 4" value="x^2-4" style="width:100%;font-size:16px;padding:10px;margin-top:8px">
+ <div class="row" style="margin-top:8px;gap:8px"><label>x min <input id="gmin" type="number" value="-10" style="width:70px"></label><label>x max <input id="gmax" type="number" value="10" style="width:70px"></label><button class="btn" id="gplot">Plot</button></div>
+ <canvas id="gcanvas" width="380" height="300" style="width:100%;max-width:380px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:10px"></canvas>
+ <div id="gout" class="mut" style="font-size:13px;margin-top:8px;white-space:pre-line"></div></div>`;
+ const cv=el.querySelector("#gcanvas"),ctx=cv.getContext("2d"),out=el.querySelector("#gout");
+ const plot=()=>{
+  const exprStr=el.querySelector("#gexpr").value||"x";
+  const xmin=parseFloat(el.querySelector("#gmin").value)||-10,xmax=parseFloat(el.querySelector("#gmax").value)||10;
+  const f=x=>{try{return evalExpr(exprStr.replace(/x/g,"("+x+")"))}catch(e){return NaN}};
+  const W=cv.width,H=cv.height;
+  const samples=[];let ymin=Infinity,ymax=-Infinity;
+  for(let px=0;px<=W;px++){const x=xmin+(xmax-xmin)*px/W;const y=f(x);samples.push(y);if(Number.isFinite(y)){ymin=Math.min(ymin,y);ymax=Math.max(ymax,y)}}
+  if(!Number.isFinite(ymin)){out.textContent="Couldn't evaluate that expression.";return}
+  if(ymin===ymax){ymin-=1;ymax+=1}
+  const pad=(ymax-ymin)*0.1;ymin-=pad;ymax+=pad;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1;
+  const yOf=y=>H-(y-ymin)/(ymax-ymin)*H;
+  const xOf=px=>px;
+  if(ymin<0&&ymax>0){ctx.beginPath();ctx.moveTo(0,yOf(0));ctx.lineTo(W,yOf(0));ctx.stroke()}
+  if(xmin<0&&xmax>0){const px0=(0-xmin)/(xmax-xmin)*W;ctx.beginPath();ctx.moveTo(px0,0);ctx.lineTo(px0,H);ctx.stroke()}
+  ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue("--acc")||"#4a90d9";
+  ctx.lineWidth=2.5;ctx.beginPath();let started=false;
+  for(let px=0;px<=W;px++){const y=samples[px];if(!Number.isFinite(y)){started=false;continue}
+   const py=yOf(y);if(!started){ctx.moveTo(xOf(px),py);started=true}else ctx.lineTo(xOf(px),py);}
+  ctx.stroke();
+  const yint=f(0);
+  const zeros=[];
+  let prevSign=null,prevX=null;
+  for(let px=0;px<=W;px++){
+   const y=samples[px];
+   if(!Number.isFinite(y)){prevSign=null;continue}
+   const x=xmin+(xmax-xmin)*px/W;
+   if(y===0){zeros.push(x.toFixed(2));prevSign=0;prevX=x;continue}
+   const sign=y>0?1:-1;
+   if(prevSign!==null&&prevSign!==0&&sign!==prevSign)zeros.push(((prevX+x)/2).toFixed(2));
+   prevSign=sign;prevX=x;
+  }
+  out.textContent=`y-intercept: ${Number.isFinite(yint)?yint.toFixed(3):"n/a"}${zeros.length?`\nApprox. x-intercept(s): ${zeros.join(", ")}`:"\nNo x-intercepts found in this range."}`;
+ };
+ el.querySelector("#gplot").onclick=plot;
+ plot();
+}
+
+/* ============ 4. Statistics calculator ============ */
+function toolStats(el){
+ el.innerHTML=`<div class="card"><h3>Statistics calculator</h3>
+ <p class="mut" style="font-size:12.5px">Paste numbers separated by commas or spaces — get the full five-number summary, mean, SD and outlier check.</p>
+ <textarea id="sdata" rows="3" style="width:100%;font-size:15px;padding:8px" placeholder="e.g. 2, 4, 5, 6, 6, 7, 8, 9, 10, 12, 15"></textarea>
+ <button class="btn" id="scalc" style="margin-top:8px">Calculate</button>
+ <div id="sout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ el.querySelector("#scalc").onclick=()=>{
+  const nums=(el.querySelector("#sdata").value.match(/-?\d+(\.\d+)?/g)||[]).map(Number).sort((a,b)=>a-b);
+  const out=el.querySelector("#sout");
+  if(nums.length<2){out.textContent="Enter at least 2 numbers.";return}
+  const n=nums.length;
+  const mean=nums.reduce((s,v)=>s+v,0)/n;
+  const median=n%2?nums[(n-1)/2]:(nums[n/2-1]+nums[n/2])/2;
+  const lower=nums.slice(0,Math.floor(n/2)),upper=n%2?nums.slice(Math.ceil(n/2)):nums.slice(n/2);
+  const med=arr=>{const m=arr.length;return m%2?arr[(m-1)/2]:(arr[m/2-1]+arr[m/2])/2};
+  const q1=med(lower),q3=med(upper),iqr=q3-q1;
+  const lowFence=q1-1.5*iqr,upFence=q3+1.5*iqr;
+  const outliers=nums.filter(v=>v<lowFence||v>upFence);
+  const variance=nums.reduce((s,v)=>s+(v-mean)*(v-mean),0)/n;
+  const sd=Math.sqrt(variance);
+  const svariance=n>1?nums.reduce((s,v)=>s+(v-mean)*(v-mean),0)/(n-1):0;
+  const ssd=Math.sqrt(svariance);
+  const freq={};nums.forEach(v=>freq[v]=(freq[v]||0)+1);
+  const maxf=Math.max(...Object.values(freq));
+  const modes=Object.keys(freq).filter(k=>freq[k]===maxf&&maxf>1);
+  out.textContent=`n = ${n}\nMin = ${nums[0]}, Max = ${nums[n-1]}, Range = ${(nums[n-1]-nums[0]).toFixed(3)}\nQ1 = ${q1}, Median = ${median}, Q3 = ${q3}\nIQR = ${iqr.toFixed(3)}\nOutlier fence: below ${lowFence.toFixed(2)} or above ${upFence.toFixed(2)}\nOutliers: ${outliers.length?outliers.join(", "):"none"}\nMean = ${mean.toFixed(4)}\nMode(s): ${modes.length?modes.join(", "):"none (no repeats)"}\nPopulation SD = ${sd.toFixed(4)}\nSample SD = ${ssd.toFixed(4)}`;
+ };
+}
+
+/* ============ 5. Simultaneous equation solver ============ */
+function toolSim(el){
+ el.innerHTML=`<div class="card"><h3>Simultaneous equations (2×2)</h3>
+ <p class="mut" style="font-size:12.5px">Solves a₁x + b₁y = c₁ and a₂x + b₂y = c₂ by elimination, with steps shown.</p>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+ <label>a₁<input id="sa1" type="number" value="2" style="width:60px"></label><label>b₁<input id="sb1" type="number" value="1" style="width:60px"></label><label>c₁<input id="sc1" type="number" value="11" style="width:60px"></label>
+ </div>
+ <div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px">
+ <label>a₂<input id="sa2" type="number" value="1" style="width:60px"></label><label>b₂<input id="sb2" type="number" value="-1" style="width:60px"></label><label>c₂<input id="sc2" type="number" value="1" style="width:60px"></label>
+ </div>
+ <button class="btn" id="ssolve" style="margin-top:10px">Solve</button>
+ <div id="ssout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ el.querySelector("#ssolve").onclick=()=>{
+  const v=id=>parseFloat(el.querySelector(id).value)||0;
+  const a1=v("#sa1"),b1=v("#sb1"),c1=v("#sc1"),a2=v("#sa2"),b2=v("#sb2"),c2=v("#sc2");
+  const out=el.querySelector("#ssout");
+  const det=a1*b2-a2*b1;
+  if(det===0){out.textContent="These lines are parallel (or the same line) — no unique solution.";return}
+  const x=(c1*b2-c2*b1)/det,y=(a1*c2-a2*c1)/det;
+  out.textContent=`${a1}x + ${b1}y = ${c1}\n${a2}x + ${b2}y = ${c2}\n\nUsing elimination/Cramer's rule:\nx = (c₁b₂ − c₂b₁)/(a₁b₂ − a₂b₁) = ${x}\ny = (a₁c₂ − a₂c₁)/(a₁b₂ − a₂b₁) = ${y}\n\nSolution: x = ${x}, y = ${y}`;
+ };
+}
+
+/* ============ 6. Sequences & series ============ */
+function toolSeq(el){
+ el.innerHTML=`<div class="card"><h3>Sequences & series</h3>
+ <div class="row" style="margin-top:8px"><label><input type="radio" name="seqtype" value="ar" checked> Arithmetic</label><label><input type="radio" name="seqtype" value="ge"> Geometric</label></div>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px">
+ <label>First term a <input id="sqa" type="number" value="3" style="width:70px"></label>
+ <label id="sqdlabel">Common difference d <input id="sqd" type="number" value="4" style="width:70px"></label>
+ <label>n <input id="sqn" type="number" value="10" style="width:70px"></label>
+ </div>
+ <button class="btn" id="sqcalc" style="margin-top:10px">Calculate</button>
+ <div id="sqout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ const dLabel=el.querySelector("#sqdlabel");
+ el.querySelectorAll('input[name="seqtype"]').forEach(r=>r.onchange=()=>{
+  const ge=el.querySelector('input[name="seqtype"]:checked').value==="ge";
+  dLabel.innerHTML=ge?`Common ratio r <input id="sqd" type="number" value="2" step="0.1" style="width:70px">`:`Common difference d <input id="sqd" type="number" value="4" style="width:70px">`;
+ });
+ el.querySelector("#sqcalc").onclick=()=>{
+  const ge=el.querySelector('input[name="seqtype"]:checked').value==="ge";
+  const a=parseFloat(el.querySelector("#sqa").value)||0,d=parseFloat(el.querySelector("#sqd").value)||0,n=parseInt(el.querySelector("#sqn").value)||1;
+  const out=el.querySelector("#sqout");
+  if(!ge){
+   const term=a+(n-1)*d,sum=n/2*(2*a+(n-1)*d);
+   out.textContent=`Arithmetic: a = ${a}, d = ${d}, n = ${n}\nnth term: Tₙ = a + (n−1)d = ${a} + (${n}−1)(${d}) = ${term}\nSum: Sₙ = n/2 × (2a + (n−1)d) = ${n}/2 × (${2*a+(n-1)*d}) = ${sum}`;
+  }else{
+   const term=a*Math.pow(d,n-1);
+   let sum;
+   if(d===1)sum=a*n;else sum=a*(Math.pow(d,n)-1)/(d-1);
+   let inf="";
+   if(Math.abs(d)<1)inf=`\nSum to infinity: S∞ = a/(1−r) = ${a}/(1−${d}) = ${(a/(1-d)).toFixed(4)}`;
+   out.textContent=`Geometric: a = ${a}, r = ${d}, n = ${n}\nnth term: Tₙ = a·r^(n−1) = ${a}×${d}^${n-1} ≈ ${term.toFixed(4)}\nSum: Sₙ = a(rⁿ−1)/(r−1) ≈ ${sum.toFixed(4)}${inf}`;
+  }
+ };
+}
+
+/* ============ 7. Trig equation solver ============ */
+function toolTrigSolve(el){
+ el.innerHTML=`<div class="card"><h3>Trig equation solver</h3>
+ <p class="mut" style="font-size:12.5px">Solves k·f(x) + c = 0, i.e. f(x) = −c/k, over a chosen domain (degrees).</p>
+ <div class="row" style="margin-top:8px;gap:8px"><label>f <select id="tfn"><option value="sin">sin</option><option value="cos">cos</option><option value="tan">tan</option></select></label>
+ <label>k <input id="tk" type="number" value="2" style="width:60px"></label>
+ <label>c <input id="tc" type="number" value="1" style="width:60px"></label></div>
+ <div class="row" style="margin-top:8px;gap:8px"><label>domain min <input id="tmin" type="number" value="0" style="width:70px"></label><label>domain max <input id="tmax" type="number" value="360" style="width:70px"></label></div>
+ <button class="btn" id="tsolve" style="margin-top:10px">Solve</button>
+ <div id="tout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ el.querySelector("#tsolve").onclick=()=>{
+  const fn=el.querySelector("#tfn").value,k=parseFloat(el.querySelector("#tk").value)||1,c=parseFloat(el.querySelector("#tc").value)||0;
+  const dmin=parseFloat(el.querySelector("#tmin").value)||0,dmax=parseFloat(el.querySelector("#tmax").value)||360;
+  const out=el.querySelector("#tout");
+  const target=-c/k;
+  if((fn==="sin"||fn==="cos")&&Math.abs(target)>1){out.textContent=`${fn}(x) = ${target.toFixed(4)} has no solution — sin/cos only range between −1 and 1.`;return}
+  let ref,family;
+  if(fn==="tan"){ref=Math.atan(target)*180/Math.PI;family="tan"}
+  else if(fn==="sin"){ref=Math.asin(target)*180/Math.PI;family="sin"}
+  else{ref=Math.acos(target)*180/Math.PI;family="cos"}
+  const sols=new Set();
+  if(family==="tan"){
+   for(let kk=-20;kk<=20;kk++){const x=ref+kk*180;if(x>=dmin-1e-6&&x<=dmax+1e-6)sols.add(Math.round(x*1000)/1000)}
+  }else if(family==="sin"){
+   for(let kk=-20;kk<=20;kk++){
+    const x1=ref+kk*360,x2=(180-ref)+kk*360;
+    if(x1>=dmin-1e-6&&x1<=dmax+1e-6)sols.add(Math.round(x1*1000)/1000);
+    if(x2>=dmin-1e-6&&x2<=dmax+1e-6)sols.add(Math.round(x2*1000)/1000);
+   }
+  }else{
+   for(let kk=-20;kk<=20;kk++){
+    const x1=ref+kk*360,x2=-ref+kk*360;
+    if(x1>=dmin-1e-6&&x1<=dmax+1e-6)sols.add(Math.round(x1*1000)/1000);
+    if(x2>=dmin-1e-6&&x2<=dmax+1e-6)sols.add(Math.round(x2*1000)/1000);
+   }
+  }
+  const list=[...sols].sort((a,b)=>a-b);
+  out.textContent=`${k}${fn}(x) + ${c} = 0\n${fn}(x) = ${-c}/${k} = ${target.toFixed(4)}\nReference angle ≈ ${Math.abs(ref).toFixed(2)}°\n\nSolutions in [${dmin}°, ${dmax}°]:\n${list.length?list.map(v=>v+"°").join(", "):"none in this domain"}`;
+ };
+}
+
+/* ============ 8. Circle & hyperbola transformer ============ */
+function toolConic(el){
+ el.innerHTML=`<div class="card"><h3>Circle & hyperbola transformer</h3>
+ <div class="row" style="margin-top:8px"><label><input type="radio" name="conictype" value="circ" checked> Circle (general form)</label><label><input type="radio" name="conictype" value="hyp"> Hyperbola (y = 1/(x−h) + k)</label></div>
+ <div id="conicin" style="margin-top:8px"></div>
+ <button class="btn" id="conicgo" style="margin-top:10px">Find it</button>
+ <div id="conicout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ const box=el.querySelector("#conicin");
+ const draw=()=>{const hyp=el.querySelector('input[name="conictype"]:checked').value==="hyp";
+  box.innerHTML=hyp
+   ? `<p class="mut" style="font-size:12.5px">Enter h and k for y = 1/(x − h) + k</p><div class="row" style="gap:8px"><label>h <input id="ch" type="number" value="3" style="width:70px"></label><label>k <input id="ck" type="number" value="2" style="width:70px"></label></div>`
+   : `<p class="mut" style="font-size:12.5px">x² + y² + Dx + Ey + F = 0</p><div class="row" style="gap:8px"><label>D <input id="cD" type="number" value="-6" style="width:70px"></label><label>E <input id="cE" type="number" value="4" style="width:70px"></label><label>F <input id="cF" type="number" value="-12" style="width:70px"></label></div>`;
+ };
+ draw();
+ el.querySelectorAll('input[name="conictype"]').forEach(r=>r.onchange=draw);
+ el.querySelector("#conicgo").onclick=()=>{
+  const hyp=el.querySelector('input[name="conictype"]:checked').value==="hyp";
+  const out=el.querySelector("#conicout");
+  if(hyp){
+   const h=parseFloat(el.querySelector("#ch").value)||0,k=parseFloat(el.querySelector("#ck").value)||0;
+   out.textContent=`y = 1/(x − ${h}) + ${k} is y = 1/x shifted right ${h} and up ${k} (adjust wording if h or k is negative).\nVertical asymptote: x = ${h}\nHorizontal asymptote: y = ${k}`;
+  }else{
+   const D=parseFloat(el.querySelector("#cD").value)||0,E=parseFloat(el.querySelector("#cE").value)||0,F=parseFloat(el.querySelector("#cF").value)||0;
+   const h=-D/2,k=-E/2,rr=h*h+k*k-F;
+   if(rr<0){out.textContent=`(x ${h>=0?"−":"+"} ${Math.abs(h)})² + (y ${k>=0?"−":"+"} ${Math.abs(k)})² = ${rr.toFixed(2)}\nThis is negative, so there's no real circle for these values.`;return}
+   out.textContent=`Completing the square:\n(x ${h>=0?"−":"+"} ${Math.abs(h)})² + (y ${k>=0?"−":"+"} ${Math.abs(k)})² = ${rr}\nCentre: (${h}, ${k})\nRadius: √${rr} = ${surdStr(rr)} ≈ ${Math.sqrt(rr).toFixed(3)}`;
+  }
+ };
+}
+
+/* ============ 9. CAS command flashcards ============ */
+const CASCMD=[
+["Solve a linear equation, e.g. 2x + 5 = 11","solve(2x+5=11,x)  →  x = 3"],
+["Solve a quadratic equation, e.g. x² − 5x + 6 = 0","solve(x^2-5x+6=0,x)  →  x = 2 or x = 3"],
+["Factorise an expression, e.g. x² − 5x + 6","factor(x^2-5x+6)  →  (x−2)(x−3)"],
+["Expand an expression, e.g. (x+2)(x−3)","expand((x+2)(x-3))  →  x² − x − 6"],
+["Solve simultaneous equations","solve({2x+y=11,x-y=1},{x,y})  →  x = 4, y = 3"],
+["Find the exact zeros of a polynomial function","zeros(x^2-4,x)  →  {−2, 2} (Menu > Algebra > Zeros)"],
+["Force a decimal approximation instead of exact form","Press ctrl+enter instead of enter, or wrap in approx( ... )"],
+["Complete the square on an expression","Menu > Algebra > Complete the Square — gives the vertex form directly"],
+["Find one-variable statistics (mean, SD, quartiles) from a list","Enter the list in Lists & Spreadsheet, then Menu > Statistics > Stat Calculations > One-Variable Statistics"],
+["Solve an exponential equation, e.g. 2^x = 16","solve(2^x=16,x)  →  x = 4"],
+["Solve a trig equation over a domain, e.g. sin(x)=0.5 for 0≤x≤360","solve(sin(x)=0.5,x)|x>=0 and x<=360  →  x = 30, 150"],
+["Find where two graphs intersect","Graphs page: Menu > Analyze Graph > Intersection (click both curves), or solve(f1(x)=f2(x),x)"],
+["Graph a function to check its shape/turning point","Graphs page, type f1(x)= your expression, then Menu > Analyze Graph > Minimum/Maximum"],
+["Rationalise or simplify a surd expression","Just type it normally, e.g. 1/sqrt(3), and press enter — CAS auto-simplifies exact surds"]
+];
+function toolCasCmd(el){
+ const i=ld("cci",0)%CASCMD.length,flip=ld("ccf",false),done=ld("ccdone",{}),n=Object.keys(done).length;
+ const [task,cmd]=CASCMD[i];
+ el.innerHTML=`<div class="card"><h3>CAS commands</h3><p class="mut" style="font-size:13px">A flashcard set for using the calculator itself, for Maths 2 (CAS). Think of the command before flipping. ${n}/${CASCMD.length} marked known.</p>
+ <div style="border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:10px;min-height:90px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer" id="cccard">
+ ${flip?`<div style="font-size:15.5px;font-family:monospace">${esc(cmd)}</div>`:`<div style="font-size:16px;font-weight:600">${esc(task)}</div>`}</div>
+ <p class="mut" style="font-size:12.5px;margin-top:6px">${i+1} / ${CASCMD.length} — ${flip?"tap to show the task again":"tap to reveal the CAS command"}</p>
+ <div class="mvr" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+ <button class="btn" data-cc="got">I knew it</button>
+ <button class="btn ghost" data-cc="not">Not yet</button>
+ <button class="btn ghost" data-cc="shuf">Shuffle</button>
+ <button class="btn ghost" data-cc="reset">Reset progress</button>
+ </div></div>`;
+ el.querySelector("#cccard").onclick=()=>{sv("ccf",!flip);toolCasCmd(el)};
+ el.onclick=e=>{const b=e.target.closest("[data-cc]");if(!b||b.id==="cccard")return;const a=b.dataset.cc;
+  if(a==="got"){done[task]=1;sv("ccdone",done);sv("cci",(i+1)%CASCMD.length);sv("ccf",false)}
+  else if(a==="not"){sv("cci",(i+1)%CASCMD.length);sv("ccf",false)}
+  else if(a==="shuf"){sv("cci",Math.floor(Math.random()*CASCMD.length));sv("ccf",false)}
+  else if(a==="reset"){sv("ccdone",{});sv("cci",0);sv("ccf",false)}
+  toolCasCmd(el)};
+}
+
+/* ============ 10. Box plot visualiser ============ */
+function toolBoxPlot(el){
+ el.innerHTML=`<div class="card"><h3>Box plot visualiser</h3>
+ <p class="mut" style="font-size:12.5px">Paste a data list — draws the actual box-and-whisker plot from the five-number summary.</p>
+ <textarea id="bpdata" rows="3" style="width:100%;font-size:15px;padding:8px" placeholder="e.g. 2, 4, 5, 6, 6, 7, 8, 9, 10, 12, 15"></textarea>
+ <button class="btn" id="bpcalc" style="margin-top:8px">Draw</button>
+ <canvas id="bpcanvas" width="380" height="140" style="width:100%;max-width:380px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:10px"></canvas>
+ <div id="bpout" class="mut" style="font-size:13px;margin-top:8px;white-space:pre-line"></div></div>`;
+ const cv=el.querySelector("#bpcanvas"),ctx=cv.getContext("2d");
+ el.querySelector("#bpcalc").onclick=()=>{
+  const nums=(el.querySelector("#bpdata").value.match(/-?\d+(\.\d+)?/g)||[]).map(Number).sort((a,b)=>a-b);
+  const out=el.querySelector("#bpout");
+  if(nums.length<2){out.textContent="Enter at least 2 numbers.";return}
+  const n=nums.length;
+  const median=n%2?nums[(n-1)/2]:(nums[n/2-1]+nums[n/2])/2;
+  const lower=nums.slice(0,Math.floor(n/2)),upper=n%2?nums.slice(Math.ceil(n/2)):nums.slice(n/2);
+  const med=arr=>{const m=arr.length;return m%2?arr[(m-1)/2]:(arr[m/2-1]+arr[m/2])/2};
+  const q1=med(lower),q3=med(upper),iqr=q3-q1;
+  const lowFence=q1-1.5*iqr,upFence=q3+1.5*iqr;
+  const outliers=nums.filter(v=>v<lowFence||v>upFence);
+  const nonOut=nums.filter(v=>v>=lowFence&&v<=upFence);
+  const whiskerMin=nonOut.length?nonOut[0]:nums[0],whiskerMax=nonOut.length?nonOut[nonOut.length-1]:nums[n-1];
+  const W=cv.width,H=cv.height,pad=30;
+  ctx.clearRect(0,0,W,H);
+  const lo=nums[0],hi=nums[n-1],range=hi-lo||1;
+  const xOf=v=>pad+(v-lo)/range*(W-2*pad);
+  const midY=H/2;
+  ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,H-18);ctx.lineTo(W-pad,H-18);ctx.stroke();
+  ctx.font="10px sans-serif";ctx.fillStyle="#8a8a8a";
+  [lo,hi].forEach(v=>{ctx.fillText(v.toFixed(1),xOf(v)-8,H-4)});
+  ctx.strokeStyle="#4a90d9";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(xOf(whiskerMin),midY);ctx.lineTo(xOf(q1),midY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(xOf(q3),midY);ctx.lineTo(xOf(whiskerMax),midY);ctx.stroke();
+  [whiskerMin,whiskerMax].forEach(v=>{ctx.beginPath();ctx.moveTo(xOf(v),midY-12);ctx.lineTo(xOf(v),midY+12);ctx.stroke()});
+  ctx.fillStyle="rgba(74,144,217,0.25)";ctx.fillRect(xOf(q1),midY-20,xOf(q3)-xOf(q1),40);
+  ctx.strokeRect(xOf(q1),midY-20,xOf(q3)-xOf(q1),40);
+  ctx.beginPath();ctx.moveTo(xOf(median),midY-20);ctx.lineTo(xOf(median),midY+20);ctx.lineWidth=2.5;ctx.stroke();
+  ctx.fillStyle="#d9534f";outliers.forEach(v=>{ctx.beginPath();ctx.arc(xOf(v),midY,3.5,0,2*Math.PI);ctx.fill()});
+  out.textContent=`Min = ${nums[0]}, Q1 = ${q1}, Median = ${median}, Q3 = ${q3}, Max = ${nums[n-1]}\nIQR = ${iqr}, outlier fence: below ${lowFence.toFixed(2)} or above ${upFence.toFixed(2)}\nOutliers (red dots): ${outliers.length?outliers.join(", "):"none"}`;
+ };
+}
+
+/* ============ 11. 3D shape calculator ============ */
+function tool3D(el){
+ el.innerHTML=`<div class="card"><h3>3D shape calculator</h3>
+ <div class="row" style="margin-top:8px"><label>Shape
+ <select id="shShape" style="margin-left:6px">
+ <option value="cyl">Cylinder</option><option value="cone">Cone</option><option value="sph">Sphere</option>
+ <option value="rect">Rectangular prism</option><option value="tri">Triangular prism (right-angled cross-section)</option><option value="pyr">Square pyramid</option>
+ </select></label></div>
+ <div id="shIn" style="margin-top:8px"></div>
+ <button class="btn" id="shGo" style="margin-top:10px">Calculate</button>
+ <div id="shOut" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ const box=el.querySelector("#shIn"),sel=el.querySelector("#shShape");
+ const fields={
+  cyl:[["r","radius"],["h","height"]],
+  cone:[["r","radius"],["h","height"]],
+  sph:[["r","radius"]],
+  rect:[["l","length"],["w","width"],["h","height"]],
+  tri:[["b","base of triangle"],["h","height of triangle"],["L","prism length"]],
+  pyr:[["a","base side"],["h","height"]]
+ };
+ const draw=()=>{box.innerHTML=fields[sel.value].map(([id,label])=>`<label style="margin-right:8px">${label} <input id="sh_${id}" type="number" value="5" style="width:70px"></label>`).join("")};
+ draw();sel.onchange=draw;
+ el.querySelector("#shGo").onclick=()=>{
+  const v=id=>parseFloat(el.querySelector("#sh_"+id)?.value)||0;
+  const out=el.querySelector("#shOut");const shape=sel.value;
+  if(shape==="cyl"){const r=v("r"),h=v("h");const vol=Math.PI*r*r*h,sa=2*Math.PI*r*r+2*Math.PI*r*h;
+   out.textContent=`Volume = πr²h = π(${r})²(${h}) ≈ ${vol.toFixed(2)}\nSurface area = 2πr² + 2πrh ≈ ${sa.toFixed(2)}`;}
+  else if(shape==="cone"){const r=v("r"),h=v("h");const l=Math.sqrt(r*r+h*h);const vol=(1/3)*Math.PI*r*r*h,sa=Math.PI*r*r+Math.PI*r*l;
+   out.textContent=`Slant height l = √(r²+h²) = √(${r}²+${h}²) ≈ ${l.toFixed(2)}\nVolume = ⅓πr²h ≈ ${vol.toFixed(2)}\nSurface area = πr² + πrl ≈ ${sa.toFixed(2)}`;}
+  else if(shape==="sph"){const r=v("r");const vol=(4/3)*Math.PI*r*r*r,sa=4*Math.PI*r*r;
+   out.textContent=`Volume = ⁴⁄₃πr³ ≈ ${vol.toFixed(2)}\nSurface area = 4πr² ≈ ${sa.toFixed(2)}`;}
+  else if(shape==="rect"){const l=v("l"),w=v("w"),h=v("h");const vol=l*w*h,sa=2*(l*w+l*h+w*h);
+   out.textContent=`Volume = l×w×h = ${l}×${w}×${h} = ${vol.toFixed(2)}\nSurface area = 2(lw+lh+wh) = 2(${(l*w).toFixed(1)}+${(l*h).toFixed(1)}+${(w*h).toFixed(1)}) = ${sa.toFixed(2)}`;}
+  else if(shape==="tri"){const b=v("b"),h=v("h"),L=v("L");const hyp=Math.sqrt(b*b+h*h);const area=0.5*b*h;const vol=area*L;const sa=2*area+(b+h+hyp)*L;
+   out.textContent=`Triangle hypotenuse = √(${b}²+${h}²) ≈ ${hyp.toFixed(2)}\nCross-section area = ½bh = ${area.toFixed(2)}\nVolume = area × length = ${vol.toFixed(2)}\nSurface area = 2(cross-section) + perimeter×length = ${sa.toFixed(2)}`;}
+  else if(shape==="pyr"){const a=v("a"),h=v("h");const l=Math.sqrt(h*h+(a/2)*(a/2));const vol=(1/3)*a*a*h,sa=a*a+2*a*l;
+   out.textContent=`Slant height l = √(h²+(a/2)²) ≈ ${l.toFixed(2)}\nVolume = ⅓a²h ≈ ${vol.toFixed(2)}\nSurface area = a² + 2al ≈ ${sa.toFixed(2)}`;}
+ };
+}
+
+/* ============ 12. Bearings & vector resultant ============ */
+function toolBearings(el){
+ el.innerHTML=`<div class="card"><h3>Bearings & vector resultant</h3>
+ <p class="mut" style="font-size:12.5px">Two legs of a journey (distance + bearing) → the single straight-line distance and bearing back to the start.</p>
+ <div class="row" style="margin-top:8px;gap:8px"><label>d₁ <input id="brd1" type="number" value="8" style="width:70px"></label><label>bearing₁° <input id="brb1" type="number" value="60" style="width:70px"></label></div>
+ <div class="row" style="margin-top:6px;gap:8px"><label>d₂ <input id="brd2" type="number" value="6" style="width:70px"></label><label>bearing₂° <input id="brb2" type="number" value="150" style="width:70px"></label></div>
+ <button class="btn" id="brGo" style="margin-top:10px">Calculate</button>
+ <div id="brOut" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div></div>`;
+ el.querySelector("#brGo").onclick=()=>{
+  const d1=parseFloat(el.querySelector("#brd1").value)||0,b1=parseFloat(el.querySelector("#brb1").value)||0;
+  const d2=parseFloat(el.querySelector("#brd2").value)||0,b2=parseFloat(el.querySelector("#brb2").value)||0;
+  const r=Math.PI/180;
+  const n1=d1*Math.cos(b1*r),e1=d1*Math.sin(b1*r);
+  const n2=d2*Math.cos(b2*r),e2=d2*Math.sin(b2*r);
+  const N=n1+n2,E=e1+e2;
+  const dist=Math.sqrt(N*N+E*E);
+  let brg=Math.atan2(E,N)*180/Math.PI;if(brg<0)brg+=360;
+  el.querySelector("#brOut").textContent=`Leg 1: north component = ${d1}cos(${b1}°) ≈ ${n1.toFixed(2)}, east component = ${d1}sin(${b1}°) ≈ ${e1.toFixed(2)}\nLeg 2: north component ≈ ${n2.toFixed(2)}, east component ≈ ${e2.toFixed(2)}\nTotal north ≈ ${N.toFixed(2)}, total east ≈ ${E.toFixed(2)}\n\nStraight-line distance = √(north² + east²) ≈ ${dist.toFixed(2)}\nBearing back to start direction ≈ ${brg.toFixed(1)}°`;
+ };
+}
+
+/* ============ 13. Unit circle reference ============ */
+const UC_ANGLES=[0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330,360];
+function ucVal(fn,deg){
+ const r=deg*Math.PI/180;
+ const v=fn==="sin"?Math.sin(r):fn==="cos"?Math.cos(r):Math.tan(r);
+ const rounded=Math.round(v*1e6)/1e6;
+ const exactMap={"-1":"−1","1":"1","0":"0","0.5":"1/2","-0.5":"−1/2","0.707107":"√2/2","-0.707107":"−√2/2","0.866025":"√3/2","-0.866025":"−√3/2","1.732051":"√3","-1.732051":"−√3","0.57735":"√3/3","-0.57735":"−√3/3"};
+ const key=String(rounded);
+ return exactMap[key]!==undefined?exactMap[key]:(Number.isFinite(rounded)?rounded.toFixed(3):"undefined");
+}
+function toolUnitCircle(el){
+ const cur=ld("ucang",0);
+ el.innerHTML=`<div class="card"><h3>Unit circle reference</h3>
+ <p class="mut" style="font-size:12.5px">Tap an angle to see its exact sin, cos and tan values and its point on the circle.</p>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">${UC_ANGLES.map(a=>`<button class="btn ${a===cur?'':'ghost'}" data-uc="${a}" style="padding:6px 10px;font-size:12.5px">${a}°</button>`).join("")}</div>
+ <canvas id="uccv" width="220" height="220" style="margin:14px auto;display:block;background:var(--card);border:1px solid var(--line);border-radius:50%"></canvas>
+ <div id="ucout" class="card" style="background:var(--soft);font-size:16px;text-align:center;padding:14px"></div></div>`;
+ const cv=el.querySelector("#uccv"),ctx=cv.getContext("2d");
+ const draw=deg=>{
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2,R=90;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-R-10,cy);ctx.lineTo(cx+R+10,cy);ctx.moveTo(cx,cy-R-10);ctx.lineTo(cx,cy+R+10);ctx.stroke();
+  const rad=deg*Math.PI/180;
+  const px=cx+R*Math.cos(rad),py=cy-R*Math.sin(rad);
+  ctx.strokeStyle="#4a90d9";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
+  ctx.fillStyle="#d9534f";ctx.beginPath();ctx.arc(px,py,5,0,2*Math.PI);ctx.fill();
+  el.querySelector("#ucout").innerHTML=`<b>${deg}°</b><br>sin = ${esc(ucVal("sin",deg))} · cos = ${esc(ucVal("cos",deg))} · tan = ${esc(ucVal("tan",deg))}`;
+ };
+ draw(cur);
+ el.querySelectorAll("[data-uc]").forEach(b=>b.onclick=()=>{const a=+b.dataset.uc;sv("ucang",a);toolUnitCircle(el)});
+}
+
+window.toolCasCalc=toolCalc;
+window.toolCasEqSolve=toolSolve;
+window.toolCasGraphFn=toolGraph;
+window.toolCasStatsCalc=toolStats;
+window.toolCasSimSolve=toolSim;
+window.toolCasSeq=toolSeq;
+window.toolCasTrigSolve=toolTrigSolve;
+window.toolCasConic=toolConic;
+window.toolCasCmd=toolCasCmd;
+window.toolCasBoxPlot=toolBoxPlot;
+window.toolCas3D=tool3D;
+window.toolCasBearings=toolBearings;
+window.toolCasUnitCircle=toolUnitCircle;
 })();
 
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
@@ -7210,8 +7836,13 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=89;
+const APP_VER=94;
 const APP_LOG=[
+[94,"2026-11-12 18:05","Added 4 more Maths tools: a Box plot visualiser (paste a data list, see the actual drawn box-and-whisker plot with outliers marked), a 3D shape calculator (cylinder/cone/sphere/rectangular prism/triangular prism/square pyramid — volume and surface area with working), a Bearings & vector resultant calculator (two legs of a journey → straight-line distance and bearing home, using north/east components), and a Unit circle reference (tap any common angle, see its exact sin/cos/tan and its point drawn on an actual circle)."],
+[93,"2026-11-12 17:55","Added 4 more Maths tools: Sequences & series (arithmetic/geometric, nth term, sum, sum to infinity), Trig equation solver (any k·f(x)+c=0 over a chosen domain, with reference angle and ASTC working shown), Circle & hyperbola transformer (completing the square for circles, asymptotes for hyperbolas), and a CAS commands flashcard set (14 cards — the actual calculator syntax for solve/factor/expand/zeros/stats/etc, separate from the formula-recall cards). Also added a \"CAS challenge\" generator — 6 genuinely chained, multi-concept extended-response problems (e.g. simultaneous equations feeding into a diagonal-length question, projectile motion with a 3-part turning-point-and-landing-time question, circle-line intersection) for harder Maths 2 practice than the existing CAS practice bank."],
+[92,"2026-11-12 17:45","Added 5 real interactive calculator tools under Maths, built into the app (not just more quiz questions): a Scientific calculator (sin/cos/tan/sqrt/log/^, degree mode), an Equation solver (linear and quadratic, full working, exact surds, discriminant), a Function grapher (plots any y=f(x), finds x- and y-intercepts), a Statistics calculator (paste a data list, get mean/median/Q1/Q3/IQR/outlier fences/mode/population+sample SD), and a Simultaneous equation solver (2x2, elimination method with steps shown). These are a hand-built mini CAS inside the app itself, not a connection to any external calculator software."],
+[91,"2026-11-12 17:30","Added a new \"CAS practice\" tool under Maths — 11 fresh generators of calculator-allowed, multi-part extended-response style questions (quadratic applications, compound interest evaluated fully, cosine/sine rule, standard deviation, exponential decay with solve-for-t, probability trees as decimals, composite solid volumes/areas, circle completing-the-square, population growth) for Maths 2 (CAS) exam prep, separate from the Maths 1 Tech Free generators."],
+[90,"2026-11-12 09:52","The \"More tools\" panel in each subject is now a real collapsible menu (tap to open/close) instead of always showing both the main row and the More-tools box at once — so only one group's buttons show at a time, matching the behaviour of the other single-purpose tool pages."],
 [89,"2026-11-12 07:17","The v87 \"big question\" size was too timid — genuinely undersized against Flashcards. Fixed: the question is now ~34px, a much taller card, and the title/blurb above it are shrunk right down so the question is actually what your eye lands on, matching Flashcards' scale. Applies to Exact value drill, Quadratics & surds, Tech-free practice, Worded application, and Maths/Science/French Practice questions."],
 [88,"2026-11-12 07:16","The v87 tab-bar fix wasn't actually visible — fixed properly this time: every subject's tools are now split into two real, separate panels — Flashcards/main practice/Exam topics in one row up top, everything else boxed off below in its own shaded \"More tools\" panel with a label, a border and real gap between them. Not just a wider CSS gap this time."],
 [87,"2026-11-12 06:45","Decluttered the tool tabs at the top of every subject (more spacing, bigger buttons, not jammed together) and made the question itself the big, centered focus — like Flashcards — on the main question-and-answer tools: Maths' Exact value drill, Quadratics & surds, Tech-free practice, Worded application, and the Practice questions drill shared by Maths, Science and French. Editors like the essay planner, poem annotator, Legal practice builder and French writing weren't changed — they aren't question cards, and forcing that layout onto them would break how they actually work."],
@@ -7332,7 +7963,7 @@ studyHtml=function(n){let h=_studyHtmlBase(n);if(!h)return h;
 
 let curSub=null;
 const SUBJ_CFG={
- M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math","mrecall","mexact","mquad","mtfgen","mapp","mvid","mpack","mscope"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
+ M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math","mrecall","mexact","mquad","mtfgen","mapp","mcas","mcashard","mcalc","msolve","mgraph","mstats","msim","mseq","mtsolve","mconic","mcascmd","mbox","m3d","mbrg","muc","mvid","mpack","mscope"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
  S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot","engx"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
  F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","frw","tr"],exam:["French"],drill:["fr","Drills, writing and translate","Tables, sentence builder, Section C sentences and a translator"]},
@@ -7760,16 +8391,17 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <dl class="spec" style="grid-template-columns:100px 1fr"><dt>Task</dt><dd>${esc(b.task)}</dd><dt>Goal</dt><dd>${esc(b.goal)}</dd><dt>Success check</dt><dd>${esc(b.check)}</dd><dt>Use</dt><dd>${esc(b.res)}</dd></dl>${detailHtml(b0)}
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mcas","CAS practice"],["mcashard","CAS challenge"],["mcalc","Calculator"],["msolve","Equation solver"],["mgraph","Function grapher"],["mstats","Statistics calculator"],["msim","Simultaneous solver"],["mseq","Sequences & series"],["mtsolve","Trig equation solver"],["mconic","Circle & hyperbola transformer"],["mcascmd","CAS commands"],["mbox","Box plot visualiser"],["m3d","3D shape calculator"],["mbrg","Bearings & vector resultant"],["muc","Unit circle reference"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
 const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const c=SUBJ_CFG[curSub];const ks=c.tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};
  const ksf=ks.filter(k=>k!=="engx"&&!(curSub==="E"&&(k==="flash"||true)));
  const primKeys=["flash",c.drill[0],"mscope"].filter(k=>ksf.indexOf(k)>=0);
  const moreKeys=ksf.filter(k=>primKeys.indexOf(k)<0);
  const btn=k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`;
- return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div></div>${moreKeys.length?`<div class="toolpanel more"><div class="toolpanel-h">More tools</div><div class="tools">${moreKeys.map(btn).join("")}</div></div>`:""}<div id="tool"></div>`}
+ const moreOpen=moreKeys.indexOf(tool.k)>=0;
+ return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div></div>${moreKeys.length?`<details class="toolpanel more"${moreOpen?" open":""}><summary class="toolpanel-h">More tools</summary><div class="tools">${moreKeys.map(btn).join("")}</div></details>`:""}<div id="tool"></div>`}
  return TOOL_GROUPS.map(g=>`<div class="toolpanel more"><div class="toolpanel-h">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:10px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div></div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mcas:()=>window.toolMathsCAS(el),mcashard:()=>window.toolMathsCASHard(el),mcalc:()=>window.toolCasCalc(el),msolve:()=>window.toolCasEqSolve(el),mgraph:()=>window.toolCasGraphFn(el),mstats:()=>window.toolCasStatsCalc(el),msim:()=>window.toolCasSimSolve(el),mseq:()=>window.toolCasSeq(el),mtsolve:()=>window.toolCasTrigSolve(el),mconic:()=>window.toolCasConic(el),mcascmd:()=>window.toolCasCmd(el),mbox:()=>window.toolCasBoxPlot(el),m3d:()=>window.toolCas3D(el),mbrg:()=>window.toolCasBearings(el),muc:()=>window.toolCasUnitCircle(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
 function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
