@@ -7329,29 +7329,82 @@ function periFact(cat,group,sym,name){
  if(sym==="H")return `Hydrogen sits alone at the top of group 1 — it has 1 outer electron like the alkali metals, but it's a non-metal gas, not a metal, so it's often shown separately.`;
  return "";
 }
+function periReactPredict(e1,e2){
+ const[,s1,n1,g1,,c1]=e1,[,s2,n2,g2,,c2]=e2;
+ const isMetal=c=>["ak","ae","tm","ln","ac","pm"].includes(c);
+ const isNM=c=>c==="nm"||c==="hg";
+ if(c1==="ng"||c2==="ng")return `${c1==="ng"?n1:n2} is a noble gas with a full outer shell, so it is essentially unreactive — ${s1} and ${s2} are very unlikely to react with each other.`;
+ if(isMetal(c1)&&isNM(c2))return `${n1} (metal) would likely lose electrons and ${n2} (non-metal) would likely gain them — expect an <b>ionic bond</b>, forming a compound like ${s1}${s2.length>1?s2:s2}ₓ (a transfer of electrons, held by electrostatic attraction between the resulting ions).`;
+ if(isMetal(c2)&&isNM(c1))return `${n2} (metal) would likely lose electrons and ${n1} (non-metal) would likely gain them — expect an <b>ionic bond</b> between them (a transfer of electrons, held by electrostatic attraction between the resulting ions).`;
+ if(isMetal(c1)&&isMetal(c2))return `Both ${n1} and ${n2} are metals — together they'd form a <b>metallic bond</b> (a shared "sea" of delocalised electrons, as in an alloy) rather than a simple compound.`;
+ if(isNM(c1)&&isNM(c2))return `Both ${n1} and ${n2} are non-metals — expect a <b>covalent bond</b> (sharing electron pairs) rather than a full electron transfer.`;
+ if(c1==="md"||c2==="md")return `At least one of ${n1}/${n2} is a metalloid — bonding here is harder to predict simply; metalloids can bond covalently or, with a reactive metal, can accept electrons similarly to a non-metal.`;
+ return `${n1} and ${n2} — not enough of a clear metal/non-metal contrast here to confidently predict the bond type from category alone.`;
+}
+/* ---- Reactivity / electronegativity / atomic-radius trend overlay ----
+   Verified against standard chemistry trends before shipping:
+   (a) atomic radius increases down a group, decreases across a period left->right;
+   (b) electronegativity increases across a period left->right, decreases down a group;
+   (c) metal reactivity (alkali metals, group 1) increases down the group;
+       non-metal reactivity (halogens, group 17) increases up the group (decreases down it).
+   Restricted to the two main groups where the trend is simple and reliable (1 and 17) —
+   deliberately NOT generalised across transition metals/lanthanides/actinides, where it is not this clean. */
+const TREND_INFO={
+ radius:{label:"Atomic radius",groups:[1,17],note:"Atomic radius increases ↓ down a group (each extra shell of electrons sits further from the nucleus) and decreases → across a period, left to right (more protons pull the same number of shells in tighter). Shown here for groups 1 and 17 (highlighted) — the main groups where this trend is simple and reliable; it's far less regular across the transition metals, so they aren't highlighted."},
+ electroneg:{label:"Electronegativity",groups:[1,17],note:"Electronegativity (how strongly an atom pulls on shared electrons in a bond) increases → across a period, left to right, and decreases ↓ down a group — the opposite pattern to atomic radius. Noble gases (group 18) don't normally form bonds, so they have no meaningful value and aren't shown. Shown here for groups 1 and 17 (highlighted), the clearest main-group example of each extreme."},
+ metalreact:{label:"Metal reactivity (alkali metals)",groups:[1],note:"Among the alkali metals (group 1, highlighted), reactivity increases ↓ down the group (Li → Na → K → Rb → Cs) — the single outer electron is held more loosely the further it sits from the nucleus, so it's lost more easily. This specific trend applies to group 1; reactivity does not change this simply across a whole period or for metals in general."},
+ nonmetalreact:{label:"Non-metal reactivity (halogens)",groups:[17],note:"Among the halogens (group 17, highlighted), reactivity increases ↑ up the group (I → Br → Cl → F) — the atom needs to attract just one more electron to fill its outer shell, which is easier the closer that shell is to the nucleus. This specific trend applies to group 17; it does not apply the same way to every non-metal."}
+};
 function toolSciPeriodic(el){
  const cur=ld("perisel",1);
- const main=PERI.filter(p=>p[4]<=4||p[3]!==3); // not used; keep simple split below
+ const filt=ld("perifilt","all");
+ const q=ld("periq","");
+ const cmpB=ld("pericmp",null);
+ const trend=ld("periTrend","none");
+ const tInfo=TREND_INFO[trend]||null;
  const lnAc=PERI.filter(p=>p[5]==="ln"||p[5]==="ac");
  const grid=PERI.filter(p=>!(p[5]==="ln"||p[5]==="ac"));
- const cell=p=>{const[z,sym,name,group,period,cat]=p;const col=PERI_CAT[cat];
-  return `<button class="btn ghost" data-pz="${z}" style="grid-column:${group};grid-row:${period};padding:2px;min-width:0;font-size:10.5px;line-height:1.1;background:${z===cur?col[1]:"var(--card)"};border-color:${col[1]};color:${z===cur?"#111":"inherit"}"><div style="font-weight:700">${sym}</div><div style="font-size:8px">${z}</div></button>`};
- const lnCell=(p,i)=>{const[z,sym,name,group,period,cat]=p;const col=PERI_CAT[cat];
-  return `<button class="btn ghost" data-pz="${z}" style="grid-column:${i%14+3};grid-row:${period===6?1:2};padding:2px;min-width:0;font-size:10.5px;line-height:1.1;background:${z===cur?col[1]:"var(--card)"};border-color:${col[1]};color:${z===cur?"#111":"inherit"}"><div style="font-weight:700">${sym}</div><div style="font-size:8px">${z}</div></button>`};
+ const matches=p=>{
+  if(filt!=="all"&&p[5]!==filt)return false;
+  if(q){const ql=q.toLowerCase();if(!(p[1].toLowerCase().startsWith(ql)||p[2].toLowerCase().includes(ql)))return false}
+  return true;
+ };
+ const trendStyle=group=>{if(!tInfo)return{op:null,bw:"1px"};const hit=tInfo.groups.includes(group);return{op:hit?null:0.16,bw:hit?"3px":"1px",bc:hit?"#222":null}};
+ const cell=p=>{const[z,sym,name,group,period,cat]=p;const col=PERI_CAT[cat];const on=matches(p);const ts=trendStyle(group);
+  const op=ts.op!==null?ts.op:(on?1:0.22);
+  return `<button class="btn ghost" data-pz="${z}" style="grid-column:${group};grid-row:${period};padding:2px;min-width:0;font-size:10.5px;line-height:1.1;opacity:${op};background:${z===cur?col[1]:(z===cmpB?col[1]:"var(--card)")};border-color:${ts.bc||col[1]};border-width:${ts.bw};color:${(z===cur||z===cmpB)?"#111":"inherit"}"><div style="font-weight:700">${sym}</div><div style="font-size:8px">${z}</div></button>`};
+ const lnCell=(p,i)=>{const[z,sym,name,group,period,cat]=p;const col=PERI_CAT[cat];const on=matches(p);const op=tInfo?0.16:(on?1:0.22);
+  return `<button class="btn ghost" data-pz="${z}" style="grid-column:${i%14+3};grid-row:${period===6?1:2};padding:2px;min-width:0;font-size:10.5px;line-height:1.1;opacity:${op};background:${z===cur?col[1]:(z===cmpB?col[1]:"var(--card)")};border-color:${col[1]};color:${(z===cur||z===cmpB)?"#111":"inherit"}"><div style="font-weight:700">${sym}</div><div style="font-size:8px">${z}</div></button>`};
  const e=PERI.find(p=>p[0]===cur);
  const[z,sym,name,group,period,cat,mass]=e;
  const val=periValence(group,sym);
+ const cmpE=cmpB?PERI.find(p=>p[0]===cmpB):null;
  el.innerHTML=`<div class="card"><h3>Periodic table reference</h3>
- <p class="mut" style="font-size:12.5px">Tap any element. Colour = category (legend below).</p>
+ <p class="mut" style="font-size:12.5px">Tap any element for its details, or tap a second one to compare/predict how they'd bond. Search or filter to highlight a group.</p>
+ <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><input id="periSearch" placeholder="Search name or symbol…" value="${esc(q)}" style="width:170px" data-nomj><select data-nomj id="periFilt"><option value="all" ${filt==="all"?"selected":""}>All categories</option>${Object.entries(PERI_CAT).map(([k,v])=>`<option value="${k}" ${filt===k?"selected":""}>${esc(v[0])}</option>`).join("")}</select>${cmpB?`<button class="btn ghost" id="periClrCmp">Clear comparison</button>`:""}</div>
+ <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><label class="f" style="margin:0">Trend overlay<select data-nomj id="periTrendSel"><option value="none" ${trend==="none"?"selected":""}>No trend overlay</option><option value="radius" ${trend==="radius"?"selected":""}>Atomic radius</option><option value="electroneg" ${trend==="electroneg"?"selected":""}>Electronegativity</option><option value="metalreact" ${trend==="metalreact"?"selected":""}>Metal reactivity (Group 1)</option><option value="nonmetalreact" ${trend==="nonmetalreact"?"selected":""}>Non-metal reactivity (Group 17)</option></select></label></div>
  <div style="overflow-x:auto;padding-bottom:6px"><div style="display:grid;grid-template-columns:repeat(18,24px);gap:2px;min-width:460px">${grid.map(cell).join("")}</div>
  <div style="display:grid;grid-template-columns:repeat(18,24px);grid-template-rows:repeat(2,24px);gap:2px;margin-top:6px;min-width:460px">${lnAc.map(lnCell).join("")}</div></div>
  <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:10px;font-size:11px">${Object.entries(PERI_CAT).map(([k,v])=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="display:inline-block;width:10px;height:10px;background:${v[1]};border-radius:2px"></i>${esc(v[0])}</span>`).join("")}</div>
  <div class="card" style="margin-top:12px;background:var(--soft)">
- <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-size:36px;font-weight:700">${esc(sym)}</span><span style="font-size:20px">${esc(name)}</span></div>
+ <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-size:36px;font-weight:700">${esc(sym)}</span><span style="font-size:20px">${esc(name)}</span><button class="btn ghost" id="periCmpBtn" style="font-size:12px;margin-left:auto">Compare with another element</button></div>
  <div class="mut" style="margin-top:4px;font-size:13px">Atomic number ${z} &middot; Relative atomic mass ${mass} &middot; Period ${period} &middot; Group ${group===3&&(cat==="ln"||cat==="ac")?"—":group} &middot; ${esc(PERI_CAT[cat][0])}${val?` &middot; ${val} valence electron${val===1?"":"s"}`:""}</div>
  <p style="margin-top:8px;font-size:14px">${esc(periFact(cat,group,sym,name))}</p>
- </div></div>`;
- el.querySelectorAll("[data-pz]").forEach(b=>b.onclick=()=>{sv("perisel",+b.dataset.pz);toolSciPeriodic(el)});
+ </div>
+ ${cmpE?`<div class="card" style="margin-top:10px;background:var(--soft)"><b>${esc(sym)} + ${esc(cmpE[1])} (${esc(cmpE[2])}) — predicted bonding:</b><p style="margin-top:6px;font-size:14px">${periReactPredict(e,cmpE)}</p><p class="mut" style="font-size:11.5px;margin-top:6px">A simple category-based prediction for Year 10 level — real reactivity also depends on exact conditions and isn't always this clean.</p></div>`:""}
+ ${tInfo?`<div class="card" style="margin-top:10px;background:var(--soft)"><b>${esc(tInfo.label)} trend</b> <span class="mut" style="font-size:12px">(highlighted elements below)</span><p style="margin-top:6px;font-size:13.5px" data-nomj>${esc(tInfo.note)}</p></div>`:""}
+ </div>`;
+ el.querySelector("#periTrendSel").onchange=e2=>{sv("periTrend",e2.target.value);toolSciPeriodic(el)};
+ el.querySelectorAll("[data-pz]").forEach(b=>b.onclick=()=>{
+  const picking=el.querySelector("#periCmpBtn")&&el.querySelector("#periCmpBtn").dataset.active==="1";
+  if(picking&&+b.dataset.pz!==cur){sv("pericmp",+b.dataset.pz)}
+  else sv("perisel",+b.dataset.pz);
+  toolSciPeriodic(el);
+ });
+ const cmpBtn=el.querySelector("#periCmpBtn");if(cmpBtn)cmpBtn.onclick=()=>{cmpBtn.dataset.active="1";cmpBtn.textContent="Now tap a second element…"};
+ const clrCmp=el.querySelector("#periClrCmp");if(clrCmp)clrCmp.onclick=()=>{sv("pericmp",null);toolSciPeriodic(el)};
+ el.querySelector("#periSearch").oninput=e2=>{sv("periq",e2.target.value);const sb=el.querySelector("#periSearch");toolSciPeriodic(el);const ns=el.querySelector("#periSearch");if(ns){ns.focus();ns.setSelectionRange(ns.value.length,ns.value.length)}};
+ el.querySelector("#periFilt").onchange=e2=>{sv("perifilt",e2.target.value);toolSciPeriodic(el)};
 }
 
 /* ============ 5. Punnett square genetics tool ============ */
@@ -7365,11 +7418,26 @@ function normGeno(a,b){
  return [a,b].sort().join("");
 }
 function toolSciPunnett(el){
- const p1=ld("pgp1","Aa"),p2=ld("pgp2","Aa");
+ const mode=ld("pgMode","mono");
  el.innerHTML=`<div class="card"><h3>Punnett square</h3>
- <p class="mut" style="font-size:12.5px">Enter each parent's genotype as two letters (e.g. Aa, AA, aa for dominant/recessive, or two different capital letters like RW for codominance).</p>
+ <div class="row" style="gap:6px;margin-bottom:8px;flex-wrap:wrap">
+ <button class="btn ${mode==="mono"?"":"ghost"}" data-pm="mono">Monohybrid</button>
+ <button class="btn ${mode==="di"?"":"ghost"}" data-pm="di">Dihybrid</button>
+ <button class="btn ${mode==="sex"?"":"ghost"}" data-pm="sex">Sex-linked</button>
+ <button class="btn ${mode==="ped"?"":"ghost"}" data-pm="ped">Pedigree</button>
+ </div><div id="pgbody"></div></div>`;
+ el.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{sv("pgMode",b.dataset.pm);toolSciPunnett(el)});
+ const body=el.querySelector("#pgbody");
+ if(mode==="di"){toolPunnettDi(body);return}
+ if(mode==="sex"){toolPunnettSex(body);return}
+ if(mode==="ped"){toolPunnettPed(body);return}
+ toolPunnettMono(body);
+}
+function toolPunnettMono(el){
+ const p1=ld("pgp1","Aa"),p2=ld("pgp2","Aa");
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">Enter each parent's genotype as two letters (e.g. Aa, AA, aa for dominant/recessive, or two different capital letters like RW for codominance).</p>
  <div class="row" style="margin-top:8px;gap:10px"><label>Parent 1<input id="pgp1" value="${esc(p1)}" style="width:70px;text-align:center;font-size:18px"></label><label>Parent 2<input id="pgp2" value="${esc(p2)}" style="width:70px;text-align:center;font-size:18px"></label><button class="btn" id="pggo">Cross</button></div>
- <div id="pgout" style="margin-top:12px"></div></div>`;
+ <div id="pgout" style="margin-top:12px"></div>`;
  const run=()=>{
   const a=el.querySelector("#pgp1").value.trim(),b=el.querySelector("#pgp2").value.trim();
   sv("pgp1",a);sv("pgp2",b);
@@ -7400,6 +7468,98 @@ function toolSciPunnett(el){
  el.querySelector("#pggo").onclick=run;
  el.querySelectorAll("#pgp1,#pgp2").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter")run()}));
  run();
+}
+/* ---- Dihybrid cross (two genes, e.g. AaBb x AaBb) ---- */
+function toolPunnettDi(el){
+ const p1=ld("pgdp1","AaBb"),p2=ld("pgdp2","AaBb");
+ el.innerHTML=`<p class="mut" style="font-size:12.5px" data-nomj>Enter each parent's genotype for TWO genes as four letters, gene A first then gene B (e.g. AaBb). Each parent makes 4 types of gametes, giving a 4×4 = 16-box grid.</p>
+ <div class="row" style="margin-top:8px;gap:10px;flex-wrap:wrap"><label>Parent 1<input id="pgd1" value="${esc(p1)}" style="width:90px;text-align:center;font-size:17px"></label><label>Parent 2<input id="pgd2" value="${esc(p2)}" style="width:90px;text-align:center;font-size:17px"></label><button class="btn" id="pgdgo">Cross</button></div>
+ <div id="pgdout" style="margin-top:12px;overflow-x:auto"></div>`;
+ const gametesOf=g=>{const[a1,a2,b1,b2]=g;const out=[];for(const a of[a1,a2])for(const b of[b1,b2])out.push(a+b);return out};
+ const run=()=>{
+  const a=el.querySelector("#pgd1").value.trim(),b=el.querySelector("#pgd2").value.trim();
+  sv("pgdp1",a);sv("pgdp2",b);
+  const out=el.querySelector("#pgdout");
+  if(!/^[A-Za-z]{4}$/.test(a)||!/^[A-Za-z]{4}$/.test(b)){out.innerHTML=`<p class="mut">Enter exactly four letters for each parent (gene A's two alleles, then gene B's two alleles), e.g. AaBb.</p>`;return}
+  const g1=gametesOf(a),g2=gametesOf(b);
+  const geno=(x,y)=>{const gA=[x[0],y[0]].sort((p,q)=>p.toLowerCase()===q.toLowerCase()?(p===p.toUpperCase()?-1:1):p.localeCompare(q)).join("");
+   const gB=[x[1],y[1]].sort((p,q)=>p.toLowerCase()===q.toLowerCase()?(p===p.toUpperCase()?-1:1):p.localeCompare(q)).join("");return gA+gB};
+  const counts={},phenCounts={};
+  const isDom=pair=>pair.split("").some(c=>c===c.toUpperCase());
+  g1.forEach(x=>g2.forEach(y=>{
+   const gt=geno(x,y);counts[gt]=(counts[gt]||0)+1;
+   const ph=(isDom(gt.slice(0,2))?"A dominant":"a recessive")+", "+(isDom(gt.slice(2,4))?"B dominant":"b recessive");
+   phenCounts[ph]=(phenCounts[ph]||0)+1;
+  }));
+  out.innerHTML=`<table class="mono" style="border-collapse:collapse" data-nomj>
+  <tr><td></td>${g2.map(g=>`<td style="padding:4px 8px;font-weight:700;text-align:center;border-bottom:2px solid var(--line)">${esc(g)}</td>`).join("")}</tr>
+  ${g1.map(r=>`<tr><td style="padding:4px 8px;font-weight:700;border-right:2px solid var(--line)">${esc(r)}</td>${g2.map(c=>`<td style="padding:6px 10px;text-align:center;border:1px solid var(--line);font-size:13px">${esc(geno(r,c))}</td>`).join("")}</tr>`).join("")}
+  </table>
+  <div class="card" style="margin-top:12px;background:var(--soft)">
+  <b>Genotype ratio (of 16):</b> ${Object.entries(counts).map(([g,n])=>`${n} ${esc(g)}`).join(" : ")}
+  <br><b>Phenotype ratio:</b> ${Object.entries(phenCounts).map(([p,n])=>`${n}/16 (${esc(p)})`).join("  —  ")}
+  <p class="mut" style="font-size:12px;margin-top:6px">With two independently-assorting heterozygous genes (AaBb × AaBb) this always comes out 9:3:3:1 — 9 both-dominant, 3 and 3 one-dominant-one-recessive, 1 both-recessive — verified for this cross.</p>
+  </div>`;
+ };
+ el.querySelector("#pgdgo").onclick=run;
+ el.querySelectorAll("#pgd1,#pgd2").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter")run()}));
+ run();
+}
+/* ---- Sex-linked inheritance (X-linked trait) ---- */
+function toolPunnettSex(el){
+ const mg=ld("pgsM","XbY"),fg=ld("pgsF","XBXb");
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">X-linked traits (like red-green colour blindness or haemophilia) are carried on the X chromosome, so males (XY) only need one recessive allele to show the trait, while females (XX) need two. Use B/b for the normal/affected allele.</p>
+ <div class="row" style="margin-top:8px;gap:10px;flex-wrap:wrap"><label>Mother's genotype<input id="pgsF" value="${esc(fg)}" style="width:90px;text-align:center;font-size:16px"></label><label>Father's genotype<input id="pgsM" value="${esc(mg)}" style="width:90px;text-align:center;font-size:16px"></label><button class="btn" id="pgsgo">Cross</button></div>
+ <div id="pgsout" style="margin-top:12px"></div>`;
+ const run=()=>{
+  const F=el.querySelector("#pgsF").value.trim(),M=el.querySelector("#pgsM").value.trim();
+  sv("pgsF",F);sv("pgsM",M);
+  const out=el.querySelector("#pgsout");
+  const fOk=/^X[A-Za-z]X[A-Za-z]$/.test(F),mOk=/^X[A-Za-z]Y$/.test(M);
+  if(!fOk||!mOk){out.innerHTML=`<p class="mut">Mother should look like X_X_ (e.g. XBXb) and father like X_Y (e.g. XbY), using the same letter for both.</p>`;return}
+  const fAlleles=[F[1],F[3]],mAllele=M[1];
+  const offspring={};
+  fAlleles.forEach(fa=>{
+   const dKey="X"+[fa,mAllele].sort((p,q)=>p===p.toUpperCase()?-1:1).join("X");
+   offspring["Daughter: "+dKey]=(offspring["Daughter: "+dKey]||0)+1;
+   offspring["Son: X"+fa+"Y"]=(offspring["Son: X"+fa+"Y"]||0)+1;
+  });
+  const letter=mAllele.toLowerCase();
+  const isAffected=g=>g.replace(/[XY]/g,"").split("").every(c=>c===letter);
+  out.innerHTML=`<div class="card" style="background:var(--soft)" data-nomj>
+  <b>Offspring (each 1 in 4 of all offspring):</b>
+  <ul style="margin-top:6px">${Object.entries(offspring).map(([g,n])=>`<li>${esc(g)} — ${isAffected(g.split(": ")[1])?"<b>affected</b>":(g.split(": ")[1].length===4&&g.split(": ")[1][1]!==g.split(": ")[1][3]?"carrier (unaffected, carries one copy)":"unaffected")}</li>`).join("")}</ul>
+  <p class="mut" style="font-size:12.5px;margin-top:8px">Why sons and daughters differ: a son gets his only X from his mother and a Y (with no matching gene) from his father, so whatever X allele he inherits is expressed directly. A daughter gets an X from each parent, so she needs the recessive allele from BOTH to be affected — otherwise she's just a carrier.</p>
+  </div>`;
+ };
+ el.querySelector("#pgsgo").onclick=run;
+ el.querySelectorAll("#pgsF,#pgsM").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter")run()}));
+ run();
+}
+/* ---- Pedigree chart reader ---- */
+const PEDIGREE_EX={
+ recessive:{name:"Autosomal recessive (e.g. cystic fibrosis)",note:"Two unaffected (carrier) parents can have an affected child; the trait can 'skip' generations and often appears when there's no history of it in recent ancestors.",
+  gens:[[["Unaffected M",false],["Unaffected F (carrier)",false]],[["Unaffected F",false],["Affected M",true],["Unaffected M (carrier)",false]]]},
+ dominant:{name:"Autosomal dominant (e.g. Huntington's disease)",note:"At least one affected parent is needed for an affected child; the trait usually appears in every generation and doesn't skip.",
+  gens:[[["Affected M",true],["Unaffected F",false]],[["Affected F",true],["Unaffected M",false],["Unaffected F",false]]]},
+ xlinked:{name:"X-linked recessive (e.g. colour blindness)",note:"Affects many more males than females; an affected father cannot pass it to his sons (they get his Y, not his X) but all his daughters become at least carriers.",
+  gens:[[["Unaffected M",false],["Carrier F",false]],[["Affected M",true],["Unaffected F",false],["Carrier F",false]]]}
+};
+function toolPunnettPed(el){
+ const which=ld("pgPed","recessive");
+ const P=PEDIGREE_EX[which];
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">A pedigree chart tracks a trait through a family tree: squares = male, circles = female, filled = affected. Pick a pattern to see a worked small example and how to tell the inheritance pattern apart.</p>
+ <div class="row" style="gap:6px;margin:8px 0">${Object.entries(PEDIGREE_EX).map(([k,v])=>`<button class="btn ${k===which?"":"ghost"}" data-pp="${k}" style="font-size:12px">${esc(v.name.split(" (")[0])}</button>`).join("")}</div>
+ <div id="pedcv" style="overflow-x:auto"></div>
+ <div class="card" style="margin-top:12px;background:var(--soft)"><b>${esc(P.name)}</b><p style="margin-top:6px;font-size:14px">${esc(P.note)}</p></div>`;
+ el.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>{sv("pgPed",b.dataset.pp);toolPunnettPed(el)});
+ const wrap=el.querySelector("#pedcv");
+ const rows=P.gens.map((gen,gi)=>`<div class="row" style="gap:28px;justify-content:center;margin:${gi?10:0}px 0">${gen.map(([label,aff])=>{
+  const male=/M(\s|$|\))/.test(label)||label.includes(" M")||label.endsWith("M");
+  const shape=male?`<div style="width:30px;height:30px;background:${aff?"#555":"var(--card)"};border:2px solid #555"></div>`:`<div style="width:30px;height:30px;border-radius:50%;background:${aff?"#555":"var(--card)"};border:2px solid #555"></div>`;
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:70px">${shape}<span style="font-size:10px;text-align:center">${esc(label)}</span></div>`;
+ }).join("")}</div>`).join("");
+ wrap.innerHTML=`<div style="min-width:320px;padding:10px 0">${rows}</div>`;
 }
 
 /* ============ 6. Wave calculator ============ */
@@ -7572,6 +7732,1041 @@ window.toolSciRate=toolSciRate;
 window.toolSciCmd2=toolSciCmd2;
 window.toolSciBody=toolSciBody;
 window.toolSciPrac=toolSciPrac;
+})();
+
+(function(){
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const K="scit2:";
+const ld=(k,d)=>{try{const v=localStorage.getItem(K+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch(e){}};
+function r4(n){return Math.round(n*10000)/10000}
+function gcdI(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function lcmI(a,b){return Math.abs(a*b)/gcdI(a,b)}
+
+/* ================================================================
+   1. Chemical equation balancer
+   ================================================================ */
+class Frac{
+ constructor(n,d=1){if(d<0){n=-n;d=-d}const g=gcdI(n,d)||1;this.n=g?n/g:0;this.d=g?d/g:1;if(this.d===0)this.d=1}
+ add(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d)}
+ sub(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d)}
+ mul(o){return new Frac(this.n*o.n,this.d*o.d)}
+ div(o){return new Frac(this.n*o.d,this.d*o.n)}
+ isZero(){return this.n===0}
+ neg(){return new Frac(-this.n,this.d)}
+}
+function chemParseFormula(f){
+ let i=0;
+ function grp(){
+  let counts={};
+  while(i<f.length&&f[i]!==")"){
+   if(f[i]==="("){
+    i++;const inner=grp();
+    if(f[i]!==")")throw new Error("unmatched bracket");
+    i++;let ns="";while(i<f.length&&/[0-9]/.test(f[i])){ns+=f[i];i++}
+    const mult=ns?parseInt(ns,10):1;
+    for(const el in inner)counts[el]=(counts[el]||0)+inner[el]*mult;
+   }else if(/[A-Z]/.test(f[i])){
+    let sym=f[i];i++;while(i<f.length&&/[a-z]/.test(f[i])){sym+=f[i];i++}
+    let ns="";while(i<f.length&&/[0-9]/.test(f[i])){ns+=f[i];i++}
+    const n=ns?parseInt(ns,10):1;
+    counts[sym]=(counts[sym]||0)+n;
+   }else throw new Error(`Can't read "${f[i]}" in "${f}" — use element symbols (Fe, O, Cl2...) and brackets only.`);
+  }
+  return counts;
+ }
+ const res=grp();
+ if(i!==f.length)throw new Error(`Extra closing bracket in "${f}".`);
+ return res;
+}
+function chemParseEq(eqStr){
+ let s=eqStr.replace(/=>/g,"->").replace(/→/g,"->");
+ if(!s.includes("->")){if(s.includes("="))s=s.replace("=","->");else throw new Error('Use "->" (or "=") to separate the left and right sides, e.g. Fe + O2 -> Fe2O3')}
+ const [lhs,rhs]=s.split("->");
+ if(rhs===undefined||!lhs.trim()||!rhs.trim())throw new Error("Need something on both sides of the arrow.");
+ const reactants=lhs.split("+").map(x=>x.trim()).filter(Boolean);
+ const products=rhs.split("+").map(x=>x.trim()).filter(Boolean);
+ if(!reactants.length||!products.length)throw new Error("Need at least one compound on each side.");
+ return {reactants,products};
+}
+function chemBalance(eqStr){
+ const {reactants,products}=chemParseEq(eqStr);
+ const comps=[...reactants.map(f=>({f,sign:1})),...products.map(f=>({f,sign:-1}))];
+ const parsed=comps.map(c=>({...c,counts:chemParseFormula(c.f.replace(/\s+/g,""))}));
+ const elements=[...new Set(parsed.flatMap(p=>Object.keys(p.counts)))];
+ const n=parsed.length,m=elements.length;
+ let A=elements.map(el=>parsed.map(p=>new Frac(p.sign*(p.counts[el]||0))));
+ let rows=m,cols=n,pivotRow=0,pivotCols=[];
+ for(let c=0;c<cols&&pivotRow<rows;c++){
+  let sel=-1;for(let r=pivotRow;r<rows;r++)if(!A[r][c].isZero()){sel=r;break}
+  if(sel<0)continue;
+  [A[pivotRow],A[sel]]=[A[sel],A[pivotRow]];
+  const pv=A[pivotRow][c];A[pivotRow]=A[pivotRow].map(x=>x.div(pv));
+  for(let r=0;r<rows;r++)if(r!==pivotRow&&!A[r][c].isZero()){const fac=A[r][c];A[r]=A[r].map((x,ci)=>x.sub(A[pivotRow][ci].mul(fac)))}
+  pivotCols.push(c);pivotRow++;
+ }
+ const freeCols=[];for(let c=0;c<cols;c++)if(!pivotCols.includes(c))freeCols.push(c);
+ if(!freeCols.length)throw new Error("This equation has no way to balance as written — check the formulas (it may already only balance with coefficient 0, which isn't a real reaction).");
+ const freeCol=freeCols[0];
+ let x=new Array(cols).fill(null);x[freeCol]=new Frac(1);
+ for(let i=0;i<pivotCols.length;i++){const c=pivotCols[i];let val=new Frac(0);for(const fc of freeCols)val=val.add(A[i][fc].mul(x[fc]));x[c]=val.neg()}
+ for(const fc of freeCols)if(x[fc]===null)x[fc]=new Frac(0);
+ for(let i=0;i<cols;i++)if(x[i]===null)x[i]=new Frac(0);
+ let denomLCM=1;for(const fr of x)denomLCM=lcmI(denomLCM,fr.d);
+ let ints=x.map(fr=>Math.round(fr.n*(denomLCM/fr.d)));
+ let g=ints.reduce((a,b)=>gcdI(a,b),ints.find(v=>v!==0)||1);
+ if(g>1)ints=ints.map(v=>v/g);
+ if(ints.some(v=>v<0)&&ints.every(v=>v<=0))ints=ints.map(v=>-v);
+ if(ints.some(v=>v<=0))throw new Error("Balancing gave a zero or negative coefficient — double check the formulas are correct (this sometimes means the equation as typed isn't a real, balanceable reaction).");
+ const nR=reactants.length;
+ return {
+  reactants:reactants.map((f,i)=>({f,coef:ints[i],counts:parsed[i].counts})),
+  products:products.map((f,i)=>({f,coef:ints[nR+i],counts:parsed[nR+i].counts})),
+  elements
+ };
+}
+function chemSideStr(side){return side.map(s=>(s.coef>1?s.coef+" ":"")+s.f).join(" + ")}
+function chemAtomTotals(side,elements){const t={};elements.forEach(el=>t[el]=0);side.forEach(s=>elements.forEach(el=>t[el]+=s.coef*(s.counts[el]||0)));return t}
+const CHEM_PRESETS=[
+ ["Combustion","CH4 + O2 -> CO2 + H2O"],
+ ["Synthesis","N2 + H2 -> NH3"],
+ ["Decomposition","KClO3 -> KCl + O2"],
+ ["Double displacement","AgNO3 + NaCl -> AgCl + NaNO3"],
+ ["Single displacement","Al + Fe2O3 -> Al2O3 + Fe"]
+];
+function toolSciChem(el){
+ const eqStr=ld("chemeq","Fe + O2 -> Fe2O3");
+ el.innerHTML=`<div class="card"><h3>Chemical equation balancer</h3>
+ <p class="mut" style="font-size:12.5px">Type an unbalanced equation using element symbols, subscript numbers and <span class="mono">-&gt;</span> for the arrow, e.g. <span class="mono">CH4 + O2 -&gt; CO2 + H2O</span>. Brackets like <span class="mono">Ca(OH)2</span> work too.</p>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${CHEM_PRESETS.map(p=>`<button class="btn ghost" data-pre="${esc(p[1])}" style="font-size:12px">${esc(p[0])}</button>`).join("")}</div>
+ <label class="f">Unbalanced equation<input id="ceq" value="${esc(eqStr)}" style="font-size:16px" data-nomj></label>
+ <button class="btn" id="cego" style="margin-top:10px">Balance it</button>
+ <div id="ceout" style="margin-top:12px"></div></div>`;
+ el.querySelectorAll("[data-pre]").forEach(b=>b.onclick=()=>{el.querySelector("#ceq").value=b.dataset.pre;run()});
+ const run=()=>{
+  const s=el.querySelector("#ceq").value.trim();sv("chemeq",s);
+  const out=el.querySelector("#ceout");
+  if(!s){out.innerHTML="";return}
+  try{
+   const r=chemBalance(s);
+   const before=chemSideStr(r.reactants.map(x=>({...x,coef:1})))+" → "+chemSideStr(r.products.map(x=>({...x,coef:1})));
+   const after=chemSideStr(r.reactants)+" → "+chemSideStr(r.products);
+   const beforeTot=chemAtomTotals(r.reactants.map(x=>({...x,coef:1})),r.elements);
+   const beforeTotR=chemAtomTotals(r.products.map(x=>({...x,coef:1})),r.elements);
+   const afterL=chemAtomTotals(r.reactants,r.elements);
+   const afterR=chemAtomTotals(r.products,r.elements);
+   out.innerHTML=`<div class="card" style="background:var(--soft)">
+    <div class="mut" style="font-size:12.5px">Unbalanced: <span class="mono" data-nomj>${esc(before)}</span></div>
+    <div style="font-size:19px;font-weight:700;margin:8px 0" class="mono" data-nomj>${esc(after)}</div>
+    <table class="mono" style="border-collapse:collapse;margin-top:6px" data-nomj>
+     <tr><td style="padding:3px 10px;font-weight:700">Element</td>${r.elements.map(el=>`<td style="padding:3px 10px;font-weight:700;text-align:center">${esc(el)}</td>`).join("")}</tr>
+     <tr><td style="padding:3px 10px">Before — left side</td>${r.elements.map(elx=>`<td style="padding:3px 10px;text-align:center">${beforeTot[elx]}</td>`).join("")}</tr>
+     <tr><td style="padding:3px 10px">Before — right side</td>${r.elements.map(elx=>`<td style="padding:3px 10px;text-align:center">${beforeTotR[elx]}</td>`).join("")}</tr>
+     <tr><td style="padding:3px 10px;border-top:1px solid var(--line)">After — left side</td>${r.elements.map(elx=>`<td style="padding:3px 10px;text-align:center;border-top:1px solid var(--line)">${afterL[elx]}</td>`).join("")}</tr>
+     <tr><td style="padding:3px 10px">After — right side</td>${r.elements.map(elx=>`<td style="padding:3px 10px;text-align:center">${afterR[elx]}</td>`).join("")}</tr>
+    </table>
+    <p style="margin-top:10px;font-size:13.5px">Every element now has the same atom count on both sides (compare the two "After" rows above) — that's what "balanced" means. The coefficients (${esc(r.reactants.map(x=>x.coef).concat(r.products.map(x=>x.coef)).join(", "))}) are the smallest whole numbers that make this true.</p>
+    </div>`;
+  }catch(e){out.innerHTML=`<div class="card" style="background:var(--soft)"><b>Couldn't balance that:</b> ${esc(e.message)}</div>`}
+ };
+ el.querySelector("#cego").onclick=run;
+ el.querySelector("#ceq").addEventListener("keydown",e=>{if(e.key==="Enter")run()});
+ run();
+}
+
+/* ================================================================
+   2. Reaction type reference
+   ================================================================ */
+const REACT_TYPES=[
+ ["Synthesis (combination)","Two or more simple substances combine to form one more complex product.","A + B → AB","2 Na + Cl2 → 2 NaCl  (sodium + chlorine → sodium chloride)"],
+ ["Decomposition","One compound breaks down into two or more simpler substances, usually needing heat, light or electricity.","AB → A + B","2 KClO3 → 2 KCl + 3 O2  (heating potassium chlorate)"],
+ ["Single displacement","A more reactive element swaps places with a less reactive element in a compound.","A + BC → AC + B","Zn + CuSO4 → ZnSO4 + Cu  (zinc displaces copper)"],
+ ["Double displacement (precipitation)","Two ionic compounds swap partners, often producing an insoluble precipitate.","AB + CD → AD + CB","AgNO3 + NaCl → AgCl + NaNO3  (white AgCl precipitate forms)"],
+ ["Combustion","A fuel (usually containing carbon and hydrogen) reacts with oxygen, releasing heat and light; complete combustion produces CO2 and H2O.","fuel + O2 → CO2 + H2O (+ energy)","CH4 + 2 O2 → CO2 + 2 H2O  (methane burning)"],
+ ["Neutralisation (acid-base)","An acid reacts with a base to produce a salt and water.","acid + base → salt + water","HCl + NaOH → NaCl + H2O"]
+];
+function toolSciReact(el){
+ const i=ld("rctI",0)%REACT_TYPES.length;
+ const[name,desc,gen,ex]=REACT_TYPES[i];
+ el.innerHTML=`<div class="card"><h3>Reaction type reference</h3>
+ <p class="mut" style="font-size:12.5px">The six reaction types you need to recognise, with the general pattern and a real example. Use the equation balancer to balance any of these fully yourself.</p>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${REACT_TYPES.map((r,n)=>`<button class="btn ${n===i?"":"ghost"}" data-rt="${n}" style="font-size:12px">${esc(r[0].split(" (")[0])}</button>`).join("")}</div>
+ <div class="card" style="background:var(--soft)">
+ <h3 style="margin:0">${esc(name)}</h3>
+ <p style="margin:8px 0">${esc(desc)}</p>
+ <p class="mono" style="margin:6px 0;font-size:16px" data-nomj>${esc(gen)}</p>
+ <p style="margin:6px 0"><b>Example:</b> <span class="mono" data-nomj>${esc(ex)}</span></p>
+ </div></div>`;
+ el.querySelectorAll("[data-rt]").forEach(b=>b.onclick=()=>{sv("rctI",+b.dataset.rt);toolSciReact(el)});
+}
+
+/* ================================================================
+   3. Motion animation (constant velocity / constant acceleration)
+   ================================================================ */
+function toolSciMotion(el){
+ const u=ld("mou",2),a=ld("moa",1.5);
+ el.innerHTML=`<div class="card"><h3>Motion animation</h3>
+ <p class="mut" style="font-size:12.5px">A cart starts with initial velocity u and constant acceleration a. Watch it move while position-time and velocity-time graphs draw themselves, using s = ut + ½at² and v = u + at.</p>
+ <div class="row" style="gap:10px;margin-top:6px;flex-wrap:wrap">
+  <label>u, initial velocity (m/s) <input id="mo_u" type="number" step="any" value="${u}" style="width:80px"></label>
+  <label>a, acceleration (m/s²) <input id="mo_a" type="number" step="any" value="${a}" style="width:80px"></label>
+ </div>
+ <div class="row" style="gap:8px;margin-top:10px">
+  <button class="btn" id="mo_play">▶ Play</button><button class="btn ghost" id="mo_reset">⟲ Reset</button>
+ </div>
+ <canvas id="mo_track" width="420" height="70" style="width:100%;max-width:420px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;display:block"></canvas>
+ <div class="row" style="gap:12px;flex-wrap:wrap;margin-top:8px">
+  <canvas id="mo_st" width="200" height="150" style="flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas>
+  <canvas id="mo_vt" width="200" height="150" style="flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas>
+ </div>
+ <div id="mo_read" class="mono" style="margin-top:8px;font-size:14px" data-nomj></div></div>`;
+ const track=el.querySelector("#mo_track"),st=el.querySelector("#mo_st"),vt=el.querySelector("#mo_vt"),read=el.querySelector("#mo_read");
+ let T=0,running=false,rafId=null,lastTs=null;
+ const getUA=()=>({u:parseFloat(el.querySelector("#mo_u").value)||0,a:parseFloat(el.querySelector("#mo_a").value)||0});
+ const posAt=(u,a,t)=>u*t+0.5*a*t*t, velAt=(u,a,t)=>u+a*t;
+ // work out a sensible tMax: when the cart would travel ~ 300 "metres" in display terms, or 8s, whichever first
+ function tMax(u,a){let t=8;for(let i=0;i<400;i++){const tt=i*0.05;if(Math.abs(posAt(u,a,tt))>300){t=tt;break}}return Math.max(1,t)}
+ function drawTrack(u,a,t){
+  const ctx=track.getContext("2d"),W=track.width,H=track.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#8a8a8a";ctx.beginPath();ctx.moveTo(10,H-14);ctx.lineTo(W-10,H-14);ctx.stroke();
+  const tm=tMax(u,a);const maxS=Math.max(1,Math.abs(posAt(u,a,tm)));
+  const s=posAt(u,a,t);const x=10+Math.min(1,Math.max(0,Math.abs(s)/maxS))*(W-40)*(s<0?-1:1)+(s<0?W-50:0);
+  const px=10+(Math.abs(s)/maxS)*(W-40);
+  ctx.fillStyle="#4a90d9";ctx.beginPath();ctx.arc(Math.min(W-20,Math.max(20,px)),H-24,10,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#8a8a8a";ctx.font="11px sans-serif";ctx.fillText("s = "+r4(s)+" m",12,16);
+ }
+ function drawGraph(cv,label,fn,u,a,tCur,color){
+  const ctx=cv.getContext("2d"),W=cv.width,H=cv.height,pad=28;
+  ctx.clearRect(0,0,W,H);
+  const tm=tMax(u,a);
+  let ymin=0,ymax=0;for(let i=0;i<=60;i++){const v=fn(u,a,i/60*tm);if(v<ymin)ymin=v;if(v>ymax)ymax=v}
+  if(ymax===ymin){ymax=ymin+1}
+  const X=t=>pad+(t/tm)*(W-pad-8), Y=v=>H-pad-((v-ymin)/(ymax-ymin))*(H-pad-14);
+  ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,8);ctx.lineTo(pad,H-pad);ctx.lineTo(W-6,H-pad);ctx.stroke();
+  ctx.font="10px sans-serif";ctx.fillStyle="#8a8a8a";ctx.fillText(label,pad+2,16);ctx.fillText("t",W-14,H-pad+12);
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=60;i++){const t=i/60*tm;if(t>tCur)break;const v=fn(u,a,t);const px=X(t),py=Y(v);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+  ctx.stroke();
+  const vcur=fn(u,a,tCur);ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(tCur),Y(vcur),3.5,0,Math.PI*2);ctx.fill();
+ }
+ function frame(ts){
+  if(!document.body.contains(track)){running=false;return}
+  const {u,a}=getUA();
+  if(lastTs===null)lastTs=ts;
+  const dt=Math.min(0.05,(ts-lastTs)/1000);lastTs=ts;
+  if(running)T+=dt;
+  const tm=tMax(u,a);
+  if(T>tm){T=tm;running=false;el.querySelector("#mo_play").textContent="▶ Play"}
+  drawTrack(u,a,T);drawGraph(st,"s (m)",posAt,u,a,T,"#4a90d9");drawGraph(vt,"v (m/s)",velAt,u,a,T,"#d9534f");
+  read.textContent=`t = ${r4(T)} s   s = ut + ½at² = ${u}×${r4(T)} + 0.5×${a}×${r4(T)}² = ${r4(posAt(u,a,T))} m   v = u + at = ${u} + ${a}×${r4(T)} = ${r4(velAt(u,a,T))} m/s`;
+  rafId=requestAnimationFrame(frame);
+ }
+ const start=()=>{if(rafId)cancelAnimationFrame(rafId);lastTs=null;rafId=requestAnimationFrame(frame)};
+ el.querySelector("#mo_play").onclick=()=>{running=!running;el.querySelector("#mo_play").textContent=running?"⏸ Pause":"▶ Play"};
+ el.querySelector("#mo_reset").onclick=()=>{T=0;running=false;el.querySelector("#mo_play").textContent="▶ Play"};
+ el.querySelectorAll("#mo_u,#mo_a").forEach(i=>i.oninput=()=>{sv("mou",parseFloat(el.querySelector("#mo_u").value)||0);sv("moa",parseFloat(el.querySelector("#mo_a").value)||0);T=0});
+ start();
+}
+
+/* ================================================================
+   4. Wave animation (transverse)
+   ================================================================ */
+function toolSciWaveAnim(el){
+ const A=ld("waA",30),f=ld("waF",1),lam=ld("waL",120);
+ el.innerHTML=`<div class="card"><h3>Wave animation</h3>
+ <p class="mut" style="font-size:12.5px">A moving transverse wave: y = A·sin(2π(x/λ − ft)). Adjust frequency and wavelength and watch v = f × λ update live.</p>
+ <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:6px">
+  <label>Amplitude A (px) <input id="wa_a" type="number" value="${A}" style="width:70px"></label>
+  <label>Frequency f (Hz) <input id="wa_f" type="number" step="0.1" value="${f}" style="width:70px"></label>
+  <label>Wavelength λ (px) <input id="wa_l" type="number" value="${lam}" style="width:70px"></label>
+ </div>
+ <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="wa_play">⏸ Pause</button></div>
+ <canvas id="wa_cv" width="420" height="160" style="width:100%;max-width:420px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;display:block"></canvas>
+ <div id="wa_read" class="mono" style="margin-top:6px;font-size:14px" data-nomj></div>
+ <p class="mut" style="font-size:12px;margin-top:6px">Pixels stand in for metres here so the picture fits on screen — the relationship v = fλ holds in whatever units you use, including real SI units (see the Wave calculator for worked numeric examples).</p>
+ </div>`;
+ const cv=el.querySelector("#wa_cv");
+ let running=true,t0=performance.now();
+ el.querySelector("#wa_play").onclick=()=>{running=!running;el.querySelector("#wa_play").textContent=running?"⏸ Pause":"▶ Play"};
+ function frame(ts){
+  if(!document.body.contains(cv))return;
+  const Aa=parseFloat(el.querySelector("#wa_a").value)||1,Ff=parseFloat(el.querySelector("#wa_f").value)||0.01,Ll=parseFloat(el.querySelector("#wa_l").value)||1;
+  sv("waA",Aa);sv("waF",Ff);sv("waL",Ll);
+  const ctx=cv.getContext("2d"),W=cv.width,H=cv.height,mid=H/2;
+  const t=running?(ts-t0)/1000:(el._wa_t||0); if(running)el._wa_t=t;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#8a8a8a";ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(W,mid);ctx.stroke();
+  ctx.strokeStyle="#4a90d9";ctx.lineWidth=2.5;ctx.beginPath();
+  for(let x=0;x<=W;x++){const y=mid-Aa*Math.sin(2*Math.PI*(x/Ll-Ff*t));if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+  ctx.stroke();
+  const read=el.querySelector("#wa_read");if(read)read.textContent=`v = f × λ = ${Ff} × ${Ll} = ${r4(Ff*Ll)} (px/s equivalent)    Period T = 1/f = ${r4(1/Ff)} s`;
+  requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
+}
+
+/* ================================================================
+   5. Circuit animation
+   ================================================================ */
+function toolSciCircAnim(el){
+ const mode=ld("caMode","ser"),V=ld("caV",12),r1=ld("caR1",4),r2=ld("caR2",8);
+ el.innerHTML=`<div class="card"><h3>Circuit animation</h3>
+ <p class="mut" style="font-size:12.5px">Two resistors in series or parallel with a battery. Dots show conventional current direction; dot speed shows current size (I = V/R).</p>
+ <div class="row" style="gap:6px;margin-top:6px"><button class="btn ${mode==="ser"?"":"ghost"}" data-cm="ser">Series</button><button class="btn ${mode==="par"?"":"ghost"}" data-cm="par">Parallel</button></div>
+ <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:8px">
+  <label>Supply V <input id="ca_v" type="number" value="${V}" style="width:70px"></label>
+  <label>R1 (Ω) <input id="ca_r1" type="number" value="${r1}" style="width:70px"></label>
+  <label>R2 (Ω) <input id="ca_r2" type="number" value="${r2}" style="width:70px"></label>
+ </div>
+ <canvas id="ca_cv" width="420" height="220" style="width:100%;max-width:420px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;display:block"></canvas>
+ <div id="ca_read" class="mono" style="margin-top:6px;font-size:14px;white-space:pre-line" data-nomj></div></div>`;
+ el.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{sv("caMode",b.dataset.cm);toolSciCircAnim(el)});
+ const cv=el.querySelector("#ca_cv");
+ function wireDots(ctx,pts,speed,t,color){
+  // pts: array of [x,y] describing a path (closed or open); draw path + moving dots along it
+  ctx.strokeStyle="#555";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.stroke();
+  // compute cumulative lengths
+  const segLen=[];let total=0;for(let i=0;i<pts.length-1;i++){const d=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);segLen.push(d);total+=d}
+  const nDots=6;
+  for(let d=0;d<nDots;d++){
+   let dist=((t*speed*40)+d*(total/nDots))%total;
+   let i=0;while(i<segLen.length&&dist>segLen[i]){dist-=segLen[i];i++}
+   if(i>=segLen.length)i=segLen.length-1;
+   const [x1,y1]=pts[i],[x2,y2]=pts[i+1]||pts[i];const segd=segLen[i]||1;const frac=dist/segd;
+   const x=x1+(x2-x1)*frac,y=y1+(y2-y1)*frac;
+   ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
+  }
+ }
+ let t0=performance.now();
+ function frame(ts){
+  if(!document.body.contains(cv))return;
+  const Vv=parseFloat(el.querySelector("#ca_v").value)||0,R1=parseFloat(el.querySelector("#ca_r1").value)||1,R2=parseFloat(el.querySelector("#ca_r2").value)||1;
+  sv("caV",Vv);sv("caR1",R1);sv("caR2",R2);
+  const ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const t=(ts-t0)/1000;
+  const m=el.querySelector("[data-cm].btn:not(.ghost)")?.dataset.cm||mode;
+  ctx.font="12px sans-serif";ctx.fillStyle="#8a8a8a";
+  let readTxt="";
+  if(m==="ser"){
+   const Rt=R1+R2,I=Vv/Rt;
+   const loop=[[60,180],[60,40],[180,40],[180,100],[240,100],[240,40],[360,40],[360,180],[60,180]];
+   wireDots(ctx,loop,I,t,"#4a90d9");
+   ctx.fillText("Battery",40,200);ctx.fillText("R1",175,35);ctx.fillText("R2",355,35);
+   ctx.strokeStyle="#d9534f";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(180,60);ctx.lineTo(180,100);ctx.moveTo(240,60);ctx.lineTo(240,100);ctx.stroke();
+   readTxt=`Series: Rtotal = R1+R2 = ${R1}+${R2} = ${r4(Rt)} Ω\nCurrent (same everywhere) I = V/Rtotal = ${Vv}/${r4(Rt)} = ${r4(I)} A`;
+  }else{
+   const Rt=1/(1/R1+1/R2),It=Vv/Rt,I1=Vv/R1,I2=Vv/R2;
+   const loopMain=[[40,120],[40,40],[380,40],[380,120]];
+   const branch1=[[40,120],[40,60],[180,60],[180,120]];
+   const branch2=[[180,120],[180,180],[380,180],[380,120]];
+   wireDots(ctx,loopMain,It,t,"#4a90d9");
+   wireDots(ctx,branch1,I1,t,"#3fae6a");
+   wireDots(ctx,branch2,I2,t,"#e0a020");
+   ctx.fillText("Battery",15,135);ctx.fillText("R1",105,55);ctx.fillText("R2",275,195);
+   readTxt=`Parallel: 1/Rtotal = 1/${R1}+1/${R2} → Rtotal = ${r4(Rt)} Ω\nBranch 1 (green): I1 = V/R1 = ${Vv}/${R1} = ${r4(I1)} A\nBranch 2 (orange): I2 = V/R2 = ${Vv}/${R2} = ${r4(I2)} A\nTotal from battery (blue): I = ${r4(It)} A`;
+  }
+  const read=el.querySelector("#ca_read");if(read)read.textContent=readTxt;
+  requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
+}
+
+/* ================================================================
+   6. Food chains & food webs
+   ================================================================ */
+const FOOD_PRESETS={
+ paddock:{name:"Australian paddock",nodes:[["Grass","producer",[60,220]],["Grasshopper","primary",[200,220]],["Mouse","primary",[60,140]],["Small bird","secondary",[200,140]],["Snake","secondary",[340,140]],["Kookaburra","tertiary",[270,60]],["Fox","tertiary",[130,60]],["Decomposers\n(fungi, bacteria)","decomposer",[340,220]]],
+  edges:[["Grass","Grasshopper"],["Grass","Mouse"],["Grasshopper","Small bird"],["Mouse","Snake"],["Small bird","Kookaburra"],["Snake","Kookaburra"],["Mouse","Fox"],["Small bird","Fox"],["Fox","Decomposers\n(fungi, bacteria)"],["Kookaburra","Decomposers\n(fungi, bacteria)"]]},
+ ocean:{name:"Coastal ocean",nodes:[["Phytoplankton","producer",[60,220]],["Zooplankton","primary",[200,220]],["Small fish","secondary",[60,140]],["Squid","secondary",[340,220]],["Seal","tertiary",[200,140]],["Shark","tertiary",[340,140]],["Decomposers\n(bacteria)","decomposer",[200,60]]],
+  edges:[["Phytoplankton","Zooplankton"],["Zooplankton","Small fish"],["Zooplankton","Squid"],["Small fish","Seal"],["Squid","Seal"],["Small fish","Shark"],["Seal","Shark"],["Shark","Decomposers\n(bacteria)"],["Seal","Decomposers\n(bacteria)"]]}
+};
+const FOOD_COL={producer:"#7fb069",primary:"#e0c25a",secondary:"#e08a4a",tertiary:"#d9534f",decomposer:"#9a7fb0"};
+const FOOD_POOL=[["Grass","producer"],["Algae","producer"],["Phytoplankton","producer"],["Grasshopper","primary"],["Rabbit","primary"],["Zooplankton","primary"],["Caterpillar","primary"],["Small bird","secondary"],["Frog","secondary"],["Small fish","secondary"],["Spider","secondary"],["Snake","tertiary"],["Hawk","tertiary"],["Fox","tertiary"],["Shark","tertiary"],["Decomposers (fungi, bacteria)","decomposer"]];
+const FOOD_RANK={producer:0,primary:1,secondary:2,tertiary:3,decomposer:4};
+function toolSciFoodWeb(el){
+ const which=ld("fwPreset","paddock");
+ el.innerHTML=`<div class="card"><h3>Food chains & food webs</h3>
+ <p class="mut" style="font-size:12.5px">Arrows point from what's eaten to what eats it — the direction energy flows. Pick a ready-made ecosystem, or build your own.</p>
+ <div class="row" style="gap:6px;margin:8px 0;flex-wrap:wrap">${Object.entries(FOOD_PRESETS).map(([k,v])=>`<button class="btn ${k===which?"":"ghost"}" data-fw="${k}">${esc(v.name)}</button>`).join("")}<button class="btn ${which==="custom"?"":"ghost"}" data-fw="custom">Build your own</button></div>
+ <div id="fw_area"></div>
+ <div class="row" style="flex-wrap:wrap;gap:10px;font-size:11.5px;margin-top:10px">${Object.entries(FOOD_COL).map(([k,c])=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="width:10px;height:10px;background:${c};border-radius:2px;display:inline-block"></i>${esc(k[0].toUpperCase()+k.slice(1))}</span>`).join("")}</div>
+ <div class="card" style="margin-top:12px;background:var(--soft)">
+ <b>Energy flow (the 10% rule):</b> only about 10% of the energy taken in at one trophic level is passed on to the next (the rest is lost as heat, used for movement, or lost in waste/undigested parts) — this is why food chains rarely have more than 4-5 levels, and why there are always far fewer top predators than producers.
+ <br><b>Trophic levels:</b> producers (make their own food, e.g. plants, algae) → primary consumers/herbivores → secondary consumers (eat herbivores) → tertiary consumers (apex predators) → decomposers (break down dead material and waste at every level, recycling nutrients back to producers).
+ </div></div>`;
+ el.querySelectorAll("[data-fw]").forEach(b=>b.onclick=()=>{sv("fwPreset",b.dataset.fw);toolSciFoodWeb(el)});
+ const area=el.querySelector("#fw_area");
+ if(which==="custom"){toolFoodCustom(area);return}
+ const P=FOOD_PRESETS[which];
+ area.innerHTML=`<div style="overflow-x:auto"><canvas id="fw_cv" width="420" height="280" style="min-width:420px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas></div>`;
+ const cv=area.querySelector("#fw_cv"),ctx=cv.getContext("2d");
+ ctx.clearRect(0,0,cv.width,cv.height);
+ const byName={};P.nodes.forEach(n=>byName[n[0]]=n);
+ ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1.6;
+ P.edges.forEach(([a,b])=>{
+  const[,,pa]=byName[a],[,,pb]=byName[b];
+  const ang=Math.atan2(pb[1]-pa[1],pb[0]-pa[0]);
+  const r=26;
+  const x1=pa[0]+Math.cos(ang)*r,y1=pa[1]+Math.sin(ang)*r,x2=pb[0]-Math.cos(ang)*r,y2=pb[1]-Math.sin(ang)*r;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  // arrowhead at x2,y2
+  ctx.save();ctx.translate(x2,y2);ctx.rotate(ang);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-8,-4);ctx.lineTo(-8,4);ctx.closePath();ctx.fillStyle="#8a8a8a";ctx.fill();ctx.restore();
+ });
+ P.nodes.forEach(([name,kind,[x,y]])=>{
+  ctx.fillStyle=FOOD_COL[kind];ctx.beginPath();ctx.ellipse(x,y,42,22,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#111";ctx.font="10.5px sans-serif";ctx.textAlign="center";
+  name.split("\n").forEach((ln,i)=>ctx.fillText(ln,x,y+4+i*11-((name.split("\n").length-1)*5)));
+  ctx.textAlign="left";
+ });
+}
+/* ---- Free-build food web: pick/add species, draw your own energy-flow connections ---- */
+function toolFoodCustom(area){
+ let nodes=ld("fwCNodes",[["Grass","producer"],["Rabbit","primary"],["Fox","tertiary"]]);
+ let edges=ld("fwCEdges",[["Grass","Rabbit"],["Rabbit","Fox"]]);
+ let connectFrom=null,connecting=false,statusMsg="";
+ function msg(t){statusMsg=t;const m=area.querySelector("#fwc_msg");if(m)m.textContent=t}
+ function layout(){
+  const cols={producer:60,primary:160,secondary:260,tertiary:360};
+  const counts={};
+  return nodes.map(([n,t])=>{
+   if(t==="decomposer"){const i=counts.dec=(counts.dec||0);counts.dec++;return [n,t,[60+i*95,280]]}
+   const i=counts[t]=(counts[t]||0);counts[t]++;return [n,t,[cols[t],40+i*75]];
+  });
+ }
+ function draw(){
+  const cv=area.querySelector("#fwc_cv");if(!cv)return;const ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const placed=layout();const byName={};placed.forEach(p=>byName[p[0]]=p);
+  ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1.6;
+  edges.forEach(([a,b])=>{
+   const pa=byName[a],pb=byName[b];if(!pa||!pb)return;
+   const x1=pa[2][0],y1=pa[2][1],x2=pb[2][0],y2=pb[2][1];
+   const ang=Math.atan2(y2-y1,x2-x1),r=24;
+   const sx=x1+Math.cos(ang)*r,sy=y1+Math.sin(ang)*r,ex=x2-Math.cos(ang)*r,ey=y2-Math.sin(ang)*r;
+   ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+   ctx.save();ctx.translate(ex,ey);ctx.rotate(ang);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-8,-4);ctx.lineTo(-8,4);ctx.closePath();ctx.fillStyle="#8a8a8a";ctx.fill();ctx.restore();
+  });
+  placed.forEach(([n,t,[x,y]])=>{
+   ctx.fillStyle=FOOD_COL[t];ctx.beginPath();ctx.ellipse(x,y,38,20,0,0,Math.PI*2);ctx.fill();
+   if(n===connectFrom){ctx.strokeStyle="#000";ctx.lineWidth=2.5;ctx.stroke()}
+   ctx.fillStyle="#111";ctx.font="10px sans-serif";ctx.textAlign="center";ctx.fillText(n.length>13?n.slice(0,12)+"…":n,x,y+3);ctx.textAlign="left";
+  });
+  cv.onclick=e=>{
+   if(!connecting)return;
+   const rect=cv.getBoundingClientRect(),scaleX=cv.width/rect.width,scaleY=cv.height/rect.height;
+   const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+   const hit=placed.find(([,,[x,y]])=>Math.hypot(mx-x,my-y)<40);
+   if(!hit)return;
+   if(!connectFrom){connectFrom=hit[0];render();return}
+   if(connectFrom===hit[0]){msg("Pick a different species — tap who eats it.");return}
+   const fromName=connectFrom;
+   const fromT=(nodes.find(x=>x[0]===fromName)||[,"producer"])[1],toT=hit[1];
+   const ok=toT==="decomposer"||FOOD_RANK[toT]>FOOD_RANK[fromT];
+   if(!ok){msg(`That doesn't work as energy flow: "${hit[0]}" (${toT}) can't realistically eat "${fromName}" (${fromT}) going backward down the chain. Try connecting the other way, or pick a consumer that's a step (or more) up — decomposers can take energy from anything.`);connectFrom=null;connecting=false;render();return}
+   if(edges.some(([a,b])=>a===fromName&&b===hit[0])){msg("That link already exists.")}
+   else{edges.push([fromName,hit[0]]);sv("fwCEdges",edges);msg(`Added: ${fromName} → ${hit[0]}`)}
+   connectFrom=null;connecting=false;render();
+  };
+ }
+ function render(){
+  area.innerHTML=`<p class="mut" style="font-size:12.5px">Add species from the pool below (or type your own and pick a type), then tap "Connect two species" and tap, in order, the species that gets eaten and then the species that eats it.</p>
+  <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${FOOD_POOL.map(([n,t])=>`<button class="btn ghost" data-addp="${esc(n)}|${t}" style="font-size:11px">+ ${esc(n)}</button>`).join("")}</div>
+  <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><input id="fwc_name" placeholder="Custom species name" style="width:150px" data-nomj><select data-nomj id="fwc_type"><option value="producer">Producer</option><option value="primary">Primary consumer</option><option value="secondary">Secondary consumer</option><option value="tertiary">Tertiary/top consumer</option><option value="decomposer">Decomposer</option></select><button class="btn" id="fwc_add">Add</button></div>
+  <div class="row" style="gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn ${connecting?"":"ghost"}" id="fwc_conn">${connecting?(connectFrom?`Tap who eats "${esc(connectFrom)}"…`:"Tap the species that gets eaten…"):"Connect two species"}</button><button class="btn ghost" id="fwc_clear">Clear all</button></div>
+  <div style="overflow-x:auto"><canvas id="fwc_cv" width="420" height="330" style="min-width:420px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas></div>
+  <div id="fwc_msg" class="mut" style="font-size:12.5px;margin-top:6px" data-nomj>${esc(statusMsg)}</div>`;
+  area.querySelectorAll("[data-addp]").forEach(b=>b.onclick=()=>{
+   const [n,t]=b.dataset.addp.split("|");
+   if(nodes.some(x=>x[0]===n)){msg("Already added.");return}
+   if(nodes.length>=14){msg("That's enough species for one clear diagram — clear all to start a new web.");return}
+   nodes.push([n,t]);sv("fwCNodes",nodes);render();
+  });
+  area.querySelector("#fwc_add").onclick=()=>{
+   const n=area.querySelector("#fwc_name").value.trim(),t=area.querySelector("#fwc_type").value;
+   if(!n){msg("Type a species name first.");return}
+   if(nodes.some(x=>x[0].toLowerCase()===n.toLowerCase())){msg("That name is already in your web.");return}
+   if(nodes.length>=14){msg("That's enough species for one clear diagram.");return}
+   nodes.push([n,t]);sv("fwCNodes",nodes);render();
+  };
+  area.querySelector("#fwc_clear").onclick=()=>{nodes=[];edges=[];connectFrom=null;connecting=false;statusMsg="";sv("fwCNodes",nodes);sv("fwCEdges",edges);render()};
+  area.querySelector("#fwc_conn").onclick=()=>{connecting=!connecting;connectFrom=null;render()};
+  draw();
+ }
+ render();
+}
+
+/* ================================================================
+   7. DNA -> mRNA -> protein
+   ================================================================ */
+const DNA_COMP={A:"T",T:"A",G:"C",C:"G"};
+const CODON_TABLE={
+ UUU:"Phe",UUC:"Phe",UUA:"Leu",UUG:"Leu",CUU:"Leu",CUC:"Leu",CUA:"Leu",CUG:"Leu",AUU:"Ile",AUC:"Ile",AUA:"Ile",AUG:"Met (start)",GUU:"Val",GUC:"Val",GUA:"Val",GUG:"Val",
+ UCU:"Ser",UCC:"Ser",UCA:"Ser",UCG:"Ser",CCU:"Pro",CCC:"Pro",CCA:"Pro",CCG:"Pro",ACU:"Thr",ACC:"Thr",ACA:"Thr",ACG:"Thr",GCU:"Ala",GCC:"Ala",GCA:"Ala",GCG:"Ala",
+ UAU:"Tyr",UAC:"Tyr",UAA:"Stop",UAG:"Stop",CAU:"His",CAC:"His",CAA:"Gln",CAG:"Gln",AAU:"Asn",AAC:"Asn",AAA:"Lys",AAG:"Lys",GAU:"Asp",GAC:"Asp",GAA:"Glu",GAG:"Glu",
+ UGU:"Cys",UGC:"Cys",UGA:"Stop",UGG:"Trp",CGU:"Arg",CGC:"Arg",CGA:"Arg",CGG:"Arg",AGU:"Ser",AGC:"Ser",AGA:"Arg",AGG:"Arg",GGU:"Gly",GGC:"Gly",GGA:"Gly",GGG:"Gly"
+};
+function toolSciDNA(el){
+ const seq=ld("dnaSeq","TACGGCTTTATC");
+ el.innerHTML=`<div class="card"><h3>DNA → mRNA → protein</h3>
+ <p class="mut" style="font-size:12.5px">Enter a DNA template strand (letters A, T, G, C only). We'll pair it into the complementary strand, show the mRNA transcribed from it (same sequence as the complementary strand but U instead of T), then translate the mRNA into amino acids using the genetic code.</p>
+ <label class="f">DNA template strand<input id="dn_seq" value="${esc(seq)}" style="font-family:monospace;letter-spacing:2px;font-size:16px;text-transform:uppercase" data-nomj></label>
+ <button class="btn" id="dn_go" style="margin-top:10px">Transcribe & translate</button>
+ <div id="dn_out" style="margin-top:12px"></div>
+ <details style="margin-top:10px"><summary class="mut" style="font-size:12.5px;cursor:pointer">Full codon table (mRNA → amino acid)</summary>
+ <div class="mono" style="font-size:11.5px;margin-top:6px;line-height:1.7;max-height:200px;overflow-y:auto" data-nomj>${Object.entries(CODON_TABLE).map(([c,a])=>`${c}=${a}`).join("  ")}</div></details>
+ </div>`;
+ const run=()=>{
+  let s=el.querySelector("#dn_seq").value.toUpperCase().replace(/[^ATGC]/g,"");
+  sv("dnaSeq",s);
+  const out=el.querySelector("#dn_out");
+  if(s.length<3){out.innerHTML=`<p class="mut">Enter at least 3 bases (A, T, G, C).</p>`;return}
+  const comp=s.split("").map(b=>DNA_COMP[b]).join("");
+  const mrna=comp.replace(/T/g,"U");
+  const codons=[];for(let i=0;i+3<=mrna.length;i+=3)codons.push(mrna.slice(i,i+3));
+  let aminoList=[],hitStop=false;
+  for(const c of codons){
+   const a=CODON_TABLE[c];
+   if(a==="Stop"){aminoList.push({c,a:"Stop"});hitStop=true;break}
+   aminoList.push({c,a});
+  }
+  out.innerHTML=`<div class="card" style="background:var(--soft)" data-nomj>
+  <table class="mono" style="border-collapse:collapse;font-size:13px">
+  <tr><td style="padding:3px 8px;font-weight:700">DNA template</td><td style="padding:3px 8px;letter-spacing:2px">${s.split("").join(" ")}</td></tr>
+  <tr><td style="padding:3px 8px;font-weight:700">Complementary DNA</td><td style="padding:3px 8px;letter-spacing:2px">${comp.split("").join(" ")}</td></tr>
+  <tr><td style="padding:3px 8px;font-weight:700">mRNA (T→U)</td><td style="padding:3px 8px;letter-spacing:2px;color:#4a90d9">${mrna.split("").join(" ")}</td></tr>
+  </table>
+  <p style="margin-top:10px"><b>Codons read in triplets:</b> ${codons.map(c=>c).join(" · ")}${mrna.length%3?" (last "+mrna.length%3+" base(s) left over — not a full codon)":""}</p>
+  <p style="margin-top:6px"><b>Amino acid chain:</b> ${aminoList.map(x=>`${x.a}`).join(" – ")}${!hitStop&&aminoList.length===codons.length?" (no stop codon reached in this sequence)":""}</p>
+  <p class="mut" style="font-size:12px;margin-top:8px">AUG codes for the start amino acid, methionine (Met) — most real proteins begin here. UAA, UAG and UGA are all "Stop" — they end translation and add no amino acid.</p>
+  </div>`;
+ };
+ el.querySelector("#dn_go").onclick=run;
+ el.querySelector("#dn_seq").addEventListener("keydown",e=>{if(e.key==="Enter")run()});
+ run();
+}
+
+/* ================================================================
+   8. Biology graphs (population growth, predator-prey, enzyme activity)
+   ================================================================ */
+function toolSciBioGraph(el){
+ const which=ld("bgMode","pop");
+ const MODES=[["pop","Population growth"],["pp","Predator-prey cycle"],["enzT","Enzyme activity vs temperature"],["enzPH","Enzyme activity vs pH"]];
+ el.innerHTML=`<div class="card"><h3>Biology graphs</h3>
+ <p class="mut" style="font-size:12.5px">Common Year 10 Biology graph shapes, drawn live, with what each part of the curve means.</p>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${MODES.map(m=>`<button class="btn ${m[0]===which?"":"ghost"}" data-bg="${m[0]}" style="font-size:12px">${esc(m[1])}</button>`).join("")}</div>
+ <canvas id="bg_cv" width="380" height="220" style="width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas>
+ <p id="bg_note" style="margin-top:10px;font-size:14px"></p></div>`;
+ el.querySelectorAll("[data-bg]").forEach(b=>b.onclick=()=>{sv("bgMode",b.dataset.bg);toolSciBioGraph(el)});
+ const cv=el.querySelector("#bg_cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height,pad=32;
+ const axes=(xl,yl)=>{ctx.clearRect(0,0,W,H);ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,8);ctx.lineTo(pad,H-pad);ctx.lineTo(W-8,H-pad);ctx.stroke();ctx.font="11px sans-serif";ctx.fillStyle="#8a8a8a";ctx.fillText(xl,W-50,H-10);ctx.save();ctx.translate(12,100);ctx.rotate(-Math.PI/2);ctx.fillText(yl,0,0);ctx.restore()};
+ const plot=(pts,color)=>{ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.beginPath();pts.forEach(([x,y],i)=>{if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke()};
+ if(which==="pop"){
+  axes("Time","Population");
+  const n=100,K=200;
+  const expo=[],logi=[];
+  for(let i=0;i<=n;i++){const t=i/n*10;const xpix=pad+i/n*(W-pad-14);
+   const Nexp=Math.min(K*1.4,5*Math.exp(0.5*t));expo.push([xpix,H-pad-(Nexp/(K*1.4))*(H-pad-10)]);
+   const Nlog=K/(1+((K-5)/5)*Math.exp(-0.9*t));logi.push([xpix,H-pad-(Nlog/(K*1.4))*(H-pad-10)]);
+  }
+  plot(expo,"#d9534f");plot(logi,"#4a90d9");
+  el.querySelector("#bg_note").innerHTML=`<span style="color:#d9534f">■</span> Exponential ("J-shaped") growth — unlimited resources, rate keeps increasing. <span style="color:#4a90d9">■</span> Logistic ("S-shaped") growth — growth slows as the population nears the <b>carrying capacity</b> (K), the maximum a habitat can sustain, due to limited food, space or increased competition/predation/disease.`;
+ }else if(which==="pp"){
+  axes("Time","Population");
+  const prey=[],pred=[];
+  for(let i=0;i<=200;i++){const t=i/200*20;const xpix=pad+i/200*(W-pad-14);
+   const P=120+70*Math.sin(t*0.9), Pr=90+60*Math.sin(t*0.9-1.1);
+   prey.push([xpix,H-pad-(P/220)*(H-pad-10)]);pred.push([xpix,H-pad-(Pr/220)*(H-pad-10)]);
+  }
+  plot(prey,"#3fae6a");plot(pred,"#d9534f");
+  el.querySelector("#bg_note").innerHTML=`<span style="color:#3fae6a">■</span> Prey population rises first (more food/safety); <span style="color:#d9534f">■</span> predator population rises after, lagging behind — more prey means predators breed more successfully. As predators increase they reduce the prey population, which then causes the predator population to fall too (less food), and the cycle repeats.`;
+ }else if(which==="enzT"){
+  axes("Temperature (°C)","Rate of reaction");
+  const pts=[];for(let i=0;i<=100;i++){const T=i/100*70;const xpix=pad+i/100*(W-pad-14);
+   let rate;if(T<37)rate=Math.pow(1.08,T)*2; else rate=Math.pow(1.08,37)*2*Math.max(0,1-(T-37)/20);
+   pts.push([xpix,H-pad-Math.min(1,rate/(Math.pow(1.08,37)*2))*(H-pad-10)]);
+  }
+  plot(pts,"#e0a020");
+  el.querySelector("#bg_note").innerHTML=`Rate increases with temperature up to the enzyme's <b>optimum</b> (≈37°C for most human enzymes) as particles move faster and collide more often. Past the optimum, rising heat starts to <b>denature</b> the enzyme — its active site's shape is permanently disrupted — so the rate drops sharply even though the temperature keeps rising.`;
+ }else{
+  axes("pH","Rate of reaction");
+  const pts=[];for(let i=0;i<=100;i++){const pH=i/100*14;const xpix=pad+i/100*(W-pad-14);
+   const rate=Math.exp(-Math.pow(pH-7,2)/4);
+   pts.push([xpix,H-pad-rate*(H-pad-10)]);
+  }
+  plot(pts,"#8a6fd0");
+  el.querySelector("#bg_note").innerHTML=`Every enzyme has an <b>optimum pH</b> (here shown at pH 7, typical of many human enzymes — pepsin in the stomach is an exception, with an optimum near pH 2). Moving away from the optimum in either direction changes the shape of the enzyme's active site, reducing how well the substrate fits, until the enzyme denatures and stops working altogether.`;
+ }
+}
+
+/* ================================================================
+   9. Genomes, karyotypes & mutations
+   ================================================================ */
+function toolSciGenome(el){
+ const tab=ld("gnTab","genome");
+ el.innerHTML=`<div class="card"><h3>Genomes, karyotypes & mutations</h3>
+ <div class="row" style="gap:6px;margin:8px 0"><button class="btn ${tab==="genome"?"":"ghost"}" data-gn="genome">The human genome</button><button class="btn ${tab==="karyo"?"":"ghost"}" data-gn="karyo">Karyotype</button><button class="btn ${tab==="mut"?"":"ghost"}" data-gn="mut">Mutations</button></div>
+ <div id="gn_body"></div></div>`;
+ el.querySelectorAll("[data-gn]").forEach(b=>b.onclick=()=>{sv("gnTab",b.dataset.gn);toolSciGenome(el)});
+ const body=el.querySelector("#gn_body");
+ if(tab==="genome"){
+  body.innerHTML=`<div class="card" style="background:var(--soft)">
+  <p><b>Genome:</b> the complete set of genetic material (all the DNA) of an organism.</p>
+  <p style="margin-top:8px"><b>Humans have 23 pairs of chromosomes</b> (46 total) in almost every body cell:</p>
+  <ul style="margin-top:6px"><li><b>22 pairs of autosomes</b> (pairs 1-22) — carry most genes, unrelated to sex.</li>
+  <li><b>1 pair of sex chromosomes</b> (pair 23) — <b>XX</b> in females, <b>XY</b> in males.</li></ul>
+  <p style="margin-top:8px">One chromosome of each pair is inherited from each biological parent. Sex (egg) cells and sperm contain only 23 chromosomes (one of each pair, made by meiosis), so fertilisation restores the full 46.</p>
+  <p style="margin-top:8px">The human genome contains roughly 3 billion DNA base pairs and an estimated 20,000-25,000 genes, packaged into those 46 chromosomes inside the nucleus of (almost) every cell.</p></div>`;
+ }else if(tab==="karyo"){
+  const pairs=23;
+  let bars="";
+  for(let i=1;i<=pairs;i++){
+   const isSex=i===23;
+   const h=isSex?34:Math.max(18,60-i*1.6);
+   bars+=`<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="display:flex;gap:2px"><div style="width:7px;height:${h}px;background:${isSex?"#e08a8a":"#6fd0b0"};border-radius:3px"></div><div style="width:7px;height:${h}px;background:${isSex?"#9ab8f0":"#6fd0b0"};border-radius:3px"></div></div><span style="font-size:8.5px">${isSex?"XX/XY":i}</span></div>`;
+  }
+  body.innerHTML=`<div class="card" style="background:var(--soft)">
+  <p class="mut" style="font-size:12.5px">A simplified karyotype — a picture of all of a person's chromosomes arranged in matching pairs, largest to smallest. Real karyotypes are made by staining and photographing chromosomes from a dividing cell. Pair 23 is drawn in two possible colours since it differs between female (XX) and male (XY).</p>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:flex-end">${bars}</div>
+  <p style="margin-top:10px;font-size:13.5px">Doctors use real karyotypes to detect chromosome <b>number</b> abnormalities — e.g. Down syndrome is an extra copy of chromosome 21 (three copies instead of two, called trisomy 21) — and large structural changes, though not single-gene mutations (those need DNA sequencing, not a karyotype).</p></div>`;
+ }else{
+  const MUT=[
+   ["Substitution","One base is swapped for a different base.","ATG CAT CAT","ATG CAC CAT","Only the one changed codon is affected — may change one amino acid (or none, if the new codon still codes for the same one) — generally the least disruptive type."],
+   ["Insertion","One or more extra bases are added into the sequence.","ATG CAT CAT","ATG CGA TCA T","Shifts every base after the insertion point along by one — a frameshift — which usually scrambles every amino acid from that point on."],
+   ["Deletion","One or more bases are removed from the sequence.","ATG CAT CAT","ATG ATC AT","Also a frameshift (unless a multiple of 3 bases is removed) — everything downstream is read in the wrong groups of three."]
+  ];
+  body.innerHTML=`<div class="card" style="background:var(--soft)"><p class="mut" style="font-size:12.5px">A mutation is any change to a DNA sequence. Point mutations affect just one or a few bases:</p>
+  ${MUT.map(([name,desc,before,after,eff])=>`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"><b>${esc(name)}</b> — ${esc(desc)}
+  <div class="mono" style="margin-top:6px;font-size:14px;letter-spacing:1px" data-nomj>Before: ${before.split(" ").join(" · ")}<br>After: &nbsp;${after.split(" ").join(" · ")}</div>
+  <p style="margin-top:4px;font-size:13px">${esc(eff)}</p></div>`).join("")}
+  <p class="mut" style="font-size:12px;margin-top:10px">Mutations happen naturally (DNA copying errors) or are caused by mutagens (UV light, X-rays, some chemicals). Most are neutral or harmful; very rarely one gives an advantage that natural selection can act on.</p></div>`;
+ }
+}
+
+window.toolSciChem=toolSciChem;
+window.toolSciReact=toolSciReact;
+window.toolSciMotion=toolSciMotion;
+window.toolSciWaveAnim=toolSciWaveAnim;
+window.toolSciCircAnim=toolSciCircAnim;
+window.toolSciFoodWeb=toolSciFoodWeb;
+window.toolSciDNA=toolSciDNA;
+window.toolSciBioGraph=toolSciBioGraph;
+window.toolSciGenome=toolSciGenome;
+window._chemBalance=chemBalance; // exposed for in-app self-test only
+})();
+
+(function(){
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const K="scit3:";
+const ld=(k,d)=>{try{const v=localStorage.getItem(K+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch(e){}};
+function r2(n){return Math.round(n*100)/100}
+function r4(n){return Math.round(n*10000)/10000}
+
+/* ================================================================
+   1. Energy transformation animation (pendulum / bouncing ball)
+   Physics checked by hand: pendulum — h(θ)=L(1-cosθ), E=mgh_max,
+   PE=mgh, KE=E-PE, v=sqrt(2·KE/m) (exact, by energy conservation).
+   Bounce — free fall/rise under gravity, v=sqrt(2g(h0-h)) at height h.
+   Example check: L=1m, g=9.8, θ0=0.5 rad → h_max=1-cos(0.5)=0.1224 m,
+   v at bottom = sqrt(2×9.8×0.1224) = 1.549 m/s — matches v=u+at style
+   free-fall check for an equivalent drop height. Air resistance is
+   ignored and the bounce/swing is treated as perfectly elastic.
+   ================================================================ */
+function toolSciEnergy(el){
+ const mode=ld("enMode","pend");
+ const L=ld("enL",1),theta0=ld("enTh",35),mass=ld("enM",1),h0=ld("enH0",2);
+ el.innerHTML=`<div class="card"><h3>Energy transformation animation</h3>
+ <p class="mut" style="font-size:12.5px">Watch kinetic energy (KE = ½mv²) and gravitational potential energy (PE = mgh) swap back and forth while total mechanical energy stays constant. Air resistance is ignored, and the ${mode==="pend"?"pendulum's swing":"ball's bounce"} is treated as perfectly elastic (no energy lost) — a simplified model, not a real measurement.</p>
+ <div class="row" style="gap:6px;margin-top:8px"><button class="btn ${mode==="pend"?"":"ghost"}" data-en="pend">Pendulum</button><button class="btn ${mode==="bounce"?"":"ghost"}" data-en="bounce">Bouncing ball</button></div>
+ <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:8px" id="en_in"></div>
+ <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="en_play">⏸ Pause</button><button class="btn ghost" id="en_reset">⟲ Reset</button></div>
+ <div class="row" style="gap:12px;flex-wrap:wrap;margin-top:10px">
+ <canvas id="en_cv" width="200" height="220" style="flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas>
+ <canvas id="en_bar" width="180" height="220" style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas>
+ </div>
+ <div id="en_read" class="mono" style="margin-top:8px;font-size:13.5px;white-space:pre-line" data-nomj></div></div>`;
+ el.querySelectorAll("[data-en]").forEach(b=>b.onclick=()=>{sv("enMode",b.dataset.en);toolSciEnergy(el)});
+ const inp=el.querySelector("#en_in");
+ if(mode==="pend"){
+  inp.innerHTML=`<label>Length L (m) <input id="en_L" type="number" step="0.1" value="${L}" style="width:70px"></label><label>Max swing angle (°, from vertical) <input id="en_th" type="number" value="${theta0}" style="width:70px"></label><label>Mass (kg) <input id="en_m" type="number" step="0.1" value="${mass}" style="width:70px"></label>`;
+ }else{
+  inp.innerHTML=`<label>Drop height (m) <input id="en_h0" type="number" step="0.1" value="${h0}" style="width:70px"></label><label>Mass (kg) <input id="en_m" type="number" step="0.1" value="${mass}" style="width:70px"></label>`;
+ }
+ el.querySelectorAll("#en_in input").forEach(i=>i.oninput=()=>{
+  sv("enL",parseFloat(el.querySelector("#en_L")?.value)||1);
+  sv("enTh",parseFloat(el.querySelector("#en_th")?.value)||35);
+  sv("enM",parseFloat(el.querySelector("#en_m")?.value)||1);
+  sv("enH0",parseFloat(el.querySelector("#en_h0")?.value)||2);
+ });
+ const cv=el.querySelector("#en_cv"),bar=el.querySelector("#en_bar"),read=el.querySelector("#en_read");
+ const g=9.8;
+ let running=true,t0=null,tAcc=0;
+ el.querySelector("#en_play").onclick=()=>{running=!running;el.querySelector("#en_play").textContent=running?"⏸ Pause":"▶ Play";t0=null};
+ el.querySelector("#en_reset").onclick=()=>{tAcc=0;t0=null};
+ function frame(ts){
+  if(!document.body.contains(cv))return;
+  const m=parseFloat(el.querySelector("#en_m")?.value)||1;
+  if(t0===null)t0=ts;
+  if(running)tAcc+=(ts-t0)/1000;
+  t0=ts;
+  const t=tAcc;
+  const ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  let h,v,PE,KE,E,label;
+  if(mode==="pend"){
+   const Lm=parseFloat(el.querySelector("#en_L")?.value)||1;
+   const th0=(parseFloat(el.querySelector("#en_th")?.value)||35)*Math.PI/180;
+   const omega=Math.sqrt(g/Lm);
+   const theta=th0*Math.cos(omega*t);
+   const hmax=Lm*(1-Math.cos(th0));
+   h=Lm*(1-Math.cos(theta));
+   E=m*g*hmax;PE=m*g*h;KE=Math.max(0,E-PE);v=Math.sqrt(2*KE/m);
+   const px=W/2,py=20,rodLenPx=Math.min(150,Lm*80+40);
+   const bx=px+rodLenPx*Math.sin(theta),by=py+rodLenPx*Math.cos(theta);
+   ctx.strokeStyle="#8a8a8a";ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(bx,by);ctx.stroke();
+   ctx.fillStyle="#555";ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle="#4a90d9";ctx.beginPath();ctx.arc(bx,by,12,0,Math.PI*2);ctx.fill();
+   label=`θ = ${r2(theta*180/Math.PI)}°   h = ${r4(h)} m (above lowest point)\nPE = mgh = ${m}×${g}×${r4(h)} = ${r4(PE)} J\nKE = E − PE = ${r4(E)} − ${r4(PE)} = ${r4(KE)} J  →  v = ${r4(v)} m/s\nTotal mechanical energy E = mgh_max = ${r4(E)} J (constant, ignoring air resistance)`;
+  }else{
+   const H0=parseFloat(el.querySelector("#en_h0")?.value)||2;
+   const Tfall=Math.sqrt(2*H0/g),Tcycle=2*Tfall;
+   let tc=t%Tcycle,hh;
+   if(tc<Tfall){hh=H0-0.5*g*tc*tc}else{const tu=tc-Tfall,tRem=Tfall-tu;hh=H0-0.5*g*tRem*tRem}
+   hh=Math.max(0,hh);
+   h=hh;E=m*g*H0;PE=m*g*h;KE=Math.max(0,E-PE);v=Math.sqrt(2*KE/m);
+   const groundY=H-20,topY=20,py2=groundY-(h/H0)*(groundY-topY);
+   ctx.strokeStyle="#8a8a8a";ctx.beginPath();ctx.moveTo(10,groundY+10);ctx.lineTo(W-10,groundY+10);ctx.stroke();
+   ctx.fillStyle="#d9534f";ctx.beginPath();ctx.arc(W/2,py2,12,0,Math.PI*2);ctx.fill();
+   label=`Height h = ${r4(h)} m\nPE = mgh = ${m}×${g}×${r4(h)} = ${r4(PE)} J\nKE = E − PE = ${r4(E)} − ${r4(PE)} = ${r4(KE)} J  →  v = ${r4(v)} m/s\nTotal mechanical energy E = mgh₀ = ${r4(E)} J (constant — idealised perfectly-elastic bounce, no air resistance)`;
+  }
+  const bctx=bar.getContext("2d"),bw=bar.width,bh=bar.height;
+  bctx.clearRect(0,0,bw,bh);
+  const maxE=E||1,peH=(PE/maxE)*(bh-40),keH=(KE/maxE)*(bh-40);
+  bctx.fillStyle="#4a90d9";bctx.fillRect(30,bh-20-peH,45,peH);
+  bctx.fillStyle="#d9534f";bctx.fillRect(100,bh-20-keH,45,keH);
+  bctx.strokeStyle="#8a8a8a";bctx.beginPath();bctx.moveTo(15,bh-20);bctx.lineTo(bw-10,bh-20);bctx.stroke();
+  bctx.fillStyle="#8a8a8a";bctx.font="11px sans-serif";bctx.textAlign="center";
+  bctx.fillText("PE",52,bh-5);bctx.fillText("KE",122,bh-5);
+  bctx.fillText(r2(PE)+" J",52,Math.max(14,bh-24-peH));
+  bctx.fillText(r2(KE)+" J",122,Math.max(14,bh-24-keH));
+  bctx.textAlign="left";
+  read.textContent=label;
+  requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
+}
+
+/* ================================================================
+   2. Acids & bases / pH tool
+   pH = -log10[H+] and [H+] = 10^-pH, checked against standard values
+   (e.g. [H+]=1e-7 -> pH=7, [H+]=0.01 -> pH=2). Indicator colours and
+   ranges (litmus, universal indicator, phenolphthalein ~8.2, methyl
+   orange ~3.1-4.4) match standard school-chemistry references.
+   ================================================================ */
+const PH_BANDS=[["0-3","#d9534f","Strongly acidic — e.g. stomach acid (≈pH 1-2), lemon juice (≈pH 2)"],["4-6","#e0a020","Weakly acidic — e.g. black coffee, tomato juice, rain"],["7","#3fae6a","Neutral — pure water"],["8-10","#4a90d9","Weakly basic — e.g. baking soda solution, seawater"],["11-14","#8a6fd0","Strongly basic — e.g. ammonia solution, oven/drain cleaner"]];
+const INDICATORS=[
+ ["Litmus","Red in acidic solutions, blue in basic (alkaline) solutions, purple-ish in neutral — a simple acid/base indicator, not precise."],
+ ["Universal indicator","A full-spectrum indicator giving an approximate pH reading from its colour: red (pH 1-3), orange (pH 4-5), yellow (pH 6), green (pH 7, neutral), blue (pH 8-10), purple/violet (pH 11-14)."],
+ ["Phenolphthalein","Colourless below about pH 8.2, turns pink/magenta above it — used in titrations to show the moment a base has just neutralised an acid."],
+ ["Methyl orange","Red below about pH 3.1, orange in between, yellow above about pH 4.4 — a titration indicator for a different pH range than phenolphthalein."]
+];
+function toolSciPH(el){
+ const mode=ld("phMode","calc");
+ el.innerHTML=`<div class="card"><h3>Acids & bases / pH</h3>
+ <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
+ <button class="btn ${mode==="calc"?"":"ghost"}" data-phm="calc">pH calculator</button>
+ <button class="btn ${mode==="scale"?"":"ghost"}" data-phm="scale">pH scale</button>
+ <button class="btn ${mode==="neut"?"":"ghost"}" data-phm="neut">Neutralisation</button>
+ <button class="btn ${mode==="ind"?"":"ghost"}" data-phm="ind">Indicators</button>
+ </div><div id="ph_body"></div></div>`;
+ el.querySelectorAll("[data-phm]").forEach(b=>b.onclick=()=>{sv("phMode",b.dataset.phm);toolSciPH(el)});
+ const body=el.querySelector("#ph_body");
+ if(mode==="calc"){
+  const solve=ld("phSolve","ph");
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">pH = −log₁₀[H⁺] — where [H⁺] is the hydrogen ion concentration in mol/L.</p>
+  <label class="f">Solve for<select data-nomj id="ph_s"><option value="ph" ${solve==="ph"?"selected":""}>pH (from [H⁺])</option><option value="h" ${solve==="h"?"selected":""}>[H⁺] (from pH)</option></select></label>
+  <div id="ph_in" style="margin-top:8px"></div><button class="btn" id="ph_go" style="margin-top:10px">Calculate</button>
+  <div id="ph_out" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  const draw=()=>{const s=body.querySelector("#ph_s").value;sv("phSolve",s);
+   body.querySelector("#ph_in").innerHTML=s==="ph"?`<label>[H⁺] (mol/L) <input id="ph_hv" type="number" value="0.001" step="any" style="width:130px"></label>`:`<label>pH <input id="ph_pv" type="number" value="3" step="any" style="width:90px"></label>`};
+  draw();body.querySelector("#ph_s").onchange=draw;
+  body.querySelector("#ph_go").onclick=()=>{const s=body.querySelector("#ph_s").value;const out=body.querySelector("#ph_out");
+   if(s==="ph"){const hv=parseFloat(body.querySelector("#ph_hv").value);if(!(hv>0)){out.textContent="[H⁺] must be a positive number.";return}
+    const ph=-Math.log10(hv);out.textContent=`pH = −log₁₀[H⁺] = −log₁₀(${hv}) = ${r4(ph)}\n${ph<7?"Acidic (pH < 7)":ph>7?"Basic/alkaline (pH > 7)":"Neutral (pH = 7)"}`;
+   }else{const pv=parseFloat(body.querySelector("#ph_pv").value);const hv=Math.pow(10,-pv);out.textContent=`[H⁺] = 10^(−pH) = 10^(−${pv}) = ${hv.toExponential(3)} mol/L\n${pv<7?"Acidic (pH < 7)":pv>7?"Basic/alkaline (pH > 7)":"Neutral (pH = 7)"}`}
+  };
+ }else if(mode==="scale"){
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">The pH scale runs from 0 (strongly acidic) to 14 (strongly basic/alkaline), with 7 neutral (pure water at 25°C). Each whole step is a ×10 change in [H⁺] — pH 4 has 10× more H⁺ than pH 5.</p>
+  <div class="row" style="gap:0;margin-top:10px">${PH_BANDS.map(([r,c])=>`<div style="flex:1;padding:8px 2px;background:${c};color:#fff;text-align:center;font-size:12px"><b>${r}</b></div>`).join("")}</div>
+  <div style="margin-top:8px">${PH_BANDS.map(([r,,d])=>`<p style="font-size:13px;margin:4px 0"><b>pH ${r}:</b> ${esc(d)}</p>`).join("")}</div>`;
+ }else if(mode==="neut"){
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">An acid and a base react together in a neutralisation reaction to form a salt and water, moving the mixture's pH toward 7.</p>
+  <div class="card" style="background:var(--soft)">
+  <p class="mono" style="font-size:16px" data-nomj>acid + base → salt + water</p>
+  <p style="margin-top:8px"><b>Example:</b> <span class="mono" data-nomj>HCl + NaOH → NaCl + H₂O</span> (hydrochloric acid + sodium hydroxide → sodium chloride + water)</p>
+  <p style="margin-top:8px"><b>Example:</b> <span class="mono" data-nomj>H₂SO₄ + 2 NaOH → Na₂SO₄ + 2 H₂O</span> — use the Equation balancer tool to check any neutralisation equation balances.</p>
+  <p style="margin-top:8px">The salt's name comes from the acid's negative ion (chloride from hydrochloric acid, sulfate from sulfuric acid, nitrate from nitric acid) and the base's positive ion. Use the Moles & titration tool for c₁v₁ = c₂v₂ quantity calculations.</p>
+  </div>`;
+ }else{
+  body.innerHTML=INDICATORS.map(([name,desc])=>`<div class="card" style="background:var(--soft);margin-bottom:8px"><b>${esc(name)}</b><p style="margin-top:4px;font-size:13.5px">${esc(desc)}</p></div>`).join("");
+ }
+}
+
+/* ================================================================
+   3. States of matter / particle model animation
+   ================================================================ */
+function toolSciStates(el){
+ const temp=ld("stTemp",20);
+ el.innerHTML=`<div class="card"><h3>States of matter — particle model</h3>
+ <p class="mut" style="font-size:12.5px">A simplified particle-model animation (not a specific real substance) — move the temperature slider and watch the particles' arrangement and motion change between solid, liquid and gas.</p>
+ <label class="f">Temperature<input id="st_t" type="range" min="0" max="100" value="${temp}" style="width:100%"></label>
+ <div id="st_lab" style="text-align:center;font-weight:700;font-size:16px;margin-top:4px"></div>
+ <canvas id="st_cv" width="340" height="200" style="width:100%;max-width:340px;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;display:block"></canvas>
+ <div id="st_note" style="margin-top:10px;font-size:14px"></div></div>`;
+ const slider=el.querySelector("#st_t"),cv=el.querySelector("#st_cv"),lab=el.querySelector("#st_lab"),note=el.querySelector("#st_note");
+ const cols=6,rows=6,N=cols*rows;
+ const parts=[];
+ for(let i=0;i<N;i++){
+  const cx=30+(i%cols)*((cv.width-60)/(cols-1)),cy=30+Math.floor(i/cols)*((cv.height-60)/(rows-1));
+  parts.push({hx:cx,hy:cy,x:cx,y:cy,vx:0,vy:0});
+ }
+ slider.oninput=()=>{sv("stTemp",+slider.value)};
+ function stateOf(t){return t<34?"solid":t<67?"liquid":"gas"}
+ function frame(){
+  if(!document.body.contains(cv))return;
+  const t=+slider.value,st=stateOf(t);
+  lab.textContent=st[0].toUpperCase()+st.slice(1)+` (temperature ${t})`;
+  const speed=0.3+t/100*2.2;
+  const ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  parts.forEach(p=>{
+   if(st==="solid"){
+    p.x=p.hx+Math.sin(Date.now()/150+p.hx)*speed*1.5;
+    p.y=p.hy+Math.cos(Date.now()/170+p.hy)*speed*1.5;
+   }else if(st==="liquid"){
+    p.vx+=(Math.random()-0.5)*0.4;p.vy+=(Math.random()-0.5)*0.4;
+    p.vx=Math.max(-speed,Math.min(speed,p.vx));p.vy=Math.max(-speed,Math.min(speed,p.vy));
+    p.x+=p.vx;p.y+=p.vy;
+    p.x+=(p.hx-p.x)*0.01;p.y+=(p.hy-p.y)*0.01;
+    p.x=Math.max(16,Math.min(W-16,p.x));p.y=Math.max(16,Math.min(H-16,p.y));
+   }else{
+    p.vx+=(Math.random()-0.5)*0.6;p.vy+=(Math.random()-0.5)*0.6;
+    p.vx=Math.max(-speed,Math.min(speed,p.vx));p.vy=Math.max(-speed,Math.min(speed,p.vy));
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<10){p.x=10;p.vx=Math.abs(p.vx)} if(p.x>W-10){p.x=W-10;p.vx=-Math.abs(p.vx)}
+    if(p.y<10){p.y=10;p.vy=Math.abs(p.vy)} if(p.y>H-10){p.y=H-10;p.vy=-Math.abs(p.vy)}
+   }
+   ctx.fillStyle=st==="solid"?"#4a90d9":st==="liquid"?"#3fae6a":"#d9534f";
+   ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fill();
+  });
+  const notes={solid:"Particles are tightly packed in a fixed, regular arrangement and only vibrate in place — strong forces of attraction hold them where they are, so a solid keeps its shape and volume.",
+   liquid:"Particles are still close together (similar spacing to a solid) but have enough energy to move around and slide past each other — a liquid flows and takes the shape of its container, but keeps roughly the same volume.",
+   gas:"Particles have enough energy to move almost completely independently — fast, in random directions, with large gaps between them — a gas spreads out to fill and take the shape of its whole container."};
+  note.innerHTML=notes[st]+`<p class="mut" style="font-size:12px;margin-top:8px">Real melting/boiling points depend on the specific substance — this shows the general particle-arrangement idea common to all materials, not one substance's exact behaviour.</p>`;
+  requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
+}
+
+/* ================================================================
+   4. Forces & Newton's laws
+   ================================================================ */
+function toolSciForce(el){
+ const mode=ld("fcMode","net");
+ el.innerHTML=`<div class="card"><h3>Forces & Newton's laws</h3>
+ <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
+ <button class="btn ${mode==="net"?"":"ghost"}" data-fcm="net">Net force calculator</button>
+ <button class="btn ${mode==="laws"?"":"ghost"}" data-fcm="laws">Newton's three laws</button>
+ <button class="btn ${mode==="fric"?"":"ghost"}" data-fcm="fric">Friction basics</button>
+ </div><div id="fc_body"></div></div>`;
+ el.querySelectorAll("[data-fcm]").forEach(b=>b.onclick=()=>{sv("fcMode",b.dataset.fcm);toolSciForce(el)});
+ const body=el.querySelector("#fc_body");
+ if(mode==="net"){
+  const forces=ld("fcForces","20 right, 8 left"),mass=ld("fcMass",5);
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">Enter forces acting along one line, e.g. <span class="mono" data-nomj>20 right, 8 left, 5 right</span>. We'll add them up (right = positive) to find the net force, and — if you give a mass — the resulting acceleration (F = ma).</p>
+  <label class="f">Forces (N)<input id="fc_f" value="${esc(forces)}" style="font-size:14px" data-nomj></label>
+  <label class="f" style="margin-top:8px">Mass (kg, optional — leave 0 to skip)<input id="fc_m" type="number" value="${mass}" style="width:90px"></label>
+  <button class="btn" id="fc_go" style="margin-top:10px">Calculate</button>
+  <div id="fc_out" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line" data-nomj></div>`;
+  const run=()=>{
+   const s=body.querySelector("#fc_f").value;const m=parseFloat(body.querySelector("#fc_m").value)||0;
+   sv("fcForces",s);sv("fcMass",m);
+   const out=body.querySelector("#fc_out");
+   const matches=[...s.matchAll(/(-?\d+(?:\.\d+)?)\s*(left|right|l|r|\+|-)?/gi)].filter(x=>x[1]!==undefined);
+   if(!matches.length){out.textContent="Enter at least one force, e.g. 20 right, 8 left.";return}
+   const vals=matches.map(mt=>{let v=parseFloat(mt[1]);const dir=(mt[2]||"").toLowerCase();
+    if(dir==="left"||dir==="l"||dir==="-")v=-Math.abs(v);else v=Math.abs(v);return v});
+   const net=vals.reduce((a,b)=>a+b,0);
+   const expr=vals.map((v,i)=>i===0?(v<0?"−"+Math.abs(v):""+v):(v<0?" − "+Math.abs(v):" + "+v)).join("")+" N";
+   let verdict;
+   if(Math.abs(net)<1e-9)verdict="Balanced forces (net force = 0) — by Newton's First Law, the object's velocity doesn't change: it stays at rest, or keeps moving at a constant speed in a straight line.";
+   else verdict=`Unbalanced forces (net force ≠ 0) — by Newton's Second Law, the object accelerates in the direction of the net force (${net>0?"right":"left"}).`;
+   let accLine="";
+   if(m>0){const a=net/m;accLine=`\nWith mass = ${m} kg: a = Fnet / m = ${r4(net)} / ${m} = ${r4(a)} m/s² (${a>=0?"right":"left"})`}
+   out.textContent=`Forces: ${vals.map(v=>(v>=0?"+":"")+v+" N").join(", ")}\nNet force = ${expr} = ${r4(net)} N (right positive)\n${verdict}${accLine}`;
+  };
+  body.querySelector("#fc_go").onclick=run;run();
+ }else if(mode==="laws"){
+  body.innerHTML=`<div class="card" style="background:var(--soft)">
+  <p><b>First law (inertia):</b> an object stays at rest, or keeps moving at a constant velocity in a straight line, unless acted on by a net (unbalanced) external force.</p>
+  <p style="margin-top:10px"><b>Second law:</b> the acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass — <span class="mono" data-nomj>F = ma</span> (or a = F/m). A bigger net force gives more acceleration; a bigger mass gives less acceleration for the same force.</p>
+  <p style="margin-top:10px"><b>Third law:</b> for every action force, there is a reaction force equal in size and opposite in direction, acting on a different object (e.g. a rocket pushes exhaust gas backward; the gas pushes the rocket forward with an equal-sized force).</p>
+  </div>`;
+ }else{
+  body.innerHTML=`<div class="card" style="background:var(--soft)">
+  <p><b>Friction</b> is a force that opposes the relative motion (or attempted motion) between two surfaces in contact, acting parallel to the surfaces.</p>
+  <ul style="margin-top:8px"><li><b>Static friction</b> resists an object starting to move; it increases to match an applied force up to a maximum, after which the object starts to slide.</li>
+  <li><b>Kinetic (sliding) friction</b> acts once an object is already moving, opposing its motion.</li>
+  <li>Friction depends on the roughness of the two surfaces and how hard they're pressed together (the normal force) — it does <i>not</i> depend much on how fast the object is already moving or on the contact area.</li>
+  <li>Friction is useful (walking, braking, holding a pen) but also wastes energy as heat, which is why machines are lubricated to reduce it.</li></ul></div>`;
+ }
+}
+
+/* ================================================================
+   5. Cell structure reference (plant vs animal)
+   ================================================================ */
+const ORGANELLES=[
+ ["Nucleus","Both","Contains the cell's DNA (genetic material) and controls the cell's activities, including directing protein synthesis."],
+ ["Cell membrane","Both","A thin, selectively permeable layer that controls what substances enter and leave the cell."],
+ ["Cytoplasm","Both","The jelly-like substance filling the cell, where many chemical reactions take place, holding the organelles in place."],
+ ["Mitochondria","Both","The site of (aerobic) cellular respiration — releasing energy from glucose for the cell to use. Often called the cell's 'powerhouse'."],
+ ["Ribosomes","Both","The site of protein synthesis, where amino acids are assembled into proteins according to instructions from mRNA."],
+ ["Cell wall","Plant only","A rigid layer made of cellulose, outside the cell membrane — supports and protects the cell and maintains its shape, even under pressure."],
+ ["Chloroplast","Plant only","Contains chlorophyll and is the site of photosynthesis — using light energy to make glucose from carbon dioxide and water."],
+ ["Vacuole","Mainly plant (large)","Plant cells usually have one large central vacuole storing water, nutrients and waste, and providing turgor pressure that keeps the cell firm. Animal cells may have small, temporary vacuoles instead."]
+];
+function toolSciCell(el){
+ const tab=ld("clTab","plant");
+ const parts=tab==="plant"?["Nucleus","Cell membrane","Cytoplasm","Mitochondria","Ribosomes","Cell wall","Chloroplast","Vacuole"]:["Nucleus","Cell membrane","Cytoplasm","Mitochondria","Ribosomes"];
+ const diagram=tab==="plant"
+  ?`<div style="position:relative;width:260px;height:180px;margin:10px auto;background:#eaf6ea;border:4px solid #4a7a3a;border-radius:6px">
+    <div style="position:absolute;inset:6px;border:2px solid #3fae6a;border-radius:4px"></div>
+    <div style="position:absolute;left:20px;top:20px;width:90px;height:60px;background:#9ad0c0;border-radius:40%"></div>
+    <div style="position:absolute;left:120px;top:60px;width:44px;height:44px;background:#555;border-radius:50%"></div>
+    <div style="position:absolute;left:170px;top:45px;width:34px;height:20px;background:#3fae6a;border-radius:50%"></div>
+    <div style="position:absolute;left:30px;top:110px;width:26px;height:16px;background:#d9534f;border-radius:50%"></div>
+    <span style="position:absolute;left:135px;top:70px;font-size:9px">Nucleus</span>
+    <span style="position:absolute;left:18px;top:85px;font-size:9px">Vacuole</span>
+    <span style="position:absolute;left:168px;top:68px;font-size:9px">Chloroplast</span>
+   </div>`
+  :`<div style="position:relative;width:260px;height:180px;margin:10px auto;background:#f6eaea;border:4px solid #b06a6a;border-radius:50%">
+    <div style="position:absolute;left:100px;top:60px;width:50px;height:50px;background:#555;border-radius:50%"></div>
+    <div style="position:absolute;left:60px;top:30px;width:24px;height:14px;background:#d9534f;border-radius:50%"></div>
+    <div style="position:absolute;left:170px;top:110px;width:24px;height:14px;background:#d9534f;border-radius:50%"></div>
+    <span style="position:absolute;left:107px;top:75px;font-size:9px;color:#fff">Nucleus</span>
+   </div>`;
+ el.innerHTML=`<div class="card"><h3>Cell structure</h3>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${tab==="plant"?"":"ghost"}" data-cl="plant">Plant cell</button><button class="btn ${tab==="animal"?"":"ghost"}" data-cl="animal">Animal cell</button></div>
+ <p class="mut" style="font-size:12px;text-align:center">A simplified diagram (not to scale, not a real micrograph).</p>
+ ${diagram}
+ <div style="margin-top:6px">${ORGANELLES.filter(o=>parts.includes(o[0])).map(([n,w,d])=>`<div style="margin:8px 0;padding-top:8px;border-top:1px solid var(--line)"><b>${esc(n)}</b> <span class="mut" style="font-size:11.5px">(${esc(w)})</span><p style="margin-top:3px;font-size:13.5px">${esc(d)}</p></div>`).join("")}</div>
+ <p class="mut" style="font-size:12px;margin-top:10px">Plant cells have all the structures animal cells have, plus a cell wall, chloroplasts, and usually a large central vacuole.</p>
+ </div>`;
+ el.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>{sv("clTab",b.dataset.cl);toolSciCell(el)});
+}
+
+/* ================================================================
+   6. Natural selection / evolution simulator
+   (illustrates differential survival + reproduction -> trait
+   frequency shift; a simplified teaching model, not a precise
+   population-genetics simulation)
+   ================================================================ */
+function toolSciEvolve(el){
+ const popSize=ld("evPop",40),selStrength=ld("evSel",60);
+ let gen=ld("evGen",0);
+ let pop=ld("evPopArr",null);
+ if(!pop||pop.length!==popSize){pop=[];for(let i=0;i<popSize;i++)pop.push(Math.random()<0.5?"light":"dark");sv("evPopArr",pop);gen=0;sv("evGen",0)}
+ let history=ld("evHist",null);
+ if(!history)history=[pop.filter(x=>x==="dark").length/pop.length];
+ el.innerHTML=`<div class="card"><h3>Natural selection simulator</h3>
+ <p class="mut" style="font-size:12.5px">A simple population of moths is either light or dark coloured, resting on dark bark. Dark moths are camouflaged and more likely to survive predation; light moths stand out and are more likely to be eaten (loosely based on the classic peppered-moth example). Run generations and watch which trait becomes more common through differential survival and reproduction — a simplified illustration, not a precise genetics model.</p>
+ <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:8px">
+ <label>Population size <input id="ev_n" type="number" value="${popSize}" style="width:70px"></label>
+ <label>Selection pressure (0-90, % extra chance a light moth is eaten) <input id="ev_s" type="number" value="${selStrength}" style="width:70px"></label>
+ </div>
+ <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="ev_step">Run one generation</button><button class="btn ghost" id="ev_reset">Reset population</button></div>
+ <div style="overflow-x:auto"><div id="ev_dots" style="display:flex;flex-wrap:wrap;gap:3px;margin-top:10px;min-width:260px"></div></div>
+ <canvas id="ev_cv" width="340" height="160" style="width:100%;max-width:340px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:8px"></canvas>
+ <div id="ev_read" style="margin-top:8px;font-size:13.5px"></div></div>`;
+ const drawPop=()=>{
+  el.querySelector("#ev_dots").innerHTML=pop.map(c=>`<i style="width:12px;height:12px;border-radius:50%;display:inline-block;background:${c==="dark"?"#4a3426":"#d9c9a8"};border:1px solid #8a8a8a"></i>`).join("");
+  const darkFrac=pop.filter(x=>x==="dark").length/pop.length;
+  el.querySelector("#ev_read").textContent=`Generation ${gen}: ${pop.filter(x=>x==="dark").length}/${pop.length} dark (${r2(darkFrac*100)}%), ${pop.filter(x=>x==="light").length}/${pop.length} light.`;
+  const cv=el.querySelector("#ev_cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height,pad=30;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#8a8a8a";ctx.beginPath();ctx.moveTo(pad,8);ctx.lineTo(pad,H-pad);ctx.lineTo(W-8,H-pad);ctx.stroke();
+  ctx.font="10px sans-serif";ctx.fillStyle="#8a8a8a";ctx.fillText("Generation",W-62,H-8);ctx.save();ctx.translate(10,95);ctx.rotate(-Math.PI/2);ctx.fillText("% dark",0,0);ctx.restore();
+  ctx.strokeStyle="#4a3426";ctx.lineWidth=2.2;ctx.beginPath();
+  history.forEach((v,i)=>{const x=pad+(history.length>1?i/(history.length-1):0)*(W-pad-14);const y=H-pad-v*(H-pad-10);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+  ctx.stroke();
+ };
+ drawPop();
+ el.querySelectorAll("#ev_n,#ev_s").forEach(i=>i.oninput=()=>{sv("evPop",+el.querySelector("#ev_n").value||40);sv("evSel",+el.querySelector("#ev_s").value||60)});
+ el.querySelector("#ev_step").onclick=()=>{
+  const sel=Math.max(0,Math.min(90,+el.querySelector("#ev_s").value||60))/100;
+  const survivors=pop.filter(c=>c==="dark"?Math.random()<0.9:Math.random()<Math.max(0.05,0.9-sel));
+  if(!survivors.length){el.querySelector("#ev_read").textContent="The whole population was wiped out this generation — try a lower selection pressure and reset.";return}
+  const n=Math.max(4,+el.querySelector("#ev_n").value||pop.length);
+  const next=[];for(let i=0;i<n;i++){let c=survivors[Math.floor(Math.random()*survivors.length)];if(Math.random()<0.03)c=c==="dark"?"light":"dark";next.push(c)}
+  pop=next;gen+=1;sv("evPopArr",pop);sv("evGen",gen);
+  history.push(pop.filter(x=>x==="dark").length/pop.length);if(history.length>40)history.shift();
+  sv("evHist",history);
+  drawPop();
+ };
+ el.querySelector("#ev_reset").onclick=()=>{
+  try{localStorage.removeItem(K+"evPopArr");localStorage.removeItem(K+"evHist");localStorage.removeItem(K+"evGen")}catch(e){}
+  toolSciEvolve(el);
+ };
+}
+
+/* ================================================================
+   7. Rock cycle & plate tectonics reference
+   ================================================================ */
+const ROCK_TYPES=[
+ ["Igneous","Forms when molten rock (magma below the surface, or lava at the surface) cools and crystallises/solidifies.","Granite (slow-cooled underground, large crystals), basalt (fast-cooled at the surface, fine crystals)."],
+ ["Sedimentary","Forms when weathered/eroded rock fragments (sediment) are deposited in layers, then compacted and cemented together over time (lithification).","Sandstone, limestone, shale — often shows visible layers and can contain fossils."],
+ ["Metamorphic","Forms when an existing rock is changed by heat and/or pressure (without fully melting), recrystallising its minerals into a new structure.","Marble (from limestone), slate (from shale) — often denser and more crystalline than the original rock."]
+];
+const ROCK_CYCLE_STEPS=[
+ ["Melting","Any rock type can melt deep underground (high heat/pressure) to form magma."],
+ ["Cooling / crystallisation","Magma (or lava at the surface) cools and solidifies into igneous rock."],
+ ["Weathering & erosion","Surface rocks are broken down (weathering) and the fragments carried away (erosion) by wind, water or ice."],
+ ["Deposition, compaction & cementation","Sediment settles (deposition), gets buried and squeezed (compaction), and minerals glue the grains together (cementation) to form sedimentary rock."],
+ ["Heat & pressure (metamorphism)","Any rock type, buried deep enough or caught near tectonic activity, can be changed by heat and pressure into metamorphic rock without fully melting."]
+];
+const PLATE_BOUNDARIES=[
+ ["Convergent (plates move together)","Oceanic-continental: the denser oceanic plate is forced down (subducted) under the continental plate, often producing deep ocean trenches, volcanoes and strong earthquakes. Continental-continental: neither plate subducts easily, so the crust crumples upward, building large mountain ranges.","Andes mountains and volcanoes (oceanic-continental); the Himalayas (continental-continental)"],
+ ["Divergent (plates move apart)","Plates move away from each other and magma rises to fill the gap, creating new crust — on the ocean floor this builds a mid-ocean ridge; on land it can form a rift valley.","The Mid-Atlantic Ridge; the East African Rift Valley"],
+ ["Transform (plates slide past each other)","Plates grind past each other sideways with no new crust created or destroyed; friction locks the plates until stress builds up and releases suddenly as an earthquake.","The San Andreas Fault, California"]
+];
+function toolSciRock(el){
+ const tab=ld("rkTab","rock");
+ el.innerHTML=`<div class="card"><h3>Rock cycle & plate tectonics</h3>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${tab==="rock"?"":"ghost"}" data-rk="rock">Rock cycle</button><button class="btn ${tab==="plate"?"":"ghost"}" data-rk="plate">Plate tectonics</button></div>
+ <div id="rk_body"></div></div>`;
+ el.querySelectorAll("[data-rk]").forEach(b=>b.onclick=()=>{sv("rkTab",b.dataset.rk);toolSciRock(el)});
+ const body=el.querySelector("#rk_body");
+ if(tab==="rock"){
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">The three rock types, and how the rock cycle moves material between them — there's no fixed order; any rock type can (eventually) become any other.</p>
+  ${ROCK_TYPES.map(([n,d,ex])=>`<div class="card" style="background:var(--soft);margin:8px 0"><b>${esc(n)}</b><p style="margin-top:4px;font-size:13.5px">${esc(d)}</p><p class="mut" style="font-size:12px;margin-top:4px"><b>Examples:</b> ${esc(ex)}</p></div>`).join("")}
+  <h3 style="margin-top:14px">The rock cycle — the processes that link them</h3>
+  <div style="margin-top:6px">${ROCK_CYCLE_STEPS.map((s,i)=>`<div style="display:flex;gap:10px;margin:8px 0;align-items:flex-start"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${i+1}</div><div><b>${esc(s[0])}</b><p style="margin-top:2px;font-size:13px">${esc(s[1])}</p></div></div>`).join("")}</div>`;
+ }else{
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">The Earth's crust is broken into tectonic plates that slowly move (driven by convection currents in the mantle below). What happens depends on how neighbouring plates move relative to each other.</p>
+  ${PLATE_BOUNDARIES.map(([n,d,ex])=>`<div class="card" style="background:var(--soft);margin:8px 0"><b>${esc(n)}</b><p style="margin-top:4px;font-size:13.5px">${esc(d)}</p><p class="mut" style="font-size:12px;margin-top:4px"><b>Example:</b> ${esc(ex)}</p></div>`).join("")}
+  <p class="mut" style="font-size:12px;margin-top:10px">Earthquakes and volcanoes cluster strongly along plate boundaries (e.g. the Pacific "Ring of Fire") because this is where most of the crust's stress is released.</p>`;
+ }
+}
+
+window.toolSciEnergy=toolSciEnergy;
+window.toolSciPH=toolSciPH;
+window.toolSciStates=toolSciStates;
+window.toolSciForce=toolSciForce;
+window.toolSciCell=toolSciCell;
+window.toolSciEvolve=toolSciEvolve;
+window.toolSciRock=toolSciRock;
 })();
 
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
@@ -8275,8 +9470,11 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=95;
+const APP_VER=98;
 const APP_LOG=[
+[98,"2026-11-14 16:45","Fixed a real bug: all 26 new Science tools from v95-97 (equation balancer, periodic table, animations, Punnett squares, DNA, etc.) were built and working, but never showed up as their own tile on the Science subject page — Maths gets dedicated tiles for its extra tools, Science didn't, so they were only reachable two taps deep inside \"Practice questions\" > \"More tools\". Science now has the same one-tap tile layout as Maths: 25 new tiles added directly to the Science page. Also fixed the \"Moles & titration\" tile's description, which the app's auto-formula renderer was turning into a fraction symbol by mistake."],
+[97,"2026-11-14 16:11","Third Science deepening pass. Finished the two leftovers flagged last time: the Periodic table now has a Trend overlay toggle (Atomic radius, Electronegativity, Metal reactivity, Non-metal reactivity) that highlights the relevant group(s) and explains the direction of each trend — deliberately restricted to group 1 and group 17, where the trend is simple and reliable, rather than guessing at a trend across the whole table (transition metals/lanthanides are not this regular, so they're left alone); and Food chains & webs now has a Build your own mode — pick species from a pool or add your own with a type (producer/primary/secondary/tertiary consumer/decomposer), then tap two species in turn to draw an arrow between them, with a basic sanity check that blocks an impossible 'eaten by something lower in the chain' link. Also added a new Energy transformation animation (pendulum or bouncing ball, canvas-drawn, with a live KE/PE bar graph) demonstrating conservation of energy — the physics (h=L(1-cosθ) for the pendulum, v=√(2gh) for the fall) was checked by hand before shipping, air resistance is ignored and the swing/bounce is treated as perfectly elastic, both stated on-screen as simplifications. On top of that, 6 more new Science tools: an Acids & bases / pH tool (pH = −log₁₀[H⁺] calculator either direction, the pH scale with common examples, a neutralisation reference, and an indicator colour chart for litmus/universal indicator/phenolphthalein/methyl orange), a States of matter particle-model animation (temperature slider moving a canvas of particles between solid/liquid/gas motion, explicitly a generic model, not one real substance), a Forces & Newton's laws tool (a net-force calculator that adds signed forces and applies F=ma, the three laws in plain language, and friction basics), a Cell structure reference (plant vs animal, labelled simplified diagrams, each organelle's real function), a Natural selection simulator (a simple light/dark moth population that you run generation by generation under adjustable selection pressure, showing differential survival and reproduction shift the population's trait balance over time — explicitly a simplified teaching model), and a Rock cycle & plate tectonics reference (igneous/sedimentary/metamorphic rock formation and the processes linking them, plus the three plate-boundary types with real examples). Every formula, trend direction and the evolution model's logic was checked against a reliable reference before shipping; nothing existing was removed."],
+[96,"2026-11-14 15:59","Big Science deepening pass, as requested — Chemistry: a real Chemical equation balancer (type any equation like CH4 + O2 -> CO2 + H2O, it parses the formulas including brackets, solves the atom-balance equations and shows the smallest whole-number coefficients with a before/after atom-count table proving every element balances) and a Reaction type reference (synthesis, decomposition, single/double displacement, combustion, neutralisation, each with the general pattern and a real example); the Periodic table now has a search box, a category filter that fades out everything else, and tapping a second element after 'Compare with another element' gives a simple metal/non-metal bonding prediction. Physics: three new canvas animations with play/pause and live-drawn graphs — a Motion animation (adjustable initial velocity and acceleration, draws the cart moving plus matching position-time and velocity-time graphs in real time using s=ut+½at² and v=u+at), a Wave animation (a moving transverse wave with adjustable amplitude/frequency/wavelength, visually showing v=fλ), and a Circuit animation (animated current-direction dots on a series or parallel circuit, speed reflecting I=V/R in each branch). Biology: Food chains & webs (a paddock and an ocean ecosystem drawn as connected nodes with energy-flow arrows, plus the 10% rule and trophic levels explained), a DNA → mRNA → protein tool (type or edit a DNA strand, see the complementary strand, the transcribed mRNA, and the translated amino acid chain via the full genetic codon table, with start/stop codons marked), Biology graphs (population growth curves — exponential vs logistic/carrying-capacity, predator-prey cycles, and enzyme activity vs temperature and vs pH, each explained), and Genomes, karyotypes & mutations (23 pairs of human chromosomes, a simplified karyotype diagram, and the three point-mutation types — substitution, insertion, deletion — with before/after DNA examples). The existing Punnett square tool now has three extra modes alongside the original monohybrid cross: Dihybrid (two genes, full 4×4 grid, verified 9:3:3:1 ratio), Sex-linked (X-linked traits like colour blindness, showing why sons and daughters differ), and Pedigree (worked small pedigree charts for autosomal recessive, autosomal dominant and X-linked recessive patterns). Every ratio, codon mapping and the balancer's algorithm were checked against independently worked results before shipping; nothing existing was removed."],
 [95,"2026-11-14 14:16","Science was way behind every other subject on interactive tools (just Flashcards and the generic Practice questions drill) — added 10 new Science tools, mirroring what the Maths CAS tools did for Maths: a Physics calculator (speed/distance/time, F=ma, work, power, momentum — pick what to solve for, full working shown), an Electricity & circuits calculator (Ohm's law, electrical power three ways, series and parallel resistor networks with every branch's current/voltage), a Moles & titration calculator (n=m/M, c=n/V, and c₁v₁=c₂v₂ titration, solve for any unknown), an interactive Periodic table (all 118 elements, colour-coded by category, tap any element for its mass/period/group/valence electrons and a reactivity-trend note for metals, halogens and noble gases), a Punnett square tool (type two parent genotypes, it draws the actual 2×2 grid and gives the genotype and phenotype ratio, including codominance), a Wave calculator (v=fλ and period, with sound/light/radio presets), a Rate of reaction visualiser (temperature/concentration/surface area/catalyst, with a drawn concentration-vs-time graph and the collision-theory explanation for each), a fuller Command terms reference (separate from the sci:cmd flashcards — each term's marker expectation, a sentence starter and a worked mini-example), a Body systems reference (7 systems: structures, function, and how each interacts with the others), and a Practical skills / experimental design checker (enter your hypothesis, IV, DV, controlled variables and repeats, get a validity checklist plus a list of common mistakes to avoid). All numeric tools were checked against independently verified calculations before shipping."],
 [94,"2026-11-12 18:05","Added 4 more Maths tools: a Box plot visualiser (paste a data list, see the actual drawn box-and-whisker plot with outliers marked), a 3D shape calculator (cylinder/cone/sphere/rectangular prism/triangular prism/square pyramid — volume and surface area with working), a Bearings & vector resultant calculator (two legs of a journey → straight-line distance and bearing home, using north/east components), and a Unit circle reference (tap any common angle, see its exact sin/cos/tan and its point drawn on an actual circle)."],
 [93,"2026-11-12 17:55","Added 4 more Maths tools: Sequences & series (arithmetic/geometric, nth term, sum, sum to infinity), Trig equation solver (any k·f(x)+c=0 over a chosen domain, with reference angle and ASTC working shown), Circle & hyperbola transformer (completing the square for circles, asymptotes for hyperbolas), and a CAS commands flashcard set (14 cards — the actual calculator syntax for solve/factor/expand/zeros/stats/etc, separate from the formula-recall cards). Also added a \"CAS challenge\" generator — 6 genuinely chained, multi-concept extended-response problems (e.g. simultaneous equations feeding into a diagonal-length question, projectile motion with a 3-part turning-point-and-landing-time question, circle-line intersection) for harder Maths 2 practice than the existing CAS practice bank."],
@@ -8404,7 +9602,7 @@ studyHtml=function(n){let h=_studyHtmlBase(n);if(!h)return h;
 let curSub=null;
 const SUBJ_CFG={
  M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math","mrecall","mexact","mquad","mtfgen","mapp","mcas","mcashard","mcalc","msolve","mgraph","mstats","msim","mseq","mtsolve","mconic","mcascmd","mbox","m3d","mbrg","muc","mvid","mpack","mscope"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
- S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci","sphys","selec","smole","speri","spun","swave","srate","scmd2","sbody","sprac"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
+ S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci","sphys","selec","smole","speri","spun","swave","srate","scmd2","sbody","sprac","schem","sreact","smotion","swaveanim","scircanim","sfood","sdna","sbiograph","sgenome","senergy","sph","sstates","sforce","scell","sevolve","srock"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot","engx"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
  F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","frw","tr"],exam:["French"],drill:["fr","Drills, writing and translate","Tables, sentence builder, Section C sentences and a translator"]},
  L:{n:"Legal Studies",c:"#d99a8a",flash:"legal:all",tools:["flash","legal"],exam:["Legal Studies"],drill:["legal","Section practice","Sections A, B and C: scenarios, IRAC builder and planner"]}
@@ -8427,6 +9625,33 @@ function viewSubjects(){
   ["mvid","Maths videos","Tech free and tech active videos, by topic"],
   ["mpack","Printable pack","Formula sheet, blank recall sheet and mistake log, ready to print"],
   ["mscope","Exam topics","Every Tech Free topic: what's in it, example questions, where to revise"]
+ );
+ if(curSub==="S")tiles.splice(4,0,
+  ["schem","Equation balancer","Balance any chemical equation, with the atom-count working shown"],
+  ["speri","Periodic table","All 118 elements, trend overlays, and a bonding-prediction comparison"],
+  ["sreact","Reaction types","Synthesis, decomposition, displacement, combustion — pattern and example"],
+  ["sphys","Physics calculator","Speed, force, work, power, momentum — pick an unknown, see the working"],
+  ["selec","Electricity & circuits","Ohm's law, power, and series/parallel resistor networks"],
+  ["smotion","Motion animation","A moving cart with live position-time and velocity-time graphs"],
+  ["swaveanim","Wave animation","A moving transverse wave, adjustable amplitude/frequency/wavelength"],
+  ["scircanim","Circuit animation","Current-flow dots moving at a rate that matches the real amperage"],
+  ["senergy","Energy transformations","Pendulum or bounce, with a live kinetic/potential energy graph"],
+  ["sstates","States of matter","Particle motion in solid, liquid and gas, with a temperature slider"],
+  ["sforce","Forces & Newton's laws","Net force calculator, the three laws, and friction basics"],
+  ["smole","Moles & titration","Moles from mass, concentration, and titration calculations"],
+  ["sph","Acids & bases / pH","pH calculator, neutralisation, and the indicator colour chart"],
+  ["spun","Punnett square","Monohybrid, dihybrid, sex-linked and pedigree crosses"],
+  ["sdna","DNA to protein","Transcription and translation, full codon table"],
+  ["sevolve","Natural selection simulator","Watch a trait spread through a population under selection"],
+  ["sfood","Food chains & webs","Preset ecosystems, or build your own and connect the species"],
+  ["sbiograph","Biology graphs","Population growth, predator-prey, enzyme activity"],
+  ["scell","Cell structure","Plant vs animal cell, organelles and their functions"],
+  ["sgenome","Genomes & mutations","Chromosomes, a karyotype diagram, and mutation types"],
+  ["srock","Rock cycle & plate tectonics","Igneous/sedimentary/metamorphic, and the plate boundaries"],
+  ["sbody","Body systems","7 systems: structure, function, how they interact"],
+  ["srate","Rate of reaction","Concentration/temperature/surface area/catalyst, with a drawn graph"],
+  ["scmd2","Command terms (full)","What each command word expects, with a worked example"],
+  ["sprac","Experimental design checker","Variables and method, checked against a validity checklist"]
  );
  if(curSub==="F")tiles.splice(4,0,["fmock","Practice exam","Timed French paper: Parts A, B and C"]);
  return `<section class="sj"><button class="sj-back" data-act="subhome">&lsaquo; All subjects</button><div class="sj-top" style="--c:${c.c}"><i></i><h2>${c.n}</h2></div>
@@ -8467,6 +9692,7 @@ function subGo(w){const c=SUBJ_CFG[curSub];if(!c)return;
  else if(w==="fmock"){tab="tools";tool={k:"frex",arg:""}}
  else if(w==="qb"){qbUI.sj=curSub;try{qbUI.deck=null;qbUI.i=0}catch(e){}tab="qb"}
  else if(w==="lc"){tab="lc"}
+ else if(c.tools&&c.tools.indexOf(w)>=0){tab="tools";tool={k:w,arg:""}}
  render();window.scrollTo(0,0)}
 function subOpen(k){curSub=k;tab="subjects";render();window.scrollTo(0,0)}
 
@@ -8831,8 +10057,8 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <dl class="spec" style="grid-template-columns:100px 1fr"><dt>Task</dt><dd>${esc(b.task)}</dd><dt>Goal</dt><dd>${esc(b.goal)}</dd><dt>Success check</dt><dd>${esc(b.check)}</dd><dt>Use</dt><dd>${esc(b.res)}</dd></dl>${detailHtml(b0)}
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mcas","CAS practice"],["mcashard","CAS challenge"],["mcalc","Calculator"],["msolve","Equation solver"],["mgraph","Function grapher"],["mstats","Statistics calculator"],["msim","Simultaneous solver"],["mseq","Sequences & series"],["mtsolve","Trig equation solver"],["mconic","Circle & hyperbola transformer"],["mcascmd","CAS commands"],["mbox","Box plot visualiser"],["m3d","3D shape calculator"],["mbrg","Bearings & vector resultant"],["muc","Unit circle reference"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["sphys","Physics calculator"],["selec","Electricity & circuits"],["smole","Moles & titration"],["speri","Periodic table"],["spun","Punnett square"],["swave","Wave calculator"],["srate","Rate of reaction"],["scmd2","Command terms (full)"],["sbody","Body systems"],["sprac","Experimental design checker"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
-const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Science tools","Calculators, reference pages and visualisers for Science.",["sphys","selec","smole","speri","spun","swave","srate","scmd2","sbody","sprac"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mcas","CAS practice"],["mcashard","CAS challenge"],["mcalc","Calculator"],["msolve","Equation solver"],["mgraph","Function grapher"],["mstats","Statistics calculator"],["msim","Simultaneous solver"],["mseq","Sequences & series"],["mtsolve","Trig equation solver"],["mconic","Circle & hyperbola transformer"],["mcascmd","CAS commands"],["mbox","Box plot visualiser"],["m3d","3D shape calculator"],["mbrg","Bearings & vector resultant"],["muc","Unit circle reference"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["sphys","Physics calculator"],["selec","Electricity & circuits"],["smole","Moles & titration"],["speri","Periodic table"],["spun","Punnett square"],["swave","Wave calculator"],["srate","Rate of reaction"],["scmd2","Command terms (full)"],["sbody","Body systems"],["sprac","Experimental design checker"],["schem","Equation balancer"],["sreact","Reaction types"],["smotion","Motion animation"],["swaveanim","Wave animation"],["scircanim","Circuit animation"],["sfood","Food chains & webs"],["sdna","DNA to protein"],["sbiograph","Biology graphs"],["sgenome","Genomes & mutations"],["senergy","Energy transformations"],["sph","Acids & bases / pH"],["sstates","States of matter"],["sforce","Forces & Newton's laws"],["scell","Cell structure"],["sevolve","Natural selection simulator"],["srock","Rock cycle & plate tectonics"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
+const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Science tools","Calculators, reference pages and visualisers for Science.",["sphys","selec","smole","speri","spun","swave","srate","scmd2","sbody","sprac","schem","sreact","smotion","swaveanim","scircanim","sfood","sdna","sbiograph","sgenome","senergy","sph","sstates","sforce","scell","sevolve","srock"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const c=SUBJ_CFG[curSub];const ks=c.tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};
  const ksf=ks.filter(k=>k!=="engx"&&!(curSub==="E"&&(k==="flash"||true)));
  const primKeys=["flash",c.drill[0],"mscope"].filter(k=>ksf.indexOf(k)>=0);
@@ -8841,7 +10067,7 @@ function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="unde
  const moreOpen=moreKeys.indexOf(tool.k)>=0;
  return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div></div>${moreKeys.length?`<details class="toolpanel more"${moreOpen?" open":""}><summary class="toolpanel-h">More tools</summary><div class="tools">${moreKeys.map(btn).join("")}</div></details>`:""}<div id="tool"></div>`}
  return TOOL_GROUPS.map(g=>`<div class="toolpanel more"><div class="toolpanel-h">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:10px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div></div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mcas:()=>window.toolMathsCAS(el),mcashard:()=>window.toolMathsCASHard(el),mcalc:()=>window.toolCasCalc(el),msolve:()=>window.toolCasEqSolve(el),mgraph:()=>window.toolCasGraphFn(el),mstats:()=>window.toolCasStatsCalc(el),msim:()=>window.toolCasSimSolve(el),mseq:()=>window.toolCasSeq(el),mtsolve:()=>window.toolCasTrigSolve(el),mconic:()=>window.toolCasConic(el),mcascmd:()=>window.toolCasCmd(el),mbox:()=>window.toolCasBoxPlot(el),m3d:()=>window.toolCas3D(el),mbrg:()=>window.toolCasBearings(el),muc:()=>window.toolCasUnitCircle(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),sphys:()=>window.toolSciPhys(el),selec:()=>window.toolSciElec(el),smole:()=>window.toolSciMole(el),speri:()=>window.toolSciPeriodic(el),spun:()=>window.toolSciPunnett(el),swave:()=>window.toolSciWave(el),srate:()=>window.toolSciRate(el),scmd2:()=>window.toolSciCmd2(el),sbody:()=>window.toolSciBody(el),sprac:()=>window.toolSciPrac(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mcas:()=>window.toolMathsCAS(el),mcashard:()=>window.toolMathsCASHard(el),mcalc:()=>window.toolCasCalc(el),msolve:()=>window.toolCasEqSolve(el),mgraph:()=>window.toolCasGraphFn(el),mstats:()=>window.toolCasStatsCalc(el),msim:()=>window.toolCasSimSolve(el),mseq:()=>window.toolCasSeq(el),mtsolve:()=>window.toolCasTrigSolve(el),mconic:()=>window.toolCasConic(el),mcascmd:()=>window.toolCasCmd(el),mbox:()=>window.toolCasBoxPlot(el),m3d:()=>window.toolCas3D(el),mbrg:()=>window.toolCasBearings(el),muc:()=>window.toolCasUnitCircle(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),sphys:()=>window.toolSciPhys(el),selec:()=>window.toolSciElec(el),smole:()=>window.toolSciMole(el),speri:()=>window.toolSciPeriodic(el),spun:()=>window.toolSciPunnett(el),swave:()=>window.toolSciWave(el),srate:()=>window.toolSciRate(el),scmd2:()=>window.toolSciCmd2(el),sbody:()=>window.toolSciBody(el),sprac:()=>window.toolSciPrac(el),schem:()=>window.toolSciChem(el),sreact:()=>window.toolSciReact(el),smotion:()=>window.toolSciMotion(el),swaveanim:()=>window.toolSciWaveAnim(el),scircanim:()=>window.toolSciCircAnim(el),sfood:()=>window.toolSciFoodWeb(el),sdna:()=>window.toolSciDNA(el),sbiograph:()=>window.toolSciBioGraph(el),sgenome:()=>window.toolSciGenome(el),senergy:()=>window.toolSciEnergy(el),sph:()=>window.toolSciPH(el),sstates:()=>window.toolSciStates(el),sforce:()=>window.toolSciForce(el),scell:()=>window.toolSciCell(el),sevolve:()=>window.toolSciEvolve(el),srock:()=>window.toolSciRock(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
 function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
