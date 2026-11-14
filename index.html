@@ -74,6 +74,10 @@ dl.spec dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .tools button{padding:15px 12px;font-size:13.5px;line-height:1.25;font-weight:500;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .tools button[aria-pressed="true"]{border-color:var(--acc);background:var(--soft);font-weight:700;box-shadow:0 0 0 2px var(--acc)}
 .toolpanel{margin-bottom:22px}
+.tool-current{margin-top:10px;padding:9px 13px;background:var(--soft);border:1px solid var(--acc);border-radius:10px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.tool-current-lbl{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.tool-current b{color:var(--acc);font-size:14px}
+.tool-current-hint{color:var(--mut);font-size:12px}
 .toolpanel.more{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;margin-top:2px}
 .toolpanel-h{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);font-weight:700;margin-bottom:10px}
 summary.toolpanel-h{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
@@ -7147,22 +7151,32 @@ function fnum(n){if(!Number.isFinite(n))return"—";const rounded=Math.round(n*1
 /* ============ 1. Physics calculator (motion, force, work, power, momentum) ============ */
 const PHYS_TOPICS={
  speed:{name:"Speed, distance, time",vars:[["s","distance (m)"],["t","time (s)"],["v","speed (m/s)"]],
+  note:"Speed is how fast position changes with time — a ratio, not something you measure directly. A car at 60 m/s covers 60 metres every single second, so over t seconds it covers v × t metres; rearranging that gives the other two forms.",
+  example:"Worked example: a cyclist rides 450 m in 30 s. v = s / t = 450 / 30 = 15 m/s.",
   calc:(known,solve)=>{if(solve==="v")return{val:known.s/known.t,work:`v = s / t = ${known.s} / ${known.t} = ${r4(known.s/known.t)} m/s`};
    if(solve==="s")return{val:known.v*known.t,work:`s = v × t = ${known.v} × ${known.t} = ${r4(known.v*known.t)} m`};
    return{val:known.s/known.v,work:`t = s / v = ${known.s} / ${known.v} = ${r4(known.s/known.v)} s`}}},
  force:{name:"Force = mass × acceleration",vars:[["F","force (N)"],["m","mass (kg)"],["a","acceleration (m/s²)"]],
+  note:"This is Newton's Second Law: the bigger the net force on an object, the more it accelerates, but the more mass it has, the less that same force can accelerate it (think pushing a shopping trolley vs pushing a car). F = ma is the formula version of that trade-off.",
+  example:"Worked example: a 1200 kg car accelerates at 2.5 m/s². F = m × a = 1200 × 2.5 = 3000 N.",
   calc:(known,solve)=>{if(solve==="F")return{val:known.m*known.a,work:`F = m × a = ${known.m} × ${known.a} = ${r4(known.m*known.a)} N`};
    if(solve==="m")return{val:known.F/known.a,work:`m = F / a = ${known.F} / ${known.a} = ${r4(known.F/known.a)} kg`};
    return{val:known.F/known.m,work:`a = F / m = ${known.F} / ${known.m} = ${r4(known.F/known.m)} m/s²`}}},
  work:{name:"Work done = force × distance",vars:[["W","work (J)"],["F","force (N)"],["s","distance (m)"]],
+  note:"Work is done whenever a force moves something in the direction it's pushing. Push twice as hard, or push the same object twice as far, and you've done twice the work — which is why it's a simple product, not a more complicated relationship.",
+  example:"Worked example: a force of 40 N pushes a box 3 m across a floor. W = F × s = 40 × 3 = 120 J.",
   calc:(known,solve)=>{if(solve==="W")return{val:known.F*known.s,work:`W = F × s = ${known.F} × ${known.s} = ${r4(known.F*known.s)} J`};
    if(solve==="F")return{val:known.W/known.s,work:`F = W / s = ${known.W} / ${known.s} = ${r4(known.W/known.s)} N`};
    return{val:known.W/known.F,work:`s = W / F = ${known.W} / ${known.F} = ${r4(known.W/known.F)} m`}}},
  power:{name:"Power = work done ÷ time",vars:[["P","power (W)"],["W","work (J)"],["t","time (s)"]],
+  note:"Power is how quickly work gets done — the same job (the same W) done faster (smaller t) means more power. Two engines can produce the same total work, but the more powerful one does it in less time.",
+  example:"Worked example: a motor does 500 J of work in 4 s. P = W / t = 500 / 4 = 125 W.",
   calc:(known,solve)=>{if(solve==="P")return{val:known.W/known.t,work:`P = W / t = ${known.W} / ${known.t} = ${r4(known.W/known.t)} W`};
    if(solve==="W")return{val:known.P*known.t,work:`W = P × t = ${known.P} × ${known.t} = ${r4(known.P*known.t)} J`};
    return{val:known.W/known.P,work:`t = W / P = ${known.W} / ${known.P} = ${r4(known.W/known.P)} s`}}},
  momentum:{name:"Momentum = mass × velocity",vars:[["p","momentum (kg·m/s)"],["m","mass (kg)"],["v","velocity (m/s)"]],
+  note:"Momentum captures how hard something is to stop — a heavy truck crawling along and a small car speeding can have similar momentum, because mass and velocity trade off against each other in the same simple product.",
+  example:"Worked example: a 0.15 kg ball moves at 20 m/s. p = m × v = 0.15 × 20 = 3 kg·m/s.",
   calc:(known,solve)=>{if(solve==="p")return{val:known.m*known.v,work:`p = m × v = ${known.m} × ${known.v} = ${r4(known.m*known.v)} kg·m/s`};
    if(solve==="m")return{val:known.p/known.v,work:`m = p / v = ${known.p} / ${known.v} = ${r4(known.p/known.v)} kg`};
    return{val:known.p/known.m,work:`v = p / m = ${known.p} / ${known.m} = ${r4(known.p/known.m)} m/s`}}}
@@ -7175,10 +7189,11 @@ function toolSciPhys(el){
  el.innerHTML=`<div class="card"><h3>Physics calculator</h3>
  <p class="mut" style="font-size:12.5px">Pick a relationship, choose what you want to find, enter the other two values, get the answer with full working and units.</p>
  <label class="f">Relationship<select data-nomj id="pht">${Object.entries(PHYS_TOPICS).map(([k,v])=>`<option value="${k}" ${k===topicKey?"selected":""}>${esc(v.name)}</option>`).join("")}</select></label>
+ <div class="card" style="margin-top:8px;background:var(--soft)" data-nomj><p style="margin:0;font-size:13.5px">${esc(T.note)}</p><p class="mut" style="margin-top:6px;font-size:12.5px">${esc(T.example)}</p></div>
  <label class="f" style="margin-top:8px">Solve for<select data-nomj id="phs">${T.vars.map(v=>`<option value="${v[0]}" ${v[0]===solve?"selected":""}>${esc(v[1])}</option>`).join("")}</select></label>
- <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px" id="phin">${others.map(v=>`<label>${esc(v[1])} <input id="ph_${v[0]}" type="number" value="${vals[v[0]]!==undefined?vals[v[0]]:10}" style="width:90px"></label>`).join("")}</div>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px" id="phin" data-nomj>${others.map(v=>`<label>${esc(v[1])} <input id="ph_${v[0]}" type="number" value="${vals[v[0]]!==undefined?vals[v[0]]:10}" style="width:90px"></label>`).join("")}</div>
  <button class="btn" id="phgo" style="margin-top:10px">Calculate</button>
- <div id="phout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
+ <div id="phout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
  el.querySelector("#pht").onchange=e=>{sv("phtopic",e.target.value);sv("phsolve",PHYS_TOPICS[e.target.value].vars[2][0]);toolSciPhys(el)};
  el.querySelector("#phs").onchange=e=>{sv("phsolve",e.target.value);toolSciPhys(el)};
  el.querySelector("#phgo").onclick=()=>{
@@ -7204,9 +7219,10 @@ function toolSciElec(el){
  if(mode==="ohm"){
   const solve=ld("elohms","I");
   body.innerHTML=`<p class="mut" style="font-size:12.5px">V = I × R — voltage (V), current (A), resistance (Ω)</p>
+  <div class="card" style="background:var(--soft)" data-nomj><p style="margin:0;font-size:13.5px">Resistance is a component's opposition to current — a bigger resistance means a smaller current for the same voltage, which is why I and R sit on opposite sides of the relationship (I = V / R). A kettle element has low resistance and draws a big current; a thin wire with high resistance limits it.</p><p class="mut" style="margin-top:6px;font-size:12.5px">Worked example: a 6 V battery drives current through a 3 Ω resistor. I = V / R = 6 / 3 = 2 A.</p></div>
   <label class="f">Solve for<select data-nomj id="eos"><option value="V" ${solve==="V"?"selected":""}>Voltage V</option><option value="I" ${solve==="I"?"selected":""}>Current I</option><option value="R" ${solve==="R"?"selected":""}>Resistance R</option></select></label>
-  <div class="row" style="margin-top:8px;gap:8px" id="eoin"></div><button class="btn" id="eogo" style="margin-top:10px">Calculate</button>
-  <div id="eoout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  <div class="row" style="margin-top:8px;gap:8px" id="eoin" data-nomj></div><button class="btn" id="eogo" style="margin-top:10px">Calculate</button>
+  <div id="eoout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
   const draw=()=>{const s=body.querySelector("#eos").value;sv("elohms",s);
    const fields=s==="V"?[["I","current (A)",2],["R","resistance (Ω)",6]]:s==="I"?[["V","voltage (V)",12],["R","resistance (Ω)",6]]:[["V","voltage (V)",12],["I","current (A)",2]];
    body.querySelector("#eoin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="eo_${f[0]}" type="number" value="${f[2]}" style="width:80px"></label>`).join("")};
@@ -7217,14 +7233,15 @@ function toolSciElec(el){
    else{const V=v("V"),I=v("I");out.textContent=`R = V / I = ${V} / ${I} = ${r4(V/I)} Ω`}};
  }else if(mode==="pow"){
   const solve=ld("elpows","P1");
-  body.innerHTML=`<p class="mut" style="font-size:12.5px">P = V × I, or P = I² × R, or P = V² / R — power in watts (W)</p>
+  body.innerHTML=`<p class="mut" style="font-size:12.5px" data-nomj>P = V × I, or P = I² × R, or P = V² / R — power in watts (W)</p>
+  <div class="card" style="background:var(--soft)" data-nomj><p style="margin:0;font-size:13.5px">All three versions say the same thing, just rearranged using V = IR to swap out whichever variable you don't have — power is the rate energy is transferred, and in a circuit that's always built from the voltage pushing and the current flowing.</p><p class="mut" style="margin-top:6px;font-size:12.5px">Worked example: a heater draws 5 A at 240 V. P = V × I = 240 × 5 = 1200 W.</p></div>
   <label class="f">Which values do you have?<select data-nomj id="eps">
   <option value="P1" ${solve==="P1"?"selected":""}>I have V and I → find P</option>
   <option value="P2" ${solve==="P2"?"selected":""}>I have I and R → find P</option>
   <option value="P3" ${solve==="P3"?"selected":""}>I have V and R → find P</option>
   </select></label>
-  <div class="row" style="margin-top:8px;gap:8px" id="epin"></div><button class="btn" id="epgo" style="margin-top:10px">Calculate</button>
-  <div id="epout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  <div class="row" style="margin-top:8px;gap:8px" id="epin" data-nomj></div><button class="btn" id="epgo" style="margin-top:10px">Calculate</button>
+  <div id="epout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
   const draw=()=>{const s=body.querySelector("#eps").value;sv("elpows",s);
    const fields=s==="P1"?[["V","voltage (V)",12],["I","current (A)",2]]:s==="P2"?[["I","current (A)",2],["R","resistance (Ω)",6]]:[["V","voltage (V)",12],["R","resistance (Ω)",6]];
    body.querySelector("#epin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="ep_${f[0]}" type="number" value="${f[2]}" style="width:80px"></label>`).join("")};
@@ -7237,7 +7254,7 @@ function toolSciElec(el){
   body.innerHTML=`<p class="mut" style="font-size:12.5px">Enter resistor values separated by commas. ${mode==="ser"?"In series: current is the same through every resistor; total resistance adds up.":"In parallel: voltage is the same across every branch; total resistance is always less than the smallest resistor."}</p>
   <div class="row" style="margin-top:8px;gap:8px"><label>Resistors (Ω)<input id="cr" type="text" value="4, 6, 12" style="width:160px"></label><label>Supply voltage (V)<input id="cv" type="number" value="12" style="width:80px"></label></div>
   <button class="btn" id="crgo" style="margin-top:10px">Calculate</button>
-  <div id="crout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div>`;
+  <div id="crout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div>`;
   body.querySelector("#crgo").onclick=()=>{
    const rs=(body.querySelector("#cr").value.match(/-?\d+(\.\d+)?/g)||[]).map(Number).filter(n=>n>0);
    const V=parseFloat(body.querySelector("#cv").value)||0;
@@ -7267,10 +7284,11 @@ function toolSciMole(el){
  const body=el.querySelector("#mlbody");
  if(mode==="moles"){
   const solve=ld("mlmoles","n");
-  body.innerHTML=`<p class="mut" style="font-size:12.5px">n = m / M — moles = mass (g) ÷ molar mass (g/mol)</p>
+  body.innerHTML=`<p class="mut" style="font-size:12.5px" data-nomj>n = m / M — moles = mass (g) ÷ molar mass (g/mol)</p>
+  <div class="card" style="background:var(--soft)" data-nomj><p style="margin:0;font-size:13.5px">A mole is just a very large, fixed count of particles (6.02×10²³ of them), the same way a "dozen" always means 12 — it exists so chemists can count atoms/molecules by weighing them instead of counting one at a time. Molar mass (the mass of one mole, in g/mol) is the conversion factor between a mass you can weigh and a particle count you can use in a reaction.</p><p class="mut" style="margin-top:6px;font-size:12.5px">Worked example: 36 g of water (M = 18 g/mol). n = m / M = 36 / 18 = 2 mol.</p></div>
   <label class="f">Solve for<select data-nomj id="mms"><option value="n" ${solve==="n"?"selected":""}>Moles n</option><option value="m" ${solve==="m"?"selected":""}>Mass m</option><option value="M" ${solve==="M"?"selected":""}>Molar mass M</option></select></label>
-  <div class="row" style="margin-top:8px;gap:8px" id="mmin"></div><button class="btn" id="mmgo" style="margin-top:10px">Calculate</button>
-  <div id="mmout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  <div class="row" style="margin-top:8px;gap:8px" id="mmin" data-nomj></div><button class="btn" id="mmgo" style="margin-top:10px">Calculate</button>
+  <div id="mmout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
   const draw=()=>{const s=body.querySelector("#mms").value;sv("mlmoles",s);
    const fields=s==="n"?[["m","mass (g)",18],["M","molar mass (g/mol)",18]]:s==="m"?[["n","moles (mol)",1],["M","molar mass (g/mol)",18]]:[["m","mass (g)",18],["n","moles (mol)",1]];
    body.querySelector("#mmin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="mm_${f[0]}" type="number" value="${f[2]}" style="width:90px"></label>`).join("")};
@@ -7281,10 +7299,11 @@ function toolSciMole(el){
    else{const m=v("m"),n=v("n");out.textContent=`M = m / n = ${m} / ${n} = ${r4(m/n)} g/mol`}};
  }else if(mode==="conc"){
   const solve=ld("mlconc","c");
-  body.innerHTML=`<p class="mut" style="font-size:12.5px">c = n / V — concentration (mol/L) = moles ÷ volume (L). If your volume is in mL, divide by 1000 first.</p>
+  body.innerHTML=`<p class="mut" style="font-size:12.5px" data-nomj>c = n / V — concentration (mol/L) = moles ÷ volume (L). If your volume is in mL, divide by 1000 first.</p>
+  <div class="card" style="background:var(--soft)" data-nomj><p style="margin:0;font-size:13.5px">Concentration describes how crowded the dissolved particles are — the same number of moles spread through a bigger volume gives a lower concentration, so n sits on top and V on the bottom.</p><p class="mut" style="margin-top:6px;font-size:12.5px">Worked example: 0.2 mol of NaCl dissolved to make 0.5 L of solution. c = n / V = 0.2 / 0.5 = 0.4 mol/L.</p></div>
   <label class="f">Solve for<select data-nomj id="mcs"><option value="c" ${solve==="c"?"selected":""}>Concentration c</option><option value="n" ${solve==="n"?"selected":""}>Moles n</option><option value="V" ${solve==="V"?"selected":""}>Volume V</option></select></label>
-  <div class="row" style="margin-top:8px;gap:8px" id="mcin"></div><button class="btn" id="mcgo" style="margin-top:10px">Calculate</button>
-  <div id="mcout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  <div class="row" style="margin-top:8px;gap:8px" id="mcin" data-nomj></div><button class="btn" id="mcgo" style="margin-top:10px">Calculate</button>
+  <div id="mcout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
   const draw=()=>{const s=body.querySelector("#mcs").value;sv("mlconc",s);
    const fields=s==="c"?[["n","moles (mol)",0.5],["V","volume (L)",2]]:s==="n"?[["c","concentration (mol/L)",0.25],["V","volume (L)",2]]:[["n","moles (mol)",0.5],["c","concentration (mol/L)",0.25]];
    body.querySelector("#mcin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="mc_${f[0]}" type="number" value="${f[2]}" style="width:90px"></label>`).join("")};
@@ -7297,8 +7316,8 @@ function toolSciMole(el){
   const solve=ld("mltitr","c2");
   body.innerHTML=`<p class="mut" style="font-size:12.5px">c₁v₁ = c₂v₂ — at the equivalence point, moles of acid = moles of base (for a 1:1 reaction). Volumes can be in mL as long as you're consistent.</p>
   <label class="f">Solve for<select data-nomj id="mts"><option value="c1" ${solve==="c1"?"selected":""}>c₁ (known solution)</option><option value="v1" ${solve==="v1"?"selected":""}>v₁ (known solution)</option><option value="c2" ${solve==="c2"?"selected":""}>c₂ (unknown solution)</option><option value="v2" ${solve==="v2"?"selected":""}>v₂ (unknown solution)</option></select></label>
-  <div class="row" style="margin-top:8px;gap:8px" id="mtin"></div><button class="btn" id="mtgo" style="margin-top:10px">Calculate</button>
-  <div id="mtout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  <div class="row" style="margin-top:8px;gap:8px" id="mtin" data-nomj></div><button class="btn" id="mtgo" style="margin-top:10px">Calculate</button>
+  <div id="mtout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
   const ALL=[["c1","c₁ (mol/L)",0.1],["v1","v₁ (mL)",25],["c2","c₂ (mol/L)",0.15],["v2","v₂ (mL)",16.7]];
   const draw=()=>{const s=body.querySelector("#mts").value;sv("mltitr",s);
    body.querySelector("#mtin").innerHTML=ALL.filter(f=>f[0]!==s).map(f=>`<label>${f[1]} <input id="mt_${f[0]}" type="number" value="${f[2]}" style="width:90px"></label>`).join("")};
@@ -7508,7 +7527,7 @@ function toolPunnettDi(el){
 /* ---- Sex-linked inheritance (X-linked trait) ---- */
 function toolPunnettSex(el){
  const mg=ld("pgsM","XbY"),fg=ld("pgsF","XBXb");
- el.innerHTML=`<p class="mut" style="font-size:12.5px">X-linked traits (like red-green colour blindness or haemophilia) are carried on the X chromosome, so males (XY) only need one recessive allele to show the trait, while females (XX) need two. Use B/b for the normal/affected allele.</p>
+ el.innerHTML=`<p class="mut" style="font-size:12.5px" data-nomj>X-linked traits (like red-green colour blindness or haemophilia) are carried on the X chromosome, so males (XY) only need one recessive allele to show the trait, while females (XX) need two. Use B/b for the normal/affected allele.</p>
  <div class="row" style="margin-top:8px;gap:10px;flex-wrap:wrap"><label>Mother's genotype<input id="pgsF" value="${esc(fg)}" style="width:90px;text-align:center;font-size:16px"></label><label>Father's genotype<input id="pgsM" value="${esc(mg)}" style="width:90px;text-align:center;font-size:16px"></label><button class="btn" id="pgsgo">Cross</button></div>
  <div id="pgsout" style="margin-top:12px"></div>`;
  const run=()=>{
@@ -7567,12 +7586,13 @@ function toolSciWave(el){
  const solve=ld("wvsolve","v"),preset=ld("wvpre","custom");
  const PRESETS={custom:null,sound:{f:440,lam:0.78,note:"middle A, speed of sound ≈ 343 m/s in air"},light:{f:5e14,lam:6e-7,note:"visible red light, speed of light ≈ 3×10⁸ m/s"},radio:{f:1e6,lam:300,note:"AM radio wave, speed = 3×10⁸ m/s"}};
  el.innerHTML=`<div class="card"><h3>Wave calculator</h3>
- <p class="mut" style="font-size:12.5px">v = f × λ — wave speed (m/s) = frequency (Hz) × wavelength (m). Also finds the period T = 1/f.</p>
+ <p class="mut" style="font-size:12.5px" data-nomj>v = f × λ — wave speed (m/s) = frequency (Hz) × wavelength (m). Also finds the period T = 1/f.</p>
+ <div class="card" style="background:var(--soft)" data-nomj><p style="margin:0;font-size:13.5px">Each full wavelength that passes a point takes one period to do so, and f waves pass every second — so the distance covered per second (the speed) is naturally frequency × wavelength. More wave crests per second, or a bigger gap between crests, both mean the wave covers more distance per second.</p><p class="mut" style="margin-top:6px;font-size:12.5px">Worked example: a wave has frequency 5 Hz and wavelength 2 m. v = f × λ = 5 × 2 = 10 m/s.</p></div>
  <label class="f">Example preset<select data-nomj id="wvp"><option value="custom" ${preset==="custom"?"selected":""}>Custom (enter your own)</option><option value="sound" ${preset==="sound"?"selected":""}>Sound wave</option><option value="light" ${preset==="light"?"selected":""}>Light wave</option><option value="radio" ${preset==="radio"?"selected":""}>Radio wave</option></select></label>
  <label class="f" style="margin-top:8px">Solve for<select data-nomj id="wvs"><option value="v" ${solve==="v"?"selected":""}>Speed v</option><option value="f" ${solve==="f"?"selected":""}>Frequency f</option><option value="lam" ${solve==="lam"?"selected":""}>Wavelength λ</option></select></label>
- <div class="row" style="margin-top:8px;gap:8px" id="wvin"></div>
+ <div class="row" style="margin-top:8px;gap:8px" id="wvin" data-nomj></div>
  <button class="btn" id="wvgo" style="margin-top:10px">Calculate</button>
- <div id="wvout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
+ <div id="wvout" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
  const drawFields=()=>{const s=el.querySelector("#wvs").value;
   const defaults=PRESETS[el.querySelector("#wvp").value]||{f:50,lam:0.02};
   const fields=s==="v"?[["f","frequency (Hz)",defaults.f],["lam","wavelength (m)",defaults.lam]]:s==="f"?[["v","speed (m/s)",343],["lam","wavelength (m)",defaults.lam]]:[["v","speed (m/s)",343],["f","frequency (Hz)",defaults.f]];
@@ -7639,18 +7659,53 @@ const CMD_FULL=[
 ["Analyse","Break something down into parts and examine how they relate, to identify patterns, causes or significance.","The data/trend shows ... which suggests ...","Analyse the graph of population growth over time. → identify the trend (exponential growth), the point it slows (carrying capacity reached) and possible causes (limited food/resources)."]
 ];
 function toolSciCmd2(el){
+ const view=ld("cf2view","learn");
+ el.innerHTML=`<div class="card"><h3>Command terms reference</h3>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${view==="learn"?"":"ghost"}" data-cfv="learn">Reference</button><button class="btn ${view==="quiz"?"":"ghost"}" data-cfv="quiz">Test yourself</button></div>
+ <div id="cf2_body"></div></div>`;
+ el.querySelectorAll("[data-cfv]").forEach(b=>b.onclick=()=>{sv("cf2view",b.dataset.cfv);toolSciCmd2(el)});
+ const body=el.querySelector("#cf2_body");
+ if(view==="quiz"){cmdQuiz(body);return}
  const i=ld("cf2i",0)%CMD_FULL.length;
  const[term,def,starter,ex]=CMD_FULL[i];
- el.innerHTML=`<div class="card"><h3>Command terms reference</h3>
- <p class="mut" style="font-size:12.5px">What markers expect for each command word, a sentence starter, and a worked mini-example. (See Flashcards for a quick-fire quiz version of these.)</p>
+ body.innerHTML=`<p class="mut" style="font-size:12.5px">What markers expect for each command word, a sentence starter, and a worked mini-example. Switch to "Test yourself" to practise telling them apart from a definition, the way a question's wording will.</p>
  <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${CMD_FULL.map((c,n)=>`<button class="btn ${n===i?"":"ghost"}" data-cf="${n}" style="font-size:12px">${esc(c[0])}</button>`).join("")}</div>
  <div class="card" style="background:var(--soft)">
  <h3 style="margin:0">${esc(term)}</h3>
  <p style="margin:8px 0">${esc(def)}</p>
  <p class="mut" style="margin:6px 0"><b>Sentence starter:</b> <span class="mono">${esc(starter)}</span></p>
  <p style="margin:6px 0"><b>Worked example:</b> ${esc(ex)}</p>
- </div></div>`;
- el.querySelectorAll("[data-cf]").forEach(b=>b.onclick=()=>{sv("cf2i",+b.dataset.cf);toolSciCmd2(el)});
+ </div>`;
+ body.querySelectorAll("[data-cf]").forEach(b=>b.onclick=()=>{sv("cf2i",+b.dataset.cf);toolSciCmd2(el)});
+}
+function cmdQuiz(el){
+ const score=ld("cf2qsc",[0,0]);
+ let cur=ld("cf2qcur",null);
+ if(!cur||cur.picked===undefined){
+  const ansI=Math.floor(Math.random()*CMD_FULL.length);
+  const distract=CMD_FULL.map((c,n)=>n).filter(n=>n!==ansI).sort(()=>Math.random()-0.5).slice(0,3);
+  const opts=[ansI,...distract].sort(()=>Math.random()-0.5);
+  cur={ansI,opts,picked:null};sv("cf2qcur",cur);
+ }
+ const def=CMD_FULL[cur.ansI][1];
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">Which command term matches this definition? Score: ${score[0]} / ${score[0]+score[1]}</p>
+ <div class="card" style="background:var(--soft);padding:16px"><p style="margin:0;font-size:15px">${esc(def)}</p></div>
+ <div style="display:grid;gap:8px;margin-top:10px">${cur.opts.map(n=>`<button data-cfo="${n}" style="text-align:left;min-height:46px" ${cur.picked!==null?"disabled":""}>${esc(CMD_FULL[n][0])}</button>`).join("")}</div>
+ <div id="cf2_fb" style="margin-top:10px"></div>
+ ${cur.picked!==null?`<button class="btn" id="cf2_next" style="margin-top:10px">Next question</button>`:""}`;
+ if(cur.picked!==null){
+  el.querySelectorAll("[data-cfo]").forEach(b=>{const n=+b.dataset.cfo;
+   if(n===cur.ansI){b.textContent="✔ "+CMD_FULL[n][0];b.style.borderColor="var(--good)"}
+   else if(n===cur.picked){b.textContent="✘ "+CMD_FULL[n][0];b.style.borderColor="var(--bad)"}});
+  el.querySelector("#cf2_fb").innerHTML=cur.picked===cur.ansI?`<span class="ok">✔ Correct.</span>`:`<span class="no">✘ It's "${esc(CMD_FULL[cur.ansI][0])}".</span> ${esc(CMD_FULL[cur.ansI][2])}`;
+  el.querySelector("#cf2_next").onclick=()=>{sv("cf2qcur",null);cmdQuiz(el)};
+ }else{
+  el.querySelectorAll("[data-cfo]").forEach(b=>b.onclick=()=>{
+   const n=+b.dataset.cfo;const right=n===cur.ansI;
+   sv("cf2qsc",right?[score[0]+1,score[1]]:[score[0],score[1]+1]);
+   cur.picked=n;sv("cf2qcur",cur);cmdQuiz(el);
+  });
+ }
 }
 
 /* ============ 9. Body systems reference ============ */
@@ -7665,17 +7720,53 @@ const BODY_SYS=[
 ["Musculoskeletal system","Bones (skeleton), joints, skeletal muscles, tendons, ligaments.","Supports and protects the body, allows movement (muscles contract to pull on bones across joints), and (in bone marrow) produces blood cells.","Moves under nervous system control; needs calcium and other nutrients absorbed by the digestive system and delivered by the circulatory system."]
 ];
 function toolSciBody(el){
+ const view=ld("bsview","learn");
+ el.innerHTML=`<div class="card"><h3>Body systems reference</h3>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${view==="learn"?"":"ghost"}" data-bsv="learn">Reference</button><button class="btn ${view==="quiz"?"":"ghost"}" data-bsv="quiz">Test yourself</button></div>
+ <div id="bs_body"></div></div>`;
+ el.querySelectorAll("[data-bsv]").forEach(b=>b.onclick=()=>{sv("bsview",b.dataset.bsv);toolSciBody(el)});
+ const body=el.querySelector("#bs_body");
+ if(view==="quiz"){bodyQuiz(body);return}
  const i=ld("bsyi",0)%BODY_SYS.length;
  const[name,parts,func,inter]=BODY_SYS[i];
- el.innerHTML=`<div class="card"><h3>Body systems reference</h3>
+ body.innerHTML=`<p class="mut" style="font-size:12.5px">Structure, function, and how each system interacts with the others. Switch to "Test yourself" to practise naming the system from its job.</p>
  <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${BODY_SYS.map((s,n)=>`<button class="btn ${n===i?"":"ghost"}" data-bs="${n}" style="font-size:12px">${esc(s[0].replace(" system",""))}</button>`).join("")}</div>
  <div class="card" style="background:var(--soft)">
  <h3 style="margin:0">${esc(name)}</h3>
  <p style="margin:8px 0"><b>Main structures:</b> ${esc(parts)}</p>
  <p style="margin:8px 0"><b>Function:</b> ${esc(func)}</p>
  <p style="margin:8px 0"><b>How it interacts with other systems:</b> ${esc(inter)}</p>
- </div></div>`;
- el.querySelectorAll("[data-bs]").forEach(b=>b.onclick=()=>{sv("bsyi",+b.dataset.bs);toolSciBody(el)});
+ </div>`;
+ body.querySelectorAll("[data-bs]").forEach(b=>b.onclick=()=>{sv("bsyi",+b.dataset.bs);toolSciBody(el)});
+}
+function bodyQuiz(el){
+ const score=ld("bsqsc",[0,0]);
+ let cur=ld("bsqcur",null);
+ if(!cur||cur.picked===undefined){
+  const ansI=Math.floor(Math.random()*BODY_SYS.length);
+  const distract=BODY_SYS.map((s,n)=>n).filter(n=>n!==ansI).sort(()=>Math.random()-0.5).slice(0,3);
+  const opts=[ansI,...distract].sort(()=>Math.random()-0.5);
+  cur={ansI,opts,picked:null};sv("bsqcur",cur);
+ }
+ const func=BODY_SYS[cur.ansI][2];
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">Which system's job is this? Score: ${score[0]} / ${score[0]+score[1]}</p>
+ <div class="card" style="background:var(--soft);padding:16px"><p style="margin:0;font-size:14.5px">${esc(func)}</p></div>
+ <div style="display:grid;gap:8px;margin-top:10px">${cur.opts.map(n=>`<button data-bso="${n}" style="text-align:left;min-height:46px" ${cur.picked!==null?"disabled":""}>${esc(BODY_SYS[n][0])}</button>`).join("")}</div>
+ <div id="bs_fb" style="margin-top:10px"></div>
+ ${cur.picked!==null?`<button class="btn" id="bs_next" style="margin-top:10px">Next question</button>`:""}`;
+ if(cur.picked!==null){
+  el.querySelectorAll("[data-bso]").forEach(b=>{const n=+b.dataset.bso;
+   if(n===cur.ansI){b.textContent="✔ "+BODY_SYS[n][0];b.style.borderColor="var(--good)"}
+   else if(n===cur.picked){b.textContent="✘ "+BODY_SYS[n][0];b.style.borderColor="var(--bad)"}});
+  el.querySelector("#bs_fb").innerHTML=cur.picked===cur.ansI?`<span class="ok">✔ Correct.</span>`:`<span class="no">✘ It's the ${esc(BODY_SYS[cur.ansI][0])}.</span>`;
+  el.querySelector("#bs_next").onclick=()=>{sv("bsqcur",null);bodyQuiz(el)};
+ }else{
+  el.querySelectorAll("[data-bso]").forEach(b=>b.onclick=()=>{
+   const n=+b.dataset.bso;const right=n===cur.ansI;
+   sv("bsqsc",right?[score[0]+1,score[1]]:[score[0],score[1]+1]);
+   cur.picked=n;sv("bsqcur",cur);bodyQuiz(el);
+  });
+ }
 }
 
 /* ============ 10. Practical skills / experimental design checker ============ */
@@ -7885,19 +7976,60 @@ const REACT_TYPES=[
  ["Combustion","A fuel (usually containing carbon and hydrogen) reacts with oxygen, releasing heat and light; complete combustion produces CO2 and H2O.","fuel + O2 → CO2 + H2O (+ energy)","CH4 + 2 O2 → CO2 + 2 H2O  (methane burning)"],
  ["Neutralisation (acid-base)","An acid reacts with a base to produce a salt and water.","acid + base → salt + water","HCl + NaOH → NaCl + H2O"]
 ];
+/* Quiz bank for the reaction-type identification game. Every equation
+   independently checked for atom balance and for matching its tagged
+   type before shipping (see the working notes alongside this array). */
+const REACT_QUIZ=[
+ ["2 Mg + O2 → 2 MgO",0],["2 H2 + O2 → 2 H2O",0],["N2 + 3 H2 → 2 NH3",0],
+ ["CaCO3 → CaO + CO2",1],["2 H2O2 → 2 H2O + O2",1],["2 KClO3 → 2 KCl + 3 O2",1],
+ ["Mg + 2 HCl → MgCl2 + H2",2],["Zn + CuSO4 → ZnSO4 + Cu",2],["2 Al + Fe2O3 → Al2O3 + 2 Fe",2],
+ ["BaCl2 + Na2SO4 → BaSO4 + 2 NaCl",3],["Pb(NO3)2 + 2 KI → PbI2 + 2 KNO3",3],["AgNO3 + NaCl → AgCl + NaNO3",3],
+ ["C3H8 + 5 O2 → 3 CO2 + 4 H2O",4],["CH4 + 2 O2 → CO2 + 2 H2O",4],["C2H5OH + 3 O2 → 2 CO2 + 3 H2O",4],
+ ["H2SO4 + 2 KOH → K2SO4 + 2 H2O",5],["HNO3 + NaOH → NaNO3 + H2O",5],["HCl + NaOH → NaCl + H2O",5]
+];
 function toolSciReact(el){
+ const view=ld("rctView","learn");
+ el.innerHTML=`<div class="card"><h3>Reaction type reference</h3>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${view==="learn"?"":"ghost"}" data-rv="learn">Reference</button><button class="btn ${view==="quiz"?"":"ghost"}" data-rv="quiz">Test yourself</button></div>
+ <div id="rct_body"></div></div>`;
+ el.querySelectorAll("[data-rv]").forEach(b=>b.onclick=()=>{sv("rctView",b.dataset.rv);toolSciReact(el)});
+ const body=el.querySelector("#rct_body");
+ if(view==="quiz"){reactQuiz(body);return}
  const i=ld("rctI",0)%REACT_TYPES.length;
  const[name,desc,gen,ex]=REACT_TYPES[i];
- el.innerHTML=`<div class="card"><h3>Reaction type reference</h3>
- <p class="mut" style="font-size:12.5px">The six reaction types you need to recognise, with the general pattern and a real example. Use the equation balancer to balance any of these fully yourself.</p>
+ body.innerHTML=`<p class="mut" style="font-size:12.5px">The six reaction types you need to recognise, with the general pattern and a real example. Use the equation balancer to balance any of these fully yourself, or switch to "Test yourself" to practise spotting the type from a whole equation.</p>
  <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${REACT_TYPES.map((r,n)=>`<button class="btn ${n===i?"":"ghost"}" data-rt="${n}" style="font-size:12px">${esc(r[0].split(" (")[0])}</button>`).join("")}</div>
  <div class="card" style="background:var(--soft)">
  <h3 style="margin:0">${esc(name)}</h3>
  <p style="margin:8px 0">${esc(desc)}</p>
  <p class="mono" style="margin:6px 0;font-size:16px" data-nomj>${esc(gen)}</p>
  <p style="margin:6px 0"><b>Example:</b> <span class="mono" data-nomj>${esc(ex)}</span></p>
- </div></div>`;
- el.querySelectorAll("[data-rt]").forEach(b=>b.onclick=()=>{sv("rctI",+b.dataset.rt);toolSciReact(el)});
+ </div>`;
+ body.querySelectorAll("[data-rt]").forEach(b=>b.onclick=()=>{sv("rctI",+b.dataset.rt);toolSciReact(el)});
+}
+function reactQuiz(el){
+ const score=ld("rctqsc",[0,0]);
+ let cur=ld("rctqcur",null);
+ if(!cur||cur.picked===undefined){const idx=Math.floor(Math.random()*REACT_QUIZ.length);cur={idx,picked:null};sv("rctqcur",cur)}
+ const[eqn,ansI]=REACT_QUIZ[cur.idx];
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">Which reaction type is this? Score: ${score[0]} / ${score[0]+score[1]}</p>
+ <div class="card" style="background:var(--soft);text-align:center;padding:20px 12px"><span class="mono" style="font-size:17px" data-nomj>${esc(eqn)}</span></div>
+ <div style="display:grid;gap:8px;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${REACT_TYPES.map((r,n)=>`<button data-rqo="${n}" style="text-align:left;min-height:46px" ${cur.picked!==null?"disabled":""}>${esc(r[0].split(" (")[0])}</button>`).join("")}</div>
+ <div id="rct_fb" style="margin-top:10px"></div>
+ ${cur.picked!==null?`<button class="btn" id="rct_next" style="margin-top:10px">Next question</button>`:""}`;
+ if(cur.picked!==null){
+  el.querySelectorAll("[data-rqo]").forEach(b=>{const n=+b.dataset.rqo;
+   if(n===ansI){b.style.borderColor="var(--good)";b.textContent="✔ "+REACT_TYPES[n][0].split(" (")[0]}
+   else if(n===cur.picked){b.style.borderColor="var(--bad)";b.textContent="✘ "+REACT_TYPES[n][0].split(" (")[0]}});
+  el.querySelector("#rct_fb").innerHTML=cur.picked===ansI?`<span class="ok">✔ Correct.</span> ${esc(REACT_TYPES[ansI][0])} follows the pattern <span class="mono" data-nomj>${esc(REACT_TYPES[ansI][2])}</span>.`:`<span class="no">✘ It's ${esc(REACT_TYPES[ansI][0])}.</span> Pattern: <span class="mono" data-nomj>${esc(REACT_TYPES[ansI][2])}</span> — ${esc(REACT_TYPES[ansI][1])}`;
+  el.querySelector("#rct_next").onclick=()=>{sv("rctqcur",null);reactQuiz(el)};
+ }else{
+  el.querySelectorAll("[data-rqo]").forEach(b=>b.onclick=()=>{
+   const n=+b.dataset.rqo;const right=n===ansI;
+   sv("rctqsc",right?[score[0]+1,score[1]]:[score[0],score[1]+1]);
+   cur.picked=n;sv("rctqcur",cur);reactQuiz(el);
+  });
+ }
 }
 
 /* ================================================================
@@ -7907,7 +8039,7 @@ function toolSciMotion(el){
  const u=ld("mou",2),a=ld("moa",1.5);
  el.innerHTML=`<div class="card"><h3>Motion animation</h3>
  <p class="mut" style="font-size:12.5px">A cart starts with initial velocity u and constant acceleration a. Watch it move while position-time and velocity-time graphs draw themselves, using s = ut + ½at² and v = u + at.</p>
- <div class="row" style="gap:10px;margin-top:6px;flex-wrap:wrap">
+ <div class="row" style="gap:10px;margin-top:6px;flex-wrap:wrap" data-nomj>
   <label>u, initial velocity (m/s) <input id="mo_u" type="number" step="any" value="${u}" style="width:80px"></label>
   <label>a, acceleration (m/s²) <input id="mo_a" type="number" step="any" value="${a}" style="width:80px"></label>
  </div>
@@ -8012,7 +8144,7 @@ function toolSciWaveAnim(el){
 function toolSciCircAnim(el){
  const mode=ld("caMode","ser"),V=ld("caV",12),r1=ld("caR1",4),r2=ld("caR2",8);
  el.innerHTML=`<div class="card"><h3>Circuit animation</h3>
- <p class="mut" style="font-size:12.5px">Two resistors in series or parallel with a battery. Dots show conventional current direction; dot speed shows current size (I = V/R).</p>
+ <p class="mut" style="font-size:12.5px" data-nomj>Two resistors in series or parallel with a battery. Dots show conventional current direction; dot speed shows current size (I = V/R).</p>
  <div class="row" style="gap:6px;margin-top:6px"><button class="btn ${mode==="ser"?"":"ghost"}" data-cm="ser">Series</button><button class="btn ${mode==="par"?"":"ghost"}" data-cm="par">Parallel</button></div>
  <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:8px">
   <label>Supply V <input id="ca_v" type="number" value="${V}" style="width:70px"></label>
@@ -8092,7 +8224,7 @@ function toolSciFoodWeb(el){
  <div class="row" style="gap:6px;margin:8px 0;flex-wrap:wrap">${Object.entries(FOOD_PRESETS).map(([k,v])=>`<button class="btn ${k===which?"":"ghost"}" data-fw="${k}">${esc(v.name)}</button>`).join("")}<button class="btn ${which==="custom"?"":"ghost"}" data-fw="custom">Build your own</button></div>
  <div id="fw_area"></div>
  <div class="row" style="flex-wrap:wrap;gap:10px;font-size:11.5px;margin-top:10px">${Object.entries(FOOD_COL).map(([k,c])=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="width:10px;height:10px;background:${c};border-radius:2px;display:inline-block"></i>${esc(k[0].toUpperCase()+k.slice(1))}</span>`).join("")}</div>
- <div class="card" style="margin-top:12px;background:var(--soft)">
+ <div class="card" style="margin-top:12px;background:var(--soft)" data-nomj>
  <b>Energy flow (the 10% rule):</b> only about 10% of the energy taken in at one trophic level is passed on to the next (the rest is lost as heat, used for movement, or lost in waste/undigested parts) — this is why food chains rarely have more than 4-5 levels, and why there are always far fewer top predators than producers.
  <br><b>Trophic levels:</b> producers (make their own food, e.g. plants, algae) → primary consumers/herbivores → secondary consumers (eat herbivores) → tertiary consumers (apex predators) → decomposers (break down dead material and waste at every level, recycling nutrients back to producers).
  </div></div>`;
@@ -8328,7 +8460,7 @@ function toolSciGenome(el){
   }
   body.innerHTML=`<div class="card" style="background:var(--soft)">
   <p class="mut" style="font-size:12.5px">A simplified karyotype — a picture of all of a person's chromosomes arranged in matching pairs, largest to smallest. Real karyotypes are made by staining and photographing chromosomes from a dividing cell. Pair 23 is drawn in two possible colours since it differs between female (XX) and male (XY).</p>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:flex-end">${bars}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:flex-end" data-nomj>${bars}</div>
   <p style="margin-top:10px;font-size:13.5px">Doctors use real karyotypes to detect chromosome <b>number</b> abnormalities — e.g. Down syndrome is an extra copy of chromosome 21 (three copies instead of two, called trisomy 21) — and large structural changes, though not single-gene mutations (those need DNA sequencing, not a karyotype).</p></div>`;
  }else{
   const MUT=[
@@ -8485,10 +8617,10 @@ function toolSciPH(el){
  const body=el.querySelector("#ph_body");
  if(mode==="calc"){
   const solve=ld("phSolve","ph");
-  body.innerHTML=`<p class="mut" style="font-size:12.5px">pH = −log₁₀[H⁺] — where [H⁺] is the hydrogen ion concentration in mol/L.</p>
+  body.innerHTML=`<p class="mut" style="font-size:12.5px" data-nomj>pH = −log₁₀[H⁺] — where [H⁺] is the hydrogen ion concentration in mol/L.</p>
   <label class="f">Solve for<select data-nomj id="ph_s"><option value="ph" ${solve==="ph"?"selected":""}>pH (from [H⁺])</option><option value="h" ${solve==="h"?"selected":""}>[H⁺] (from pH)</option></select></label>
-  <div id="ph_in" style="margin-top:8px"></div><button class="btn" id="ph_go" style="margin-top:10px">Calculate</button>
-  <div id="ph_out" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  <div id="ph_in" style="margin-top:8px" data-nomj></div><button class="btn" id="ph_go" style="margin-top:10px">Calculate</button>
+  <div id="ph_out" data-nomj class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
   const draw=()=>{const s=body.querySelector("#ph_s").value;sv("phSolve",s);
    body.querySelector("#ph_in").innerHTML=s==="ph"?`<label>[H⁺] (mol/L) <input id="ph_hv" type="number" value="0.001" step="any" style="width:130px"></label>`:`<label>pH <input id="ph_pv" type="number" value="3" step="any" style="width:90px"></label>`};
   draw();body.querySelector("#ph_s").onchange=draw;
@@ -8611,7 +8743,7 @@ function toolSciForce(el){
  }else if(mode==="laws"){
   body.innerHTML=`<div class="card" style="background:var(--soft)">
   <p><b>First law (inertia):</b> an object stays at rest, or keeps moving at a constant velocity in a straight line, unless acted on by a net (unbalanced) external force.</p>
-  <p style="margin-top:10px"><b>Second law:</b> the acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass — <span class="mono" data-nomj>F = ma</span> (or a = F/m). A bigger net force gives more acceleration; a bigger mass gives less acceleration for the same force.</p>
+  <p style="margin-top:10px" data-nomj><b>Second law:</b> the acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass — <span class="mono">F = ma</span> (or a = F/m). A bigger net force gives more acceleration; a bigger mass gives less acceleration for the same force.</p>
   <p style="margin-top:10px"><b>Third law:</b> for every action force, there is a reaction force equal in size and opposite in direction, acting on a different object (e.g. a rocket pushes exhaust gas backward; the gas pushes the rocket forward with an equal-sized force).</p>
   </div>`;
  }else{
@@ -8638,6 +8770,18 @@ const ORGANELLES=[
  ["Vacuole","Mainly plant (large)","Plant cells usually have one large central vacuole storing water, nutrients and waste, and providing turgor pressure that keeps the cell firm. Animal cells may have small, temporary vacuoles instead."]
 ];
 function toolSciCell(el){
+ const view=ld("clView","learn");
+ if(view==="quiz"){
+  el.innerHTML=`<div class="card"><h3>Cell structure</h3>
+  <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ghost" data-clv="learn">Reference</button><button class="btn" data-clv="quiz">Test yourself</button></div>
+  <div id="cl_body"></div></div>`;
+  el.querySelectorAll("[data-clv]").forEach(b=>b.onclick=()=>{sv("clView",b.dataset.clv);toolSciCell(el)});
+  cellQuiz(el.querySelector("#cl_body"));
+  return;
+ }
+ toolSciCellLearn(el);
+}
+function toolSciCellLearn(el){
  const tab=ld("clTab","plant");
  const parts=tab==="plant"?["Nucleus","Cell membrane","Cytoplasm","Mitochondria","Ribosomes","Cell wall","Chloroplast","Vacuole"]:["Nucleus","Cell membrane","Cytoplasm","Mitochondria","Ribosomes"];
  const diagram=tab==="plant"
@@ -8658,13 +8802,45 @@ function toolSciCell(el){
     <span style="position:absolute;left:107px;top:75px;font-size:9px;color:#fff">Nucleus</span>
    </div>`;
  el.innerHTML=`<div class="card"><h3>Cell structure</h3>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn" data-clv="learn">Reference</button><button class="btn ghost" data-clv="quiz">Test yourself</button></div>
+ <p class="mut" style="font-size:12.5px">Switch to "Test yourself" to practise naming the organelle from its job, or spotting what's plant-only.</p>
  <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${tab==="plant"?"":"ghost"}" data-cl="plant">Plant cell</button><button class="btn ${tab==="animal"?"":"ghost"}" data-cl="animal">Animal cell</button></div>
  <p class="mut" style="font-size:12px;text-align:center">A simplified diagram (not to scale, not a real micrograph).</p>
  ${diagram}
  <div style="margin-top:6px">${ORGANELLES.filter(o=>parts.includes(o[0])).map(([n,w,d])=>`<div style="margin:8px 0;padding-top:8px;border-top:1px solid var(--line)"><b>${esc(n)}</b> <span class="mut" style="font-size:11.5px">(${esc(w)})</span><p style="margin-top:3px;font-size:13.5px">${esc(d)}</p></div>`).join("")}</div>
  <p class="mut" style="font-size:12px;margin-top:10px">Plant cells have all the structures animal cells have, plus a cell wall, chloroplasts, and usually a large central vacuole.</p>
  </div>`;
- el.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>{sv("clTab",b.dataset.cl);toolSciCell(el)});
+ el.querySelectorAll("[data-cl]").forEach(b=>b.onclick=()=>{sv("clTab",b.dataset.cl);toolSciCellLearn(el)});
+ el.querySelectorAll("[data-clv]").forEach(b=>b.onclick=()=>{sv("clView",b.dataset.clv);toolSciCell(el)});
+}
+function cellQuiz(el){
+ const score=ld("clqsc",[0,0]);
+ let cur=ld("clqcur",null);
+ if(!cur||cur.picked===undefined){
+  const ansI=Math.floor(Math.random()*ORGANELLES.length);
+  const distract=ORGANELLES.map((o,n)=>n).filter(n=>n!==ansI).sort(()=>Math.random()-0.5).slice(0,3);
+  const opts=[ansI,...distract].sort(()=>Math.random()-0.5);
+  cur={ansI,opts,picked:null};sv("clqcur",cur);
+ }
+ const desc=ORGANELLES[cur.ansI][2];
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">Which organelle does this? Score: ${score[0]} / ${score[0]+score[1]}</p>
+ <div class="card" style="background:var(--soft);padding:16px"><p style="margin:0;font-size:14.5px">${esc(desc)}</p></div>
+ <div style="display:grid;gap:8px;margin-top:10px">${cur.opts.map(n=>`<button data-clo="${n}" style="text-align:left;min-height:46px" ${cur.picked!==null?"disabled":""}>${esc(ORGANELLES[n][0])} <span class="mut" style="font-size:11px">(${esc(ORGANELLES[n][1])})</span></button>`).join("")}</div>
+ <div id="cl_fb" style="margin-top:10px"></div>
+ ${cur.picked!==null?`<button class="btn" id="cl_next" style="margin-top:10px">Next question</button>`:""}`;
+ if(cur.picked!==null){
+  el.querySelectorAll("[data-clo]").forEach(b=>{const n=+b.dataset.clo;
+   if(n===cur.ansI)b.style.borderColor="var(--good)";
+   else if(n===cur.picked)b.style.borderColor="var(--bad)";});
+  el.querySelector("#cl_fb").innerHTML=cur.picked===cur.ansI?`<span class="ok">✔ Correct.</span>`:`<span class="no">✘ It's the ${esc(ORGANELLES[cur.ansI][0])}.</span>`;
+  el.querySelector("#cl_next").onclick=()=>{sv("clqcur",null);cellQuiz(el)};
+ }else{
+  el.querySelectorAll("[data-clo]").forEach(b=>b.onclick=()=>{
+   const n=+b.dataset.clo;const right=n===cur.ansI;
+   sv("clqsc",right?[score[0]+1,score[1]]:[score[0],score[1]+1]);
+   cur.picked=n;sv("clqcur",cur);cellQuiz(el);
+  });
+ }
 }
 
 /* ================================================================
@@ -8744,10 +8920,11 @@ const PLATE_BOUNDARIES=[
 function toolSciRock(el){
  const tab=ld("rkTab","rock");
  el.innerHTML=`<div class="card"><h3>Rock cycle & plate tectonics</h3>
- <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${tab==="rock"?"":"ghost"}" data-rk="rock">Rock cycle</button><button class="btn ${tab==="plate"?"":"ghost"}" data-rk="plate">Plate tectonics</button></div>
+ <div class="row" style="gap:6px;margin-bottom:8px"><button class="btn ${tab==="rock"?"":"ghost"}" data-rk="rock">Rock cycle</button><button class="btn ${tab==="plate"?"":"ghost"}" data-rk="plate">Plate tectonics</button><button class="btn ${tab==="quiz"?"":"ghost"}" data-rk="quiz">Test yourself</button></div>
  <div id="rk_body"></div></div>`;
  el.querySelectorAll("[data-rk]").forEach(b=>b.onclick=()=>{sv("rkTab",b.dataset.rk);toolSciRock(el)});
  const body=el.querySelector("#rk_body");
+ if(tab==="quiz"){rockQuiz(body);return}
  if(tab==="rock"){
   body.innerHTML=`<p class="mut" style="font-size:12.5px">The three rock types, and how the rock cycle moves material between them — there's no fixed order; any rock type can (eventually) become any other.</p>
   ${ROCK_TYPES.map(([n,d,ex])=>`<div class="card" style="background:var(--soft);margin:8px 0"><b>${esc(n)}</b><p style="margin-top:4px;font-size:13.5px">${esc(d)}</p><p class="mut" style="font-size:12px;margin-top:4px"><b>Examples:</b> ${esc(ex)}</p></div>`).join("")}
@@ -8760,6 +8937,38 @@ function toolSciRock(el){
  }
 }
 
+function rockQuiz(el){
+ const POOL=[...ROCK_TYPES.map(r=>["rock",r[0],r[1]]),...PLATE_BOUNDARIES.map(p=>["plate",p[0],p[1]])];
+ const score=ld("rkqsc",[0,0]);
+ let cur=ld("rkqcur",null);
+ if(!cur||cur.picked===undefined){
+  const ansI=Math.floor(Math.random()*POOL.length);
+  const cat=POOL[ansI][0];
+  const sameCat=POOL.map((p,n)=>n).filter(n=>n!==ansI&&POOL[n][0]===cat);
+  const distract=sameCat.sort(()=>Math.random()-0.5).slice(0,3);
+  const opts=[ansI,...distract].sort(()=>Math.random()-0.5);
+  cur={ansI,opts,picked:null};sv("rkqcur",cur);
+ }
+ const desc=POOL[cur.ansI][2];
+ el.innerHTML=`<p class="mut" style="font-size:12.5px">Which one is this? Score: ${score[0]} / ${score[0]+score[1]}</p>
+ <div class="card" style="background:var(--soft);padding:16px"><p style="margin:0;font-size:14px">${esc(desc)}</p></div>
+ <div style="display:grid;gap:8px;margin-top:10px">${cur.opts.map(n=>`<button data-rko="${n}" style="text-align:left;min-height:46px" ${cur.picked!==null?"disabled":""}>${esc(POOL[n][1])}</button>`).join("")}</div>
+ <div id="rk_fb" style="margin-top:10px"></div>
+ ${cur.picked!==null?`<button class="btn" id="rk_next" style="margin-top:10px">Next question</button>`:""}`;
+ if(cur.picked!==null){
+  el.querySelectorAll("[data-rko]").forEach(b=>{const n=+b.dataset.rko;
+   if(n===cur.ansI)b.style.borderColor="var(--good)";
+   else if(n===cur.picked)b.style.borderColor="var(--bad)";});
+  el.querySelector("#rk_fb").innerHTML=cur.picked===cur.ansI?`<span class="ok">✔ Correct.</span>`:`<span class="no">✘ It's "${esc(POOL[cur.ansI][1])}".</span>`;
+  el.querySelector("#rk_next").onclick=()=>{sv("rkqcur",null);rockQuiz(el)};
+ }else{
+  el.querySelectorAll("[data-rko]").forEach(b=>b.onclick=()=>{
+   const n=+b.dataset.rko;const right=n===cur.ansI;
+   sv("rkqsc",right?[score[0]+1,score[1]]:[score[0],score[1]+1]);
+   cur.picked=n;sv("rkqcur",cur);rockQuiz(el);
+  });
+ }
+}
 window.toolSciEnergy=toolSciEnergy;
 window.toolSciPH=toolSciPH;
 window.toolSciStates=toolSciStates;
@@ -9470,8 +9679,9 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=98;
+const APP_VER=99;
 const APP_LOG=[
+[99,"2026-11-14 17:10","Fixed the real bug you flagged: opening any Science or Maths tool that lives in the \"More tools\" list (most of them, once Science had 26) was forcing that whole button wall open ABOVE the tool itself, so you had to scroll past 20+ buttons to see the tool you'd just tapped, with Flashcards and the subject breadcrumb pushed off-screen above it. \"More tools\" now always stays collapsed by default — instead there's a small \"Now viewing: <tool name>\" strip right under Flashcards/Practice questions, so you always know what's open and can get back to Flashcards, the subject, or the tools list without scrolling, and the tool's own content starts right away. Confirmed with Playwright on both Science (opened Rock cycle, the last tool in the list) and Maths (opened Unit circle reference): the tool's heading sits well inside the first screen, not 400+ px down a button wall. This was a general bug in how every subject's tool panel works, not Science-specific, so Maths (which also has 25 tools) is fixed the same way.\nAlso did the real \"take your time\" deepening pass on the Science tools: Command terms, Body systems, Cell structure, Rock cycle & plate tectonics and Reaction types — the five you called out as the weakest — each now has a genuine \"Test yourself\" quiz mode (multiple choice, immediate right/wrong feedback, running score) built from the same verified reference data already in the tool, not just a flip-through card any more. Reaction types' quiz gives 18 real, independently atom-balanced equations (3 per reaction type, checked by hand again before shipping) and asks you to name the type. The Physics calculator, Electricity & circuits calculator, Moles & titration calculator and Wave calculator (the \"pick two numbers, see one answer\" tools) each now also show a short, plain-English \"why this formula works\" explanation and one extra fully-worked numeric example alongside the interactive part, every time, not just after you hit Calculate. States of matter was left as-is — its slider-driven particle animation was already genuinely interactive and didn't need the same treatment. The already-strong tools (Periodic table, Punnett square, Equation balancer, the three physics animations, Energy transformations, Food chains & webs, DNA to protein, Biology graphs, Genomes & mutations, Natural selection simulator, Rate of reaction, Experimental design checker) were reviewed and left alone — they already had the explanatory depth, worked examples and interactivity this pass was aiming for. Nothing existing was removed."],
 [98,"2026-11-14 16:45","Fixed a real bug: all 26 new Science tools from v95-97 (equation balancer, periodic table, animations, Punnett squares, DNA, etc.) were built and working, but never showed up as their own tile on the Science subject page — Maths gets dedicated tiles for its extra tools, Science didn't, so they were only reachable two taps deep inside \"Practice questions\" > \"More tools\". Science now has the same one-tap tile layout as Maths: 25 new tiles added directly to the Science page. Also fixed the \"Moles & titration\" tile's description, which the app's auto-formula renderer was turning into a fraction symbol by mistake."],
 [97,"2026-11-14 16:11","Third Science deepening pass. Finished the two leftovers flagged last time: the Periodic table now has a Trend overlay toggle (Atomic radius, Electronegativity, Metal reactivity, Non-metal reactivity) that highlights the relevant group(s) and explains the direction of each trend — deliberately restricted to group 1 and group 17, where the trend is simple and reliable, rather than guessing at a trend across the whole table (transition metals/lanthanides are not this regular, so they're left alone); and Food chains & webs now has a Build your own mode — pick species from a pool or add your own with a type (producer/primary/secondary/tertiary consumer/decomposer), then tap two species in turn to draw an arrow between them, with a basic sanity check that blocks an impossible 'eaten by something lower in the chain' link. Also added a new Energy transformation animation (pendulum or bouncing ball, canvas-drawn, with a live KE/PE bar graph) demonstrating conservation of energy — the physics (h=L(1-cosθ) for the pendulum, v=√(2gh) for the fall) was checked by hand before shipping, air resistance is ignored and the swing/bounce is treated as perfectly elastic, both stated on-screen as simplifications. On top of that, 6 more new Science tools: an Acids & bases / pH tool (pH = −log₁₀[H⁺] calculator either direction, the pH scale with common examples, a neutralisation reference, and an indicator colour chart for litmus/universal indicator/phenolphthalein/methyl orange), a States of matter particle-model animation (temperature slider moving a canvas of particles between solid/liquid/gas motion, explicitly a generic model, not one real substance), a Forces & Newton's laws tool (a net-force calculator that adds signed forces and applies F=ma, the three laws in plain language, and friction basics), a Cell structure reference (plant vs animal, labelled simplified diagrams, each organelle's real function), a Natural selection simulator (a simple light/dark moth population that you run generation by generation under adjustable selection pressure, showing differential survival and reproduction shift the population's trait balance over time — explicitly a simplified teaching model), and a Rock cycle & plate tectonics reference (igneous/sedimentary/metamorphic rock formation and the processes linking them, plus the three plate-boundary types with real examples). Every formula, trend direction and the evolution model's logic was checked against a reliable reference before shipping; nothing existing was removed."],
 [96,"2026-11-14 15:59","Big Science deepening pass, as requested — Chemistry: a real Chemical equation balancer (type any equation like CH4 + O2 -> CO2 + H2O, it parses the formulas including brackets, solves the atom-balance equations and shows the smallest whole-number coefficients with a before/after atom-count table proving every element balances) and a Reaction type reference (synthesis, decomposition, single/double displacement, combustion, neutralisation, each with the general pattern and a real example); the Periodic table now has a search box, a category filter that fades out everything else, and tapping a second element after 'Compare with another element' gives a simple metal/non-metal bonding prediction. Physics: three new canvas animations with play/pause and live-drawn graphs — a Motion animation (adjustable initial velocity and acceleration, draws the cart moving plus matching position-time and velocity-time graphs in real time using s=ut+½at² and v=u+at), a Wave animation (a moving transverse wave with adjustable amplitude/frequency/wavelength, visually showing v=fλ), and a Circuit animation (animated current-direction dots on a series or parallel circuit, speed reflecting I=V/R in each branch). Biology: Food chains & webs (a paddock and an ocean ecosystem drawn as connected nodes with energy-flow arrows, plus the 10% rule and trophic levels explained), a DNA → mRNA → protein tool (type or edit a DNA strand, see the complementary strand, the transcribed mRNA, and the translated amino acid chain via the full genetic codon table, with start/stop codons marked), Biology graphs (population growth curves — exponential vs logistic/carrying-capacity, predator-prey cycles, and enzyme activity vs temperature and vs pH, each explained), and Genomes, karyotypes & mutations (23 pairs of human chromosomes, a simplified karyotype diagram, and the three point-mutation types — substitution, insertion, deletion — with before/after DNA examples). The existing Punnett square tool now has three extra modes alongside the original monohybrid cross: Dihybrid (two genes, full 4×4 grid, verified 9:3:3:1 ratio), Sex-linked (X-linked traits like colour blindness, showing why sons and daughters differ), and Pedigree (worked small pedigree charts for autosomal recessive, autosomal dominant and X-linked recessive patterns). Every ratio, codon mapping and the balancer's algorithm were checked against independently worked results before shipping; nothing existing was removed."],
@@ -10064,8 +10274,9 @@ function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="unde
  const primKeys=["flash",c.drill[0],"mscope"].filter(k=>ksf.indexOf(k)>=0);
  const moreKeys=ksf.filter(k=>primKeys.indexOf(k)<0);
  const btn=k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${k==="flash"?"Flashcards":nm[k]}</button>`;
- const moreOpen=moreKeys.indexOf(tool.k)>=0;
- return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div></div>${moreKeys.length?`<details class="toolpanel more"${moreOpen?" open":""}><summary class="toolpanel-h">More tools</summary><div class="tools">${moreKeys.map(btn).join("")}</div></details>`:""}<div id="tool"></div>`}
+ const activeInMore=moreKeys.indexOf(tool.k)>=0;
+ const curBadge=activeInMore?`<div class="tool-current"><span class="tool-current-lbl">Now viewing</span><b>${esc(nm[tool.k]||tool.k)}</b><span class="tool-current-hint">— tap "More tools" below to switch</span></div>`:"";
+ return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div>${curBadge}</div>${moreKeys.length?`<details class="toolpanel more"><summary class="toolpanel-h">More tools${activeInMore?" (tap to switch)":""}</summary><div class="tools">${moreKeys.map(btn).join("")}</div></details>`:""}<div id="tool"></div>`}
  return TOOL_GROUPS.map(g=>`<div class="toolpanel more"><div class="toolpanel-h">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:10px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div></div>`).join("")+`<div id="tool"></div>`}
 function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mcas:()=>window.toolMathsCAS(el),mcashard:()=>window.toolMathsCASHard(el),mcalc:()=>window.toolCasCalc(el),msolve:()=>window.toolCasEqSolve(el),mgraph:()=>window.toolCasGraphFn(el),mstats:()=>window.toolCasStatsCalc(el),msim:()=>window.toolCasSimSolve(el),mseq:()=>window.toolCasSeq(el),mtsolve:()=>window.toolCasTrigSolve(el),mconic:()=>window.toolCasConic(el),mcascmd:()=>window.toolCasCmd(el),mbox:()=>window.toolCasBoxPlot(el),m3d:()=>window.toolCas3D(el),mbrg:()=>window.toolCasBearings(el),muc:()=>window.toolCasUnitCircle(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),sphys:()=>window.toolSciPhys(el),selec:()=>window.toolSciElec(el),smole:()=>window.toolSciMole(el),speri:()=>window.toolSciPeriodic(el),spun:()=>window.toolSciPunnett(el),swave:()=>window.toolSciWave(el),srate:()=>window.toolSciRate(el),scmd2:()=>window.toolSciCmd2(el),sbody:()=>window.toolSciBody(el),sprac:()=>window.toolSciPrac(el),schem:()=>window.toolSciChem(el),sreact:()=>window.toolSciReact(el),smotion:()=>window.toolSciMotion(el),swaveanim:()=>window.toolSciWaveAnim(el),scircanim:()=>window.toolSciCircAnim(el),sfood:()=>window.toolSciFoodWeb(el),sdna:()=>window.toolSciDNA(el),sbiograph:()=>window.toolSciBioGraph(el),sgenome:()=>window.toolSciGenome(el),senergy:()=>window.toolSciEnergy(el),sph:()=>window.toolSciPH(el),sstates:()=>window.toolSciStates(el),sforce:()=>window.toolSciForce(el),scell:()=>window.toolSciCell(el),sevolve:()=>window.toolSciEvolve(el),srock:()=>window.toolSciRock(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
 function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
