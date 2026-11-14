@@ -7135,6 +7135,445 @@ window.toolCasBearings=toolBearings;
 window.toolCasUnitCircle=toolUnitCircle;
 })();
 
+(function(){
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const K="scit:";
+const ld=(k,d)=>{try{const v=localStorage.getItem(K+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch(e){}};
+function r2(n){return Math.round(n*100)/100}
+function r4(n){return Math.round(n*10000)/10000}
+function fnum(n){if(!Number.isFinite(n))return"—";const rounded=Math.round(n*1e6)/1e6;return rounded}
+
+/* ============ 1. Physics calculator (motion, force, work, power, momentum) ============ */
+const PHYS_TOPICS={
+ speed:{name:"Speed, distance, time",vars:[["s","distance (m)"],["t","time (s)"],["v","speed (m/s)"]],
+  calc:(known,solve)=>{if(solve==="v")return{val:known.s/known.t,work:`v = s / t = ${known.s} / ${known.t} = ${r4(known.s/known.t)} m/s`};
+   if(solve==="s")return{val:known.v*known.t,work:`s = v × t = ${known.v} × ${known.t} = ${r4(known.v*known.t)} m`};
+   return{val:known.s/known.v,work:`t = s / v = ${known.s} / ${known.v} = ${r4(known.s/known.v)} s`}}},
+ force:{name:"Force = mass × acceleration",vars:[["F","force (N)"],["m","mass (kg)"],["a","acceleration (m/s²)"]],
+  calc:(known,solve)=>{if(solve==="F")return{val:known.m*known.a,work:`F = m × a = ${known.m} × ${known.a} = ${r4(known.m*known.a)} N`};
+   if(solve==="m")return{val:known.F/known.a,work:`m = F / a = ${known.F} / ${known.a} = ${r4(known.F/known.a)} kg`};
+   return{val:known.F/known.m,work:`a = F / m = ${known.F} / ${known.m} = ${r4(known.F/known.m)} m/s²`}}},
+ work:{name:"Work done = force × distance",vars:[["W","work (J)"],["F","force (N)"],["s","distance (m)"]],
+  calc:(known,solve)=>{if(solve==="W")return{val:known.F*known.s,work:`W = F × s = ${known.F} × ${known.s} = ${r4(known.F*known.s)} J`};
+   if(solve==="F")return{val:known.W/known.s,work:`F = W / s = ${known.W} / ${known.s} = ${r4(known.W/known.s)} N`};
+   return{val:known.W/known.F,work:`s = W / F = ${known.W} / ${known.F} = ${r4(known.W/known.F)} m`}}},
+ power:{name:"Power = work done ÷ time",vars:[["P","power (W)"],["W","work (J)"],["t","time (s)"]],
+  calc:(known,solve)=>{if(solve==="P")return{val:known.W/known.t,work:`P = W / t = ${known.W} / ${known.t} = ${r4(known.W/known.t)} W`};
+   if(solve==="W")return{val:known.P*known.t,work:`W = P × t = ${known.P} × ${known.t} = ${r4(known.P*known.t)} J`};
+   return{val:known.W/known.P,work:`t = W / P = ${known.W} / ${known.P} = ${r4(known.W/known.P)} s`}}},
+ momentum:{name:"Momentum = mass × velocity",vars:[["p","momentum (kg·m/s)"],["m","mass (kg)"],["v","velocity (m/s)"]],
+  calc:(known,solve)=>{if(solve==="p")return{val:known.m*known.v,work:`p = m × v = ${known.m} × ${known.v} = ${r4(known.m*known.v)} kg·m/s`};
+   if(solve==="m")return{val:known.p/known.v,work:`m = p / v = ${known.p} / ${known.v} = ${r4(known.p/known.v)} kg`};
+   return{val:known.p/known.m,work:`v = p / m = ${known.p} / ${known.m} = ${r4(known.p/known.m)} m/s`}}}
+};
+function toolSciPhys(el){
+ const topicKey=ld("phtopic","speed"),solve=ld("phsolve",PHYS_TOPICS[topicKey].vars[2][0]);
+ const T=PHYS_TOPICS[topicKey];
+ const others=T.vars.filter(v=>v[0]!==solve);
+ const vals=ld("phvals_"+topicKey,{});
+ el.innerHTML=`<div class="card"><h3>Physics calculator</h3>
+ <p class="mut" style="font-size:12.5px">Pick a relationship, choose what you want to find, enter the other two values, get the answer with full working and units.</p>
+ <label class="f">Relationship<select data-nomj id="pht">${Object.entries(PHYS_TOPICS).map(([k,v])=>`<option value="${k}" ${k===topicKey?"selected":""}>${esc(v.name)}</option>`).join("")}</select></label>
+ <label class="f" style="margin-top:8px">Solve for<select data-nomj id="phs">${T.vars.map(v=>`<option value="${v[0]}" ${v[0]===solve?"selected":""}>${esc(v[1])}</option>`).join("")}</select></label>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px" id="phin">${others.map(v=>`<label>${esc(v[1])} <input id="ph_${v[0]}" type="number" value="${vals[v[0]]!==undefined?vals[v[0]]:10}" style="width:90px"></label>`).join("")}</div>
+ <button class="btn" id="phgo" style="margin-top:10px">Calculate</button>
+ <div id="phout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
+ el.querySelector("#pht").onchange=e=>{sv("phtopic",e.target.value);sv("phsolve",PHYS_TOPICS[e.target.value].vars[2][0]);toolSciPhys(el)};
+ el.querySelector("#phs").onchange=e=>{sv("phsolve",e.target.value);toolSciPhys(el)};
+ el.querySelector("#phgo").onclick=()=>{
+  const known={};others.forEach(v=>{const n=parseFloat(el.querySelector("#ph_"+v[0]).value)||0;known[v[0]]=n;vals[v[0]]=n});
+  sv("phvals_"+topicKey,vals);
+  const r=T.calc(known,solve);
+  el.querySelector("#phout").textContent=r.work+`\n\nAnswer: ${r.val.toFixed(4).replace(/\.?0+$/,"")}`;
+ };
+}
+
+/* ============ 2. Electricity & circuits calculator ============ */
+function toolSciElec(el){
+ const mode=ld("elmode","ohm");
+ el.innerHTML=`<div class="card"><h3>Electricity & circuits calculator</h3>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+ <button class="btn ${mode==="ohm"?"":"ghost"}" data-el="ohm">Ohm's law (V, I, R)</button>
+ <button class="btn ${mode==="pow"?"":"ghost"}" data-el="pow">Electrical power</button>
+ <button class="btn ${mode==="ser"?"":"ghost"}" data-el="ser">Series circuit</button>
+ <button class="btn ${mode==="par"?"":"ghost"}" data-el="par">Parallel circuit</button>
+ </div><div id="elbody" style="margin-top:10px"></div></div>`;
+ el.querySelectorAll("[data-el]").forEach(b=>b.onclick=()=>{sv("elmode",b.dataset.el);toolSciElec(el)});
+ const body=el.querySelector("#elbody");
+ if(mode==="ohm"){
+  const solve=ld("elohms","I");
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">V = I × R — voltage (V), current (A), resistance (Ω)</p>
+  <label class="f">Solve for<select data-nomj id="eos"><option value="V" ${solve==="V"?"selected":""}>Voltage V</option><option value="I" ${solve==="I"?"selected":""}>Current I</option><option value="R" ${solve==="R"?"selected":""}>Resistance R</option></select></label>
+  <div class="row" style="margin-top:8px;gap:8px" id="eoin"></div><button class="btn" id="eogo" style="margin-top:10px">Calculate</button>
+  <div id="eoout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  const draw=()=>{const s=body.querySelector("#eos").value;sv("elohms",s);
+   const fields=s==="V"?[["I","current (A)",2],["R","resistance (Ω)",6]]:s==="I"?[["V","voltage (V)",12],["R","resistance (Ω)",6]]:[["V","voltage (V)",12],["I","current (A)",2]];
+   body.querySelector("#eoin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="eo_${f[0]}" type="number" value="${f[2]}" style="width:80px"></label>`).join("")};
+  draw();body.querySelector("#eos").onchange=draw;
+  body.querySelector("#eogo").onclick=()=>{const s=body.querySelector("#eos").value;const v=id=>parseFloat(body.querySelector("#eo_"+id)?.value)||0;const out=body.querySelector("#eoout");
+   if(s==="V"){const I=v("I"),R=v("R");out.textContent=`V = I × R = ${I} × ${R} = ${r4(I*R)} V`}
+   else if(s==="I"){const V=v("V"),R=v("R");out.textContent=`I = V / R = ${V} / ${R} = ${r4(V/R)} A`}
+   else{const V=v("V"),I=v("I");out.textContent=`R = V / I = ${V} / ${I} = ${r4(V/I)} Ω`}};
+ }else if(mode==="pow"){
+  const solve=ld("elpows","P1");
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">P = V × I, or P = I² × R, or P = V² / R — power in watts (W)</p>
+  <label class="f">Which values do you have?<select data-nomj id="eps">
+  <option value="P1" ${solve==="P1"?"selected":""}>I have V and I → find P</option>
+  <option value="P2" ${solve==="P2"?"selected":""}>I have I and R → find P</option>
+  <option value="P3" ${solve==="P3"?"selected":""}>I have V and R → find P</option>
+  </select></label>
+  <div class="row" style="margin-top:8px;gap:8px" id="epin"></div><button class="btn" id="epgo" style="margin-top:10px">Calculate</button>
+  <div id="epout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  const draw=()=>{const s=body.querySelector("#eps").value;sv("elpows",s);
+   const fields=s==="P1"?[["V","voltage (V)",12],["I","current (A)",2]]:s==="P2"?[["I","current (A)",2],["R","resistance (Ω)",6]]:[["V","voltage (V)",12],["R","resistance (Ω)",6]];
+   body.querySelector("#epin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="ep_${f[0]}" type="number" value="${f[2]}" style="width:80px"></label>`).join("")};
+  draw();body.querySelector("#eps").onchange=draw;
+  body.querySelector("#epgo").onclick=()=>{const s=body.querySelector("#eps").value;const v=id=>parseFloat(body.querySelector("#ep_"+id)?.value)||0;const out=body.querySelector("#epout");
+   if(s==="P1"){const V=v("V"),I=v("I");out.textContent=`P = V × I = ${V} × ${I} = ${r4(V*I)} W`}
+   else if(s==="P2"){const I=v("I"),R=v("R");out.textContent=`P = I² × R = ${I}² × ${R} = ${r4(I*I*R)} W`}
+   else{const V=v("V"),R=v("R");out.textContent=`P = V² / R = ${V}² / ${R} = ${r4(V*V/R)} W`}};
+ }else{
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">Enter resistor values separated by commas. ${mode==="ser"?"In series: current is the same through every resistor; total resistance adds up.":"In parallel: voltage is the same across every branch; total resistance is always less than the smallest resistor."}</p>
+  <div class="row" style="margin-top:8px;gap:8px"><label>Resistors (Ω)<input id="cr" type="text" value="4, 6, 12" style="width:160px"></label><label>Supply voltage (V)<input id="cv" type="number" value="12" style="width:80px"></label></div>
+  <button class="btn" id="crgo" style="margin-top:10px">Calculate</button>
+  <div id="crout" class="card" style="margin-top:10px;background:var(--soft);font-size:14.5px;white-space:pre-line"></div>`;
+  body.querySelector("#crgo").onclick=()=>{
+   const rs=(body.querySelector("#cr").value.match(/-?\d+(\.\d+)?/g)||[]).map(Number).filter(n=>n>0);
+   const V=parseFloat(body.querySelector("#cv").value)||0;
+   const out=body.querySelector("#crout");
+   if(!rs.length){out.textContent="Enter at least one resistor value.";return}
+   if(mode==="ser"){
+    const Rt=rs.reduce((a,b)=>a+b,0);const I=V/Rt;
+    out.textContent=`Series: Rtotal = ${rs.join(" + ")} = ${r4(Rt)} Ω\nCurrent (same everywhere): I = V / Rtotal = ${V} / ${r4(Rt)} = ${r4(I)} A\nVoltage across each resistor (V = I × R):\n${rs.map((r,i)=>`  R${i+1} = ${r} Ω → V = ${r4(I*r)} V`).join("\n")}`;
+   }else{
+    const Rt=1/rs.reduce((a,b)=>a+1/b,0);const It=V/Rt;
+    out.textContent=`Parallel: 1/Rtotal = ${rs.map(r=>`1/${r}`).join(" + ")} → Rtotal = ${r4(Rt)} Ω (always smaller than the smallest branch)\nVoltage across every branch (same): V = ${V} V\nCurrent in each branch (I = V / R):\n${rs.map((r,i)=>`  R${i+1} = ${r} Ω → I = ${r4(V/r)} A`).join("\n")}\nTotal current from the supply: I = ${r4(It)} A`;
+   }
+  };
+ }
+}
+
+/* ============ 3. Moles & titration calculator ============ */
+function toolSciMole(el){
+ const mode=ld("mlmode","moles");
+ el.innerHTML=`<div class="card"><h3>Moles & titration calculator</h3>
+ <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+ <button class="btn ${mode==="moles"?"":"ghost"}" data-ml="moles">Moles from mass</button>
+ <button class="btn ${mode==="conc"?"":"ghost"}" data-ml="conc">Concentration</button>
+ <button class="btn ${mode==="titr"?"":"ghost"}" data-ml="titr">Titration (c₁v₁ = c₂v₂)</button>
+ </div><div id="mlbody" style="margin-top:10px"></div></div>`;
+ el.querySelectorAll("[data-ml]").forEach(b=>b.onclick=()=>{sv("mlmode",b.dataset.ml);toolSciMole(el)});
+ const body=el.querySelector("#mlbody");
+ if(mode==="moles"){
+  const solve=ld("mlmoles","n");
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">n = m / M — moles = mass (g) ÷ molar mass (g/mol)</p>
+  <label class="f">Solve for<select data-nomj id="mms"><option value="n" ${solve==="n"?"selected":""}>Moles n</option><option value="m" ${solve==="m"?"selected":""}>Mass m</option><option value="M" ${solve==="M"?"selected":""}>Molar mass M</option></select></label>
+  <div class="row" style="margin-top:8px;gap:8px" id="mmin"></div><button class="btn" id="mmgo" style="margin-top:10px">Calculate</button>
+  <div id="mmout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  const draw=()=>{const s=body.querySelector("#mms").value;sv("mlmoles",s);
+   const fields=s==="n"?[["m","mass (g)",18],["M","molar mass (g/mol)",18]]:s==="m"?[["n","moles (mol)",1],["M","molar mass (g/mol)",18]]:[["m","mass (g)",18],["n","moles (mol)",1]];
+   body.querySelector("#mmin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="mm_${f[0]}" type="number" value="${f[2]}" style="width:90px"></label>`).join("")};
+  draw();body.querySelector("#mms").onchange=draw;
+  body.querySelector("#mmgo").onclick=()=>{const s=body.querySelector("#mms").value;const v=id=>parseFloat(body.querySelector("#mm_"+id)?.value)||0;const out=body.querySelector("#mmout");
+   if(s==="n"){const m=v("m"),M=v("M");out.textContent=`n = m / M = ${m} / ${M} = ${r4(m/M)} mol`}
+   else if(s==="m"){const n=v("n"),M=v("M");out.textContent=`m = n × M = ${n} × ${M} = ${r4(n*M)} g`}
+   else{const m=v("m"),n=v("n");out.textContent=`M = m / n = ${m} / ${n} = ${r4(m/n)} g/mol`}};
+ }else if(mode==="conc"){
+  const solve=ld("mlconc","c");
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">c = n / V — concentration (mol/L) = moles ÷ volume (L). If your volume is in mL, divide by 1000 first.</p>
+  <label class="f">Solve for<select data-nomj id="mcs"><option value="c" ${solve==="c"?"selected":""}>Concentration c</option><option value="n" ${solve==="n"?"selected":""}>Moles n</option><option value="V" ${solve==="V"?"selected":""}>Volume V</option></select></label>
+  <div class="row" style="margin-top:8px;gap:8px" id="mcin"></div><button class="btn" id="mcgo" style="margin-top:10px">Calculate</button>
+  <div id="mcout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  const draw=()=>{const s=body.querySelector("#mcs").value;sv("mlconc",s);
+   const fields=s==="c"?[["n","moles (mol)",0.5],["V","volume (L)",2]]:s==="n"?[["c","concentration (mol/L)",0.25],["V","volume (L)",2]]:[["n","moles (mol)",0.5],["c","concentration (mol/L)",0.25]];
+   body.querySelector("#mcin").innerHTML=fields.map(f=>`<label>${f[1]} <input id="mc_${f[0]}" type="number" value="${f[2]}" style="width:90px"></label>`).join("")};
+  draw();body.querySelector("#mcs").onchange=draw;
+  body.querySelector("#mcgo").onclick=()=>{const s=body.querySelector("#mcs").value;const v=id=>parseFloat(body.querySelector("#mc_"+id)?.value)||0;const out=body.querySelector("#mcout");
+   if(s==="c"){const n=v("n"),V=v("V");out.textContent=`c = n / V = ${n} / ${V} = ${r4(n/V)} mol/L`}
+   else if(s==="n"){const c=v("c"),V=v("V");out.textContent=`n = c × V = ${c} × ${V} = ${r4(c*V)} mol`}
+   else{const n=v("n"),c=v("c");out.textContent=`V = n / c = ${n} / ${c} = ${r4(n/c)} L`}};
+ }else{
+  const solve=ld("mltitr","c2");
+  body.innerHTML=`<p class="mut" style="font-size:12.5px">c₁v₁ = c₂v₂ — at the equivalence point, moles of acid = moles of base (for a 1:1 reaction). Volumes can be in mL as long as you're consistent.</p>
+  <label class="f">Solve for<select data-nomj id="mts"><option value="c1" ${solve==="c1"?"selected":""}>c₁ (known solution)</option><option value="v1" ${solve==="v1"?"selected":""}>v₁ (known solution)</option><option value="c2" ${solve==="c2"?"selected":""}>c₂ (unknown solution)</option><option value="v2" ${solve==="v2"?"selected":""}>v₂ (unknown solution)</option></select></label>
+  <div class="row" style="margin-top:8px;gap:8px" id="mtin"></div><button class="btn" id="mtgo" style="margin-top:10px">Calculate</button>
+  <div id="mtout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div>`;
+  const ALL=[["c1","c₁ (mol/L)",0.1],["v1","v₁ (mL)",25],["c2","c₂ (mol/L)",0.15],["v2","v₂ (mL)",16.7]];
+  const draw=()=>{const s=body.querySelector("#mts").value;sv("mltitr",s);
+   body.querySelector("#mtin").innerHTML=ALL.filter(f=>f[0]!==s).map(f=>`<label>${f[1]} <input id="mt_${f[0]}" type="number" value="${f[2]}" style="width:90px"></label>`).join("")};
+  draw();body.querySelector("#mts").onchange=draw;
+  body.querySelector("#mtgo").onclick=()=>{const s=body.querySelector("#mts").value;const v=id=>parseFloat(body.querySelector("#mt_"+id)?.value)||0;const out=body.querySelector("#mtout");
+   if(s==="c1"){const v1=v("v1"),c2=v("c2"),v2=v("v2");out.textContent=`c₁ = c₂v₂ / v₁ = (${c2}×${v2}) / ${v1} = ${r4(c2*v2/v1)} mol/L`}
+   else if(s==="v1"){const c1=v("c1"),c2=v("c2"),v2=v("v2");out.textContent=`v₁ = c₂v₂ / c₁ = (${c2}×${v2}) / ${c1} = ${r4(c2*v2/c1)} mL`}
+   else if(s==="c2"){const c1=v("c1"),v1=v("v1"),v2=v("v2");out.textContent=`c₂ = c₁v₁ / v₂ = (${c1}×${v1}) / ${v2} = ${r4(c1*v1/v2)} mol/L`}
+   else{const c1=v("c1"),v1=v("v1"),c2=v("c2");out.textContent=`v₂ = c₁v₁ / c₂ = (${c1}×${v1}) / ${c2} = ${r4(c1*v1/c2)} mL`}};
+ }
+}
+
+/* ============ 4. Periodic table / element reference ============ */
+const PERI=[[1,"H","Hydrogen",1,1,"hy",1.01],[2,"He","Helium",18,1,"ng",4.00],[3,"Li","Lithium",1,2,"ak",6.94],[4,"Be","Beryllium",2,2,"ae",9.01],[5,"B","Boron",13,2,"md",10.81],[6,"C","Carbon",14,2,"nm",12.01],[7,"N","Nitrogen",15,2,"nm",14.01],[8,"O","Oxygen",16,2,"nm",16.00],[9,"F","Fluorine",17,2,"hg",19.00],[10,"Ne","Neon",18,2,"ng",20.18],[11,"Na","Sodium",1,3,"ak",22.99],[12,"Mg","Magnesium",2,3,"ae",24.31],[13,"Al","Aluminium",13,3,"pm",26.98],[14,"Si","Silicon",14,3,"md",28.09],[15,"P","Phosphorus",15,3,"nm",30.97],[16,"S","Sulfur",16,3,"nm",32.07],[17,"Cl","Chlorine",17,3,"hg",35.45],[18,"Ar","Argon",18,3,"ng",39.95],[19,"K","Potassium",1,4,"ak",39.10],[20,"Ca","Calcium",2,4,"ae",40.08],[21,"Sc","Scandium",3,4,"tm",44.96],[22,"Ti","Titanium",4,4,"tm",47.87],[23,"V","Vanadium",5,4,"tm",50.94],[24,"Cr","Chromium",6,4,"tm",52.00],[25,"Mn","Manganese",7,4,"tm",54.94],[26,"Fe","Iron",8,4,"tm",55.85],[27,"Co","Cobalt",9,4,"tm",58.93],[28,"Ni","Nickel",10,4,"tm",58.69],[29,"Cu","Copper",11,4,"tm",63.55],[30,"Zn","Zinc",12,4,"tm",65.38],[31,"Ga","Gallium",13,4,"pm",69.72],[32,"Ge","Germanium",14,4,"md",72.63],[33,"As","Arsenic",15,4,"md",74.92],[34,"Se","Selenium",16,4,"nm",78.97],[35,"Br","Bromine",17,4,"hg",79.90],[36,"Kr","Krypton",18,4,"ng",83.80],[37,"Rb","Rubidium",1,5,"ak",85.47],[38,"Sr","Strontium",2,5,"ae",87.62],[39,"Y","Yttrium",3,5,"tm",88.91],[40,"Zr","Zirconium",4,5,"tm",91.22],[41,"Nb","Niobium",5,5,"tm",92.91],[42,"Mo","Molybdenum",6,5,"tm",95.95],[43,"Tc","Technetium",7,5,"tm",98],[44,"Ru","Ruthenium",8,5,"tm",101.07],[45,"Rh","Rhodium",9,5,"tm",102.91],[46,"Pd","Palladium",10,5,"tm",106.42],[47,"Ag","Silver",11,5,"tm",107.87],[48,"Cd","Cadmium",12,5,"tm",112.41],[49,"In","Indium",13,5,"pm",114.82],[50,"Sn","Tin",14,5,"pm",118.71],[51,"Sb","Antimony",15,5,"md",121.76],[52,"Te","Tellurium",16,5,"md",127.60],[53,"I","Iodine",17,5,"hg",126.90],[54,"Xe","Xenon",18,5,"ng",131.29],[55,"Cs","Caesium",1,6,"ak",132.91],[56,"Ba","Barium",2,6,"ae",137.33],[57,"La","Lanthanum",3,6,"ln",138.91],[58,"Ce","Cerium",3,6,"ln",140.12],[59,"Pr","Praseodymium",3,6,"ln",140.91],[60,"Nd","Neodymium",3,6,"ln",144.24],[61,"Pm","Promethium",3,6,"ln",145],[62,"Sm","Samarium",3,6,"ln",150.36],[63,"Eu","Europium",3,6,"ln",151.96],[64,"Gd","Gadolinium",3,6,"ln",157.25],[65,"Tb","Terbium",3,6,"ln",158.93],[66,"Dy","Dysprosium",3,6,"ln",162.50],[67,"Ho","Holmium",3,6,"ln",164.93],[68,"Er","Erbium",3,6,"ln",167.26],[69,"Tm","Thulium",3,6,"ln",168.93],[70,"Yb","Ytterbium",3,6,"ln",173.05],[71,"Lu","Lutetium",3,6,"ln",174.97],[72,"Hf","Hafnium",4,6,"tm",178.49],[73,"Ta","Tantalum",5,6,"tm",180.95],[74,"W","Tungsten",6,6,"tm",183.84],[75,"Re","Rhenium",7,6,"tm",186.21],[76,"Os","Osmium",8,6,"tm",190.23],[77,"Ir","Iridium",9,6,"tm",192.22],[78,"Pt","Platinum",10,6,"tm",195.08],[79,"Au","Gold",11,6,"tm",196.97],[80,"Hg","Mercury",12,6,"tm",200.59],[81,"Tl","Thallium",13,6,"pm",204.38],[82,"Pb","Lead",14,6,"pm",207.2],[83,"Bi","Bismuth",15,6,"pm",208.98],[84,"Po","Polonium",16,6,"pm",209],[85,"At","Astatine",17,6,"hg",210],[86,"Rn","Radon",18,6,"ng",222],[87,"Fr","Francium",1,7,"ak",223],[88,"Ra","Radium",2,7,"ae",226],[89,"Ac","Actinium",3,7,"ac",227],[90,"Th","Thorium",3,7,"ac",232.04],[91,"Pa","Protactinium",3,7,"ac",231.04],[92,"U","Uranium",3,7,"ac",238.03],[93,"Np","Neptunium",3,7,"ac",237],[94,"Pu","Plutonium",3,7,"ac",244],[95,"Am","Americium",3,7,"ac",243],[96,"Cm","Curium",3,7,"ac",247],[97,"Bk","Berkelium",3,7,"ac",247],[98,"Cf","Californium",3,7,"ac",251],[99,"Es","Einsteinium",3,7,"ac",252],[100,"Fm","Fermium",3,7,"ac",257],[101,"Md","Mendelevium",3,7,"ac",258],[102,"No","Nobelium",3,7,"ac",259],[103,"Lr","Lawrencium",3,7,"ac",262],[104,"Rf","Rutherfordium",4,7,"tm",267],[105,"Db","Dubnium",5,7,"tm",268],[106,"Sg","Seaborgium",6,7,"tm",269],[107,"Bh","Bohrium",7,7,"tm",270],[108,"Hs","Hassium",8,7,"tm",269],[109,"Mt","Meitnerium",9,7,"tm",278],[110,"Ds","Darmstadtium",10,7,"tm",281],[111,"Rg","Roentgenium",11,7,"tm",282],[112,"Cn","Copernicium",12,7,"tm",285],[113,"Nh","Nihonium",13,7,"pm",286],[114,"Fl","Flerovium",14,7,"pm",289],[115,"Mc","Moscovium",15,7,"pm",290],[116,"Lv","Livermorium",16,7,"pm",293],[117,"Ts","Tennessine",17,7,"hg",294],[118,"Og","Oganesson",18,7,"ng",294]];
+const PERI_CAT={ak:["Alkali metal","#e08a8a"],ae:["Alkaline earth metal","#eac07a"],tm:["Transition metal","#8ab4d9"],ln:["Lanthanide","#c7a8e0"],ac:["Actinide","#d9a8c7"],pm:["Post-transition metal","#9bc9b0"],md:["Metalloid","#d9c48a"],nm:["Non-metal","#9ad0c0"],hg:["Halogen","#e0a35a"],ng:["Noble gas","#b0b0d9"],hy:["Hydrogen","#cccccc"]};
+function periValence(group,sym){if(group===18)return sym==="He"?2:8;if(group<=2)return group;if(group>=13)return group-10;return null}
+function periFact(cat,group,sym,name){
+ if(group===1&&cat==="ak")return `Alkali metal: 1 electron in its outer shell, so it readily loses that electron to form a +1 ion. Reactivity increases down the group (Li → Cs) because the outer electron is further from the nucleus and more weakly held. Reacts vigorously with water and oxygen, so it's stored under oil.`;
+ if(group===2&&cat==="ae")return `Alkaline earth metal: 2 outer electrons, loses both to form a +2 ion. Reactivity increases down the group, but less reactive than the alkali metal in the same period.`;
+ if(cat==="hg")return `Halogen: 7 outer electrons, needs just 1 more to fill its shell, so it readily gains an electron to form a −1 ion (or shares one in a covalent bond). Reactivity decreases down the group (F → I) because the outer shell is further from the nucleus, making it harder to attract an extra electron.`;
+ if(cat==="ng")return `Noble gas: outer shell is already full (2 for He, 8 for the rest), so it is very stable and almost completely unreactive — used where an inert atmosphere is needed (e.g. inside light bulbs).`;
+ if(cat==="md")return `Metalloid: properties between metals and non-metals — can conduct electricity a little (semiconductor behaviour), which is why several metalloids (like silicon) are used in electronics.`;
+ if(cat==="tm")return `Transition metal: good conductor of heat and electricity, usually hard and dense, often forms coloured compounds and can have more than one possible ion charge (unlike main-group metals).`;
+ if(cat==="ln")return `Lanthanide (inner transition metal): sits in period 6, pulled out of the main table to keep it a manageable width. Mostly used in magnets, batteries and lighting.`;
+ if(cat==="ac")return `Actinide (inner transition metal): sits in period 7; all are radioactive, and most (past uranium) are made artificially in a lab/reactor rather than found naturally.`;
+ if(cat==="pm")return `Post-transition metal: softer and weaker than the transition metals, with lower melting points.`;
+ if(cat==="nm")return `Non-metal: generally a poor conductor of heat and electricity, often gaseous or brittle if solid, tends to gain or share electrons in reactions rather than lose them.`;
+ if(sym==="H")return `Hydrogen sits alone at the top of group 1 — it has 1 outer electron like the alkali metals, but it's a non-metal gas, not a metal, so it's often shown separately.`;
+ return "";
+}
+function toolSciPeriodic(el){
+ const cur=ld("perisel",1);
+ const main=PERI.filter(p=>p[4]<=4||p[3]!==3); // not used; keep simple split below
+ const lnAc=PERI.filter(p=>p[5]==="ln"||p[5]==="ac");
+ const grid=PERI.filter(p=>!(p[5]==="ln"||p[5]==="ac"));
+ const cell=p=>{const[z,sym,name,group,period,cat]=p;const col=PERI_CAT[cat];
+  return `<button class="btn ghost" data-pz="${z}" style="grid-column:${group};grid-row:${period};padding:2px;min-width:0;font-size:10.5px;line-height:1.1;background:${z===cur?col[1]:"var(--card)"};border-color:${col[1]};color:${z===cur?"#111":"inherit"}"><div style="font-weight:700">${sym}</div><div style="font-size:8px">${z}</div></button>`};
+ const lnCell=(p,i)=>{const[z,sym,name,group,period,cat]=p;const col=PERI_CAT[cat];
+  return `<button class="btn ghost" data-pz="${z}" style="grid-column:${i%14+3};grid-row:${period===6?1:2};padding:2px;min-width:0;font-size:10.5px;line-height:1.1;background:${z===cur?col[1]:"var(--card)"};border-color:${col[1]};color:${z===cur?"#111":"inherit"}"><div style="font-weight:700">${sym}</div><div style="font-size:8px">${z}</div></button>`};
+ const e=PERI.find(p=>p[0]===cur);
+ const[z,sym,name,group,period,cat,mass]=e;
+ const val=periValence(group,sym);
+ el.innerHTML=`<div class="card"><h3>Periodic table reference</h3>
+ <p class="mut" style="font-size:12.5px">Tap any element. Colour = category (legend below).</p>
+ <div style="overflow-x:auto;padding-bottom:6px"><div style="display:grid;grid-template-columns:repeat(18,24px);gap:2px;min-width:460px">${grid.map(cell).join("")}</div>
+ <div style="display:grid;grid-template-columns:repeat(18,24px);grid-template-rows:repeat(2,24px);gap:2px;margin-top:6px;min-width:460px">${lnAc.map(lnCell).join("")}</div></div>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:10px;font-size:11px">${Object.entries(PERI_CAT).map(([k,v])=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="display:inline-block;width:10px;height:10px;background:${v[1]};border-radius:2px"></i>${esc(v[0])}</span>`).join("")}</div>
+ <div class="card" style="margin-top:12px;background:var(--soft)">
+ <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-size:36px;font-weight:700">${esc(sym)}</span><span style="font-size:20px">${esc(name)}</span></div>
+ <div class="mut" style="margin-top:4px;font-size:13px">Atomic number ${z} &middot; Relative atomic mass ${mass} &middot; Period ${period} &middot; Group ${group===3&&(cat==="ln"||cat==="ac")?"—":group} &middot; ${esc(PERI_CAT[cat][0])}${val?` &middot; ${val} valence electron${val===1?"":"s"}`:""}</div>
+ <p style="margin-top:8px;font-size:14px">${esc(periFact(cat,group,sym,name))}</p>
+ </div></div>`;
+ el.querySelectorAll("[data-pz]").forEach(b=>b.onclick=()=>{sv("perisel",+b.dataset.pz);toolSciPeriodic(el)});
+}
+
+/* ============ 5. Punnett square genetics tool ============ */
+function normGeno(a,b){
+ if(a.toLowerCase()===b.toLowerCase()){
+  if(a===a.toUpperCase()&&b===b.toUpperCase())return a+b;
+  if(a===a.toLowerCase()&&b===b.toLowerCase())return a+b;
+  const up=a===a.toUpperCase()?a:b,lo=a===a.toUpperCase()?b:a;
+  return up+lo;
+ }
+ return [a,b].sort().join("");
+}
+function toolSciPunnett(el){
+ const p1=ld("pgp1","Aa"),p2=ld("pgp2","Aa");
+ el.innerHTML=`<div class="card"><h3>Punnett square</h3>
+ <p class="mut" style="font-size:12.5px">Enter each parent's genotype as two letters (e.g. Aa, AA, aa for dominant/recessive, or two different capital letters like RW for codominance).</p>
+ <div class="row" style="margin-top:8px;gap:10px"><label>Parent 1<input id="pgp1" value="${esc(p1)}" style="width:70px;text-align:center;font-size:18px"></label><label>Parent 2<input id="pgp2" value="${esc(p2)}" style="width:70px;text-align:center;font-size:18px"></label><button class="btn" id="pggo">Cross</button></div>
+ <div id="pgout" style="margin-top:12px"></div></div>`;
+ const run=()=>{
+  const a=el.querySelector("#pgp1").value.trim(),b=el.querySelector("#pgp2").value.trim();
+  sv("pgp1",a);sv("pgp2",b);
+  const out=el.querySelector("#pgout");
+  if(a.length!==2||b.length!==2||!/^[A-Za-z]{2}$/.test(a)||!/^[A-Za-z]{2}$/.test(b)){out.innerHTML=`<p class="mut">Enter exactly two letters for each parent, e.g. Aa and Aa.</p>`;return}
+  const a1=a[0],a2=a[1],b1=b[0],b2=b[1];
+  const combos=[[a1,b1],[a1,b2],[a2,b1],[a2,b2]].map(([x,y])=>normGeno(x,y));
+  const letters=new Set([a1,a2,b1,b2].map(x=>x.toUpperCase()));
+  const isCodom=letters.size>1 && [a1,a2,b1,b2].every(x=>x===x.toUpperCase());
+  const counts={};combos.forEach(g=>counts[g]=(counts[g]||0)+1);
+  const phen=g=>{
+   if(isCodom){const chars=g.split("");if(chars[0].toUpperCase()===chars[1].toUpperCase())return `homozygous ${chars[0]}`;return `codominant — both ${chars[0]} and ${chars[1]} traits show`}
+   const up=g.split("").filter(c=>c===c.toUpperCase());
+   return up.length>0?"dominant trait shows":"recessive trait shows";
+  };
+  const phenCounts={};combos.forEach(g=>{const ph=phen(g);phenCounts[ph]=(phenCounts[ph]||0)+1});
+  const grid=[[a1,a2],[b1,b2]];
+  out.innerHTML=`<table style="border-collapse:collapse;margin:0 auto" class="mono">
+  <tr><td></td>${grid[1].map(g=>`<td style="padding:8px 14px;font-weight:700;text-align:center;border-bottom:2px solid var(--line)">${esc(g)}</td>`).join("")}</tr>
+  ${grid[0].map(r=>`<tr><td style="padding:8px 14px;font-weight:700;border-right:2px solid var(--line)">${esc(r)}</td>${grid[1].map(c=>{const g=normGeno(r,c);return `<td style="padding:12px 18px;text-align:center;border:1px solid var(--line);font-size:17px;font-weight:600">${esc(g)}</td>`}).join("")}</tr>`).join("")}
+  </table>
+  <div class="card" style="margin-top:12px;background:var(--soft)">
+  <b>Genotype ratio:</b> ${Object.entries(counts).map(([g,n])=>`${n}/4 ${esc(g)}`).join(" : ")}
+  <br><b>Phenotype ratio:</b> ${Object.entries(phenCounts).map(([p,n])=>`${n}/4 ${esc(p)}`).join(" : ")}
+  ${isCodom?`<p class="mut" style="font-size:12.5px;margin-top:6px">Treated as codominance because both parents' alleles are capital letters that differ (e.g. flower colour where red and white alleles are both expressed, giving spotted/pink offspring) — change a letter to lower case if you meant simple dominant/recessive instead.</p>`:""}
+  </div>`;
+ };
+ el.querySelector("#pggo").onclick=run;
+ el.querySelectorAll("#pgp1,#pgp2").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter")run()}));
+ run();
+}
+
+/* ============ 6. Wave calculator ============ */
+function toolSciWave(el){
+ const solve=ld("wvsolve","v"),preset=ld("wvpre","custom");
+ const PRESETS={custom:null,sound:{f:440,lam:0.78,note:"middle A, speed of sound ≈ 343 m/s in air"},light:{f:5e14,lam:6e-7,note:"visible red light, speed of light ≈ 3×10⁸ m/s"},radio:{f:1e6,lam:300,note:"AM radio wave, speed = 3×10⁸ m/s"}};
+ el.innerHTML=`<div class="card"><h3>Wave calculator</h3>
+ <p class="mut" style="font-size:12.5px">v = f × λ — wave speed (m/s) = frequency (Hz) × wavelength (m). Also finds the period T = 1/f.</p>
+ <label class="f">Example preset<select data-nomj id="wvp"><option value="custom" ${preset==="custom"?"selected":""}>Custom (enter your own)</option><option value="sound" ${preset==="sound"?"selected":""}>Sound wave</option><option value="light" ${preset==="light"?"selected":""}>Light wave</option><option value="radio" ${preset==="radio"?"selected":""}>Radio wave</option></select></label>
+ <label class="f" style="margin-top:8px">Solve for<select data-nomj id="wvs"><option value="v" ${solve==="v"?"selected":""}>Speed v</option><option value="f" ${solve==="f"?"selected":""}>Frequency f</option><option value="lam" ${solve==="lam"?"selected":""}>Wavelength λ</option></select></label>
+ <div class="row" style="margin-top:8px;gap:8px" id="wvin"></div>
+ <button class="btn" id="wvgo" style="margin-top:10px">Calculate</button>
+ <div id="wvout" class="card" style="margin-top:10px;background:var(--soft);font-size:15px;white-space:pre-line"></div></div>`;
+ const drawFields=()=>{const s=el.querySelector("#wvs").value;
+  const defaults=PRESETS[el.querySelector("#wvp").value]||{f:50,lam:0.02};
+  const fields=s==="v"?[["f","frequency (Hz)",defaults.f],["lam","wavelength (m)",defaults.lam]]:s==="f"?[["v","speed (m/s)",343],["lam","wavelength (m)",defaults.lam]]:[["v","speed (m/s)",343],["f","frequency (Hz)",defaults.f]];
+  el.querySelector("#wvin").innerHTML=fields.map(fx=>`<label>${fx[1]} <input id="wv_${fx[0]}" type="number" value="${fx[2]}" step="any" style="width:110px"></label>`).join("");
+ };
+ drawFields();
+ el.querySelector("#wvp").onchange=e=>{sv("wvpre",e.target.value);drawFields()};
+ el.querySelector("#wvs").onchange=e=>{sv("wvsolve",e.target.value);drawFields()};
+ el.querySelector("#wvgo").onclick=()=>{
+  const s=el.querySelector("#wvs").value;const v=id=>parseFloat(el.querySelector("#wv_"+id)?.value)||0;const out=el.querySelector("#wvout");
+  const pname=el.querySelector("#wvp").value;const note=PRESETS[pname]?PRESETS[pname].note+"\n":"";
+  if(s==="v"){const f=v("f"),lam=v("lam");const speed=f*lam;out.textContent=note+`v = f × λ = ${f} × ${lam} = ${fnum(speed)} m/s\nPeriod T = 1/f = 1/${f} = ${fnum(1/f)} s`}
+  else if(s==="f"){const vv=v("v"),lam=v("lam");out.textContent=note+`f = v / λ = ${vv} / ${lam} = ${fnum(vv/lam)} Hz\nPeriod T = 1/f = ${fnum(lam/vv)} s`}
+  else{const vv=v("v"),f=v("f");out.textContent=note+`λ = v / f = ${vv} / ${f} = ${fnum(vv/f)} m\nPeriod T = 1/f = ${fnum(1/f)} s`}
+ };
+}
+
+/* ============ 7. Rate of reaction visualiser ============ */
+const RATE_FACTORS={
+ conc:{name:"Increasing concentration",why:"More particles in the same volume means a higher chance of particles colliding, so more successful collisions happen per second — the reaction starts faster and reaches completion sooner, though the same total amount of product forms (same final concentration of reactant used up)."},
+ temp:{name:"Increasing temperature",why:"Particles move faster and have more kinetic energy, so collisions are more frequent AND more of them have enough energy to beat the activation energy — a bigger effect than concentration or surface area changes, often roughly doubling the rate for every 10°C rise."},
+ surf:{name:"Increasing surface area (smaller pieces)",why:"Breaking a solid into smaller pieces exposes more surface for particles to collide with, so more collisions happen per second even though the total amount of reactant is unchanged — the reaction finishes faster but produces the same total amount of product."},
+ cat:{name:"Adding a catalyst",why:"A catalyst provides an alternative reaction pathway with a lower activation energy, so a bigger fraction of collisions succeed at the same temperature. The catalyst is not used up and does not change the amount of product formed, only how fast it forms."}
+};
+function toolSciRate(el){
+ const factor=ld("ratefac","temp");
+ el.innerHTML=`<div class="card"><h3>Rate of reaction</h3>
+ <p class="mut" style="font-size:12.5px">Pick a factor to see how it changes the reactant-concentration-vs-time graph, and why (collision theory).</p>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">${Object.entries(RATE_FACTORS).map(([k,v])=>`<button class="btn ${k===factor?"":"ghost"}" data-rf="${k}" style="font-size:12.5px">${esc(v.name)}</button>`).join("")}</div>
+ <canvas id="rcv" width="360" height="220" style="width:100%;max-width:360px;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:10px"></canvas>
+ <div class="row" style="font-size:12px;margin-top:4px"><span style="color:#4a90d9">■ normal conditions</span><span style="margin-left:14px;color:#d9534f">■ ${esc(RATE_FACTORS[factor].name.toLowerCase())}</span></div>
+ <p style="margin-top:10px;font-size:14px">${esc(RATE_FACTORS[factor].why)}</p></div>`;
+ el.querySelectorAll("[data-rf]").forEach(b=>b.onclick=()=>{sv("ratefac",b.dataset.rf);toolSciRate(el)});
+ const cv=el.querySelector("#rcv"),ctx=cv.getContext("2d");
+ const W=cv.width,H=cv.height,pad=32;
+ ctx.clearRect(0,0,W,H);
+ ctx.strokeStyle="#8a8a8a";ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(pad,10);ctx.lineTo(pad,H-pad);ctx.lineTo(W-10,H-pad);ctx.stroke();
+ ctx.font="11px sans-serif";ctx.fillStyle="#8a8a8a";
+ ctx.fillText("Time",W-40,H-10);ctx.save();ctx.translate(10,80);ctx.rotate(-Math.PI/2);ctx.fillText("Reactant conc.",0,0);ctx.restore();
+ const decay=(rate,t)=>Math.exp(-rate*t);
+ const plot=(rate,color)=>{ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.beginPath();
+  for(let px=0;px<=W-pad-10;px++){const t=px/((W-pad-10))*8;const y=decay(rate,t);const py=10+(1-y)*(H-pad-10-10);const PX=pad+px;if(px===0)ctx.moveTo(PX,py);else ctx.lineTo(PX,py)}
+  ctx.stroke();};
+ plot(0.5,"#4a90d9");
+ plot(factor==="cat"||factor==="temp"?1.6:factor==="conc"?1.2:1.0,"#d9534f");
+}
+
+/* ============ 8. Command terms reference (full explainer) ============ */
+const CMD_FULL=[
+["Define","Give the precise meaning and identify essential qualities of a word, phrase, concept or physical quantity.","Define [term] as ...","Define momentum. → \"Momentum is the product of an object's mass and its velocity.\""],
+["State","Give a specific name, value or brief answer without explanation or calculation.","[Term/value] is ...","State the unit for force. → \"Newtons (N).\""],
+["Identify","Recognise, name or select a feature, event or element from a list, diagram or experiment.","The [feature] shown is ...","Identify the independent variable. → \"Temperature of the water.\""],
+["Describe","Give the characteristics, features or sequence of a concept, process or experiment, without explaining why.","[Subject] shows/happens by ...","Describe what happens to the particles when a solid melts. → \"The particles gain energy, vibrate faster, and move further apart, breaking the fixed arrangement.\""],
+["Explain","Give a detailed account of why and/or how, referring to causes, effects or mechanisms, making the relationships clear.","This happens because ... which causes ...","Explain why reaction rate increases with temperature. → \"Particles move faster and gain more kinetic energy, so collisions are more frequent and a greater proportion have enough energy to overcome the activation energy, so the rate increases.\""],
+["Predict","Give an expected result of an action or event, based on a pattern or available information.","Based on ..., it is expected that ...","Predict what will happen to the rate if the acid concentration is doubled. → \"The rate will roughly double, as there are more acid particles able to collide with the marble chips per second.\""],
+["Calculate","Determine a numerical answer from given data, showing the relevant working.","Using [formula]: ... = ...","Calculate the speed of a car that travels 90 m in 6 s. → \"v = s/t = 90/6 = 15 m/s.\""],
+["Construct","Make, build or put together a diagram, graph, model or logical structure.","(draw/build the requested item, labelled clearly)","Construct a labelled diagram of an animal cell. → draw and label nucleus, cytoplasm, cell membrane, mitochondria, etc."],
+["Discuss","Present a balanced argument, considering strengths and weaknesses or points for and against.","On one hand ... however ... overall ...","Discuss whether nuclear power is a suitable energy source for Australia. → weigh low emissions and reliability against waste disposal and cost, then give a balanced conclusion."],
+["Evaluate","Make a judgement using the evidence and criteria given, weighing strengths and weaknesses to reach a conclusion.","Considering ..., the best option is ... because ...","Evaluate two methods for measuring reaction rate. → compare accuracy, ease of use and limitations of each, then say which is more suitable and why."],
+["Compare","Give similarities (and often differences) between two or more things.","[A] and [B] are similar/different because ...","Compare mitosis and meiosis. → \"Both involve cell division; mitosis produces two identical diploid cells for growth, while meiosis produces four genetically different haploid cells for reproduction.\""],
+["Justify","Support a conclusion or decision with evidence and reasoning.","[Claim] is correct/best because the evidence shows ...","Justify your choice of independent variable. → explain why that variable was chosen and how it was isolated from other factors."],
+["Suggest","Put forward a possible idea, hypothesis or explanation for consideration (used when there may be more than one reasonable answer).","One possible reason is ...","Suggest a reason why the plant's leaves turned yellow. → \"It may be lacking nitrogen, which is needed to make chlorophyll.\""],
+["Analyse","Break something down into parts and examine how they relate, to identify patterns, causes or significance.","The data/trend shows ... which suggests ...","Analyse the graph of population growth over time. → identify the trend (exponential growth), the point it slows (carrying capacity reached) and possible causes (limited food/resources)."]
+];
+function toolSciCmd2(el){
+ const i=ld("cf2i",0)%CMD_FULL.length;
+ const[term,def,starter,ex]=CMD_FULL[i];
+ el.innerHTML=`<div class="card"><h3>Command terms reference</h3>
+ <p class="mut" style="font-size:12.5px">What markers expect for each command word, a sentence starter, and a worked mini-example. (See Flashcards for a quick-fire quiz version of these.)</p>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${CMD_FULL.map((c,n)=>`<button class="btn ${n===i?"":"ghost"}" data-cf="${n}" style="font-size:12px">${esc(c[0])}</button>`).join("")}</div>
+ <div class="card" style="background:var(--soft)">
+ <h3 style="margin:0">${esc(term)}</h3>
+ <p style="margin:8px 0">${esc(def)}</p>
+ <p class="mut" style="margin:6px 0"><b>Sentence starter:</b> <span class="mono">${esc(starter)}</span></p>
+ <p style="margin:6px 0"><b>Worked example:</b> ${esc(ex)}</p>
+ </div></div>`;
+ el.querySelectorAll("[data-cf]").forEach(b=>b.onclick=()=>{sv("cf2i",+b.dataset.cf);toolSciCmd2(el)});
+}
+
+/* ============ 9. Body systems reference ============ */
+const BODY_SYS=[
+["Digestive system","Mouth, oesophagus, stomach, small intestine, large intestine, liver, pancreas.","Breaks down food (mechanically and chemically) into small molecules (e.g. glucose, amino acids) that can be absorbed into the blood through the small intestine wall, and removes solid waste.","Absorbed nutrients are carried by the circulatory system to every cell; the nervous and endocrine systems control the release of digestive enzymes and movement of food (peristalsis)."],
+["Circulatory system","Heart, blood vessels (arteries, veins, capillaries), blood.","Pumps blood around the body, transporting oxygen, nutrients, hormones, carbon dioxide and waste between organs and cells.","Carries oxygen from the respiratory system and nutrients from the digestive system to cells; carries hormones from the endocrine system; carries waste to the excretory system and carbon dioxide back to the lungs."],
+["Respiratory system","Nose/mouth, trachea, bronchi, lungs, alveoli, diaphragm.","Exchanges gases — brings oxygen into the blood and removes carbon dioxide, which is needed for (and produced by) cellular respiration.","Works with the circulatory system (oxygen loaded into blood at the alveoli) and is controlled by the nervous system (breathing rate automatically increases with exercise or CO₂ levels)."],
+["Nervous system","Brain, spinal cord, nerves, sense organs.","Detects stimuli (via receptors), processes information, and sends fast electrical signals to coordinate a quick response (e.g. reflexes, movement, thinking).","Controls muscles for movement and the heart/breathing rate; works alongside the endocrine system for slower, longer-lasting control (e.g. growth, metabolism)."],
+["Endocrine system","Glands (pituitary, thyroid, adrenal, pancreas, ovaries/testes) that release hormones.","Releases hormones into the blood to produce slower, longer-lasting changes than the nervous system — e.g. growth, metabolism, blood sugar control, puberty.","Hormones travel via the circulatory system to target organs; insulin from the pancreas affects how the digestive system's absorbed glucose is stored/used."],
+["Excretory system","Kidneys, ureters, bladder, urethra (also skin and lungs remove some waste).","Filters waste products (like urea) and excess water/salts out of the blood, producing urine, to keep the body's internal environment stable (homeostasis).","Removes nitrogenous waste produced when the liver breaks down excess amino acids (digestive system); works with the circulatory system, since all blood is filtered through the kidneys."],
+["Reproductive system","Testes and associated structures (male); ovaries, uterus and associated structures (female).","Produces sex cells (sperm/eggs) and, in females, supports the development of an embryo/fetus; controlled by sex hormones from the endocrine system."," Hormones (endocrine system) trigger puberty changes and the menstrual cycle; the circulatory system supplies the developing fetus with nutrients and oxygen via the placenta."],
+["Musculoskeletal system","Bones (skeleton), joints, skeletal muscles, tendons, ligaments.","Supports and protects the body, allows movement (muscles contract to pull on bones across joints), and (in bone marrow) produces blood cells.","Moves under nervous system control; needs calcium and other nutrients absorbed by the digestive system and delivered by the circulatory system."]
+];
+function toolSciBody(el){
+ const i=ld("bsyi",0)%BODY_SYS.length;
+ const[name,parts,func,inter]=BODY_SYS[i];
+ el.innerHTML=`<div class="card"><h3>Body systems reference</h3>
+ <div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${BODY_SYS.map((s,n)=>`<button class="btn ${n===i?"":"ghost"}" data-bs="${n}" style="font-size:12px">${esc(s[0].replace(" system",""))}</button>`).join("")}</div>
+ <div class="card" style="background:var(--soft)">
+ <h3 style="margin:0">${esc(name)}</h3>
+ <p style="margin:8px 0"><b>Main structures:</b> ${esc(parts)}</p>
+ <p style="margin:8px 0"><b>Function:</b> ${esc(func)}</p>
+ <p style="margin:8px 0"><b>How it interacts with other systems:</b> ${esc(inter)}</p>
+ </div></div>`;
+ el.querySelectorAll("[data-bs]").forEach(b=>b.onclick=()=>{sv("bsyi",+b.dataset.bs);toolSciBody(el)});
+}
+
+/* ============ 10. Practical skills / experimental design checker ============ */
+const SPRAC_MISTAKES=[
+"Changing more than one variable at once — you won't know which change caused the result.",
+"Not identifying/controlling variables that could affect the dependent variable (extraneous variables).",
+"Too few repeats/trials — a single result could be due to chance or error, not a real effect.",
+"No control (baseline) to compare against, where the experiment needs one.",
+"The hypothesis doesn't actually predict a relationship between the IV and DV (just states a fact).",
+"The method doesn't say how the dependent variable will be measured, or with what equipment/units.",
+"Confusing accuracy (how close to the true value) with precision (how repeatable the results are)."
+];
+function toolSciPrac(el){
+ const d=ld("spracd",{});
+ el.innerHTML=`<div class="card"><h3>Practical skills: experimental design checker</h3>
+ <p class="mut" style="font-size:12.5px">Fill in your experiment below, then check it against a validity checklist.</p>
+ <label class="f">Hypothesis<textarea id="sp_hyp" rows="2" placeholder="e.g. If the temperature of the water increases, then the rate of the reaction will increase.">${esc(d.hyp||"")}</textarea></label>
+ <label class="f" style="margin-top:8px">Independent variable (what you change)<input id="sp_iv" value="${esc(d.iv||"")}"></label>
+ <label class="f" style="margin-top:8px">Dependent variable (what you measure)<input id="sp_dv" value="${esc(d.dv||"")}"></label>
+ <label class="f" style="margin-top:8px">Controlled variables (comma-separated — what you keep the same)<input id="sp_cv" value="${esc(d.cv||"")}"></label>
+ <label class="f" style="margin-top:8px">Number of repeats/trials<input id="sp_rep" type="number" value="${d.rep||3}" style="width:80px"></label>
+ <button class="btn" id="sp_go" style="margin-top:10px">Check my design</button>
+ <div id="sp_out" style="margin-top:12px"></div>
+ <details style="margin-top:10px"><summary class="mut" style="font-size:12.5px;cursor:pointer">Common mistakes to avoid</summary><ul style="margin-top:6px">${SPRAC_MISTAKES.map(m=>`<li style="font-size:13.5px;margin:4px 0">${esc(m)}</li>`).join("")}</ul></details>
+ </div>`;
+ const save=()=>{const nd={hyp:el.querySelector("#sp_hyp").value,iv:el.querySelector("#sp_iv").value,dv:el.querySelector("#sp_dv").value,cv:el.querySelector("#sp_cv").value,rep:+el.querySelector("#sp_rep").value||0};sv("spracd",nd);return nd};
+ el.querySelectorAll("#sp_hyp,#sp_iv,#sp_dv,#sp_cv,#sp_rep").forEach(i=>i.oninput=save);
+ el.querySelector("#sp_go").onclick=()=>{
+  const nd=save();const out=el.querySelector("#sp_out");const checks=[];
+  checks.push([!!nd.iv.trim(),"Independent variable named"]);
+  checks.push([!!nd.dv.trim(),"Dependent variable named"]);
+  const cvList=nd.cv.split(",").map(x=>x.trim()).filter(Boolean);
+  checks.push([cvList.length>=2,`At least 2 controlled variables listed${cvList.length?` (you listed ${cvList.length}: ${cvList.join(", ")})`:""}`]);
+  const hypL=nd.hyp.toLowerCase();
+  const mentionsIV=nd.iv&&hypL.includes(nd.iv.toLowerCase().split(" ")[0]);
+  const mentionsDV=nd.dv&&hypL.includes(nd.dv.toLowerCase().split(" ")[0]);
+  checks.push([/if.*then|increase|decrease|higher|lower|more|less|greater|faster|slower/.test(hypL),"Hypothesis predicts a direction of change (e.g. 'if ... then the rate will increase'), not just a fact"]);
+  checks.push([mentionsIV&&mentionsDV,"Hypothesis mentions both your independent and dependent variable"]);
+  checks.push([nd.rep>=3,`At least 3 repeats planned (you entered ${nd.rep})`]);
+  const passed=checks.filter(c=>c[0]).length;
+  out.innerHTML=`<div class="card" style="background:var(--soft)"><b>${passed} / ${checks.length} checks passed</b>
+  <ul style="margin-top:8px">${checks.map(c=>`<li style="color:${c[0]?"var(--ok,#2a7)":"var(--bad,#c33)"};font-size:14px;margin:4px 0">${c[0]?"✓":"✗"} ${esc(c[1])}</li>`).join("")}</ul>
+  <p class="mut" style="font-size:12.5px;margin-top:8px">This is a self-check against common VCE-style validity requirements, not a mark scheme — always check your own teacher's rubric too.</p></div>`;
+ };
+}
+
+window.toolSciPhys=toolSciPhys;
+window.toolSciElec=toolSciElec;
+window.toolSciMole=toolSciMole;
+window.toolSciPeriodic=toolSciPeriodic;
+window.toolSciPunnett=toolSciPunnett;
+window.toolSciWave=toolSciWave;
+window.toolSciRate=toolSciRate;
+window.toolSciCmd2=toolSciCmd2;
+window.toolSciBody=toolSciBody;
+window.toolSciPrac=toolSciPrac;
+})();
+
 const LL={idx:{},back:null,STOP:new Set("the a an and or of to in on for is are was were be by with as at from that this it its which what when where why how do does did not can may will would should into than then they their them have has had you your one two use used using each per also more most such only any all both between about over under after before during while whose who whom these those there here very much many some other another same different".split(" "))};
 function llTok(t){const o=[];(String(t||"").toLowerCase().match(/[a-z][a-z0-9]*|\d+/g)||[]).forEach(w=>{if(w.length<2||LL.STOP.has(w))return;if(w.length>4){w=w.replace(/(ing|ed|es|s)$/,"")}o.push(w)});return o}
 function llChunks(body){const paras=String(body).split(/\n\s*\n/);const out=[];let cur="";paras.forEach(p=>{cur=cur?cur+"\n\n"+p:p;if(cur.length>=160){out.push(cur);cur=""}});if(cur){if(out.length&&cur.length<80)out[out.length-1]+="\n\n"+cur;else out.push(cur)}return out}
@@ -7836,8 +8275,9 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend();else if(k==="refresh"){bdLoad(true);bdRefresh()}});
 
-const APP_VER=94;
+const APP_VER=95;
 const APP_LOG=[
+[95,"2026-11-14 14:16","Science was way behind every other subject on interactive tools (just Flashcards and the generic Practice questions drill) — added 10 new Science tools, mirroring what the Maths CAS tools did for Maths: a Physics calculator (speed/distance/time, F=ma, work, power, momentum — pick what to solve for, full working shown), an Electricity & circuits calculator (Ohm's law, electrical power three ways, series and parallel resistor networks with every branch's current/voltage), a Moles & titration calculator (n=m/M, c=n/V, and c₁v₁=c₂v₂ titration, solve for any unknown), an interactive Periodic table (all 118 elements, colour-coded by category, tap any element for its mass/period/group/valence electrons and a reactivity-trend note for metals, halogens and noble gases), a Punnett square tool (type two parent genotypes, it draws the actual 2×2 grid and gives the genotype and phenotype ratio, including codominance), a Wave calculator (v=fλ and period, with sound/light/radio presets), a Rate of reaction visualiser (temperature/concentration/surface area/catalyst, with a drawn concentration-vs-time graph and the collision-theory explanation for each), a fuller Command terms reference (separate from the sci:cmd flashcards — each term's marker expectation, a sentence starter and a worked mini-example), a Body systems reference (7 systems: structures, function, and how each interacts with the others), and a Practical skills / experimental design checker (enter your hypothesis, IV, DV, controlled variables and repeats, get a validity checklist plus a list of common mistakes to avoid). All numeric tools were checked against independently verified calculations before shipping."],
 [94,"2026-11-12 18:05","Added 4 more Maths tools: a Box plot visualiser (paste a data list, see the actual drawn box-and-whisker plot with outliers marked), a 3D shape calculator (cylinder/cone/sphere/rectangular prism/triangular prism/square pyramid — volume and surface area with working), a Bearings & vector resultant calculator (two legs of a journey → straight-line distance and bearing home, using north/east components), and a Unit circle reference (tap any common angle, see its exact sin/cos/tan and its point drawn on an actual circle)."],
 [93,"2026-11-12 17:55","Added 4 more Maths tools: Sequences & series (arithmetic/geometric, nth term, sum, sum to infinity), Trig equation solver (any k·f(x)+c=0 over a chosen domain, with reference angle and ASTC working shown), Circle & hyperbola transformer (completing the square for circles, asymptotes for hyperbolas), and a CAS commands flashcard set (14 cards — the actual calculator syntax for solve/factor/expand/zeros/stats/etc, separate from the formula-recall cards). Also added a \"CAS challenge\" generator — 6 genuinely chained, multi-concept extended-response problems (e.g. simultaneous equations feeding into a diagonal-length question, projectile motion with a 3-part turning-point-and-landing-time question, circle-line intersection) for harder Maths 2 practice than the existing CAS practice bank."],
 [92,"2026-11-12 17:45","Added 5 real interactive calculator tools under Maths, built into the app (not just more quiz questions): a Scientific calculator (sin/cos/tan/sqrt/log/^, degree mode), an Equation solver (linear and quadratic, full working, exact surds, discriminant), a Function grapher (plots any y=f(x), finds x- and y-intercepts), a Statistics calculator (paste a data list, get mean/median/Q1/Q3/IQR/outlier fences/mode/population+sample SD), and a Simultaneous equation solver (2x2, elimination method with steps shown). These are a hand-built mini CAS inside the app itself, not a connection to any external calculator software."],
@@ -7964,7 +8404,7 @@ studyHtml=function(n){let h=_studyHtmlBase(n);if(!h)return h;
 let curSub=null;
 const SUBJ_CFG={
  M:{n:"Maths",c:"#9bc86a",flash:"m:all",tools:["flash","math","mrecall","mexact","mquad","mtfgen","mapp","mcas","mcashard","mcalc","msolve","mgraph","mstats","msim","mseq","mtsolve","mconic","mcascmd","mbox","m3d","mbrg","muc","mvid","mpack","mscope"],exam:["Maths 1 (Tech Free)","Maths 2 (CAS)"],drill:["math","Practice questions","Generated questions with the answer checked"]},
- S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
+ S:{n:"Science",c:"#6fd0b0",flash:"sci:all",tools:["flash","sci","sphys","selec","smole","speri","spun","swave","srate","scmd2","sbody","sprac"],exam:["Science"],drill:["sci","Practice questions","Generated questions with the answer checked"]},
  E:{n:"English",c:"#e0c27a",flash:"eng",tools:["flash","eng","annot","engx"],exam:["English"],drill:["eng","Essay and poems","Essay planner and poem annotator"]},
  F:{n:"French",c:"#9ab8f0",flash:"fr",tools:["flash","frex","fr","frsb","frdr","frw","tr"],exam:["French"],drill:["fr","Drills, writing and translate","Tables, sentence builder, Section C sentences and a translator"]},
  L:{n:"Legal Studies",c:"#d99a8a",flash:"legal:all",tools:["flash","legal"],exam:["Legal Studies"],drill:["legal","Section practice","Sections A, B and C: scenarios, IRAC builder and planner"]}
@@ -8391,8 +8831,8 @@ function renderFocus(){const b0=BLOCKS.find(x=>x.id===focus.id);const b=getBlock
  <dl class="spec" style="grid-template-columns:100px 1fr"><dt>Task</dt><dd>${esc(b.task)}</dd><dt>Goal</dt><dd>${esc(b.goal)}</dd><dt>Success check</dt><dd>${esc(b.check)}</dd><dt>Use</dt><dd>${esc(b.res)}</dd></dl>${detailHtml(b0)}
  <div class="row">${toolBtn(b)?`<button data-act="usetool" data-t="${esc(b.tool)}">Open tool</button>`:""}</div>
  ${focus.phase==="break"||focus.done50?`<div class="card">${b0.diag?diagIn(b0.id):""}<label class="f">Error log<textarea id="ferr" placeholder="${esc(ERRP[b.sj])}">${esc(S.err[b0.id]||"")}</textarea></label>${b.mock?'<p class="mut" style="font-size:13px">Add the score under Progress, then Past-paper tracker.</p>':""}<div class="row" style="margin-top:8px"><button class="pri" data-act="fdone">Success check met: mark done</button></div></div>`:""}</div>`}
-const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mcas","CAS practice"],["mcashard","CAS challenge"],["mcalc","Calculator"],["msolve","Equation solver"],["mgraph","Function grapher"],["mstats","Statistics calculator"],["msim","Simultaneous solver"],["mseq","Sequences & series"],["mtsolve","Trig equation solver"],["mconic","Circle & hyperbola transformer"],["mcascmd","CAS commands"],["mbox","Box plot visualiser"],["m3d","3D shape calculator"],["mbrg","Bearings & vector resultant"],["muc","Unit circle reference"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
-const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
+const TOOLS=[["mix","Mixed review"],["flash","Flashcards"],["math","Maths"],["mrecall","Formula recall"],["mexact","Exact value drill"],["mquad","Quadratics & surds"],["mtfgen","Tech-free practice"],["mapp","Worded application"],["mcas","CAS practice"],["mcashard","CAS challenge"],["mcalc","Calculator"],["msolve","Equation solver"],["mgraph","Function grapher"],["mstats","Statistics calculator"],["msim","Simultaneous solver"],["mseq","Sequences & series"],["mtsolve","Trig equation solver"],["mconic","Circle & hyperbola transformer"],["mcascmd","CAS commands"],["mbox","Box plot visualiser"],["m3d","3D shape calculator"],["mbrg","Bearings & vector resultant"],["muc","Unit circle reference"],["mvid","Maths videos"],["mpack","Printable pack"],["mscope","Exam topics"],["sci","Science"],["sphys","Physics calculator"],["selec","Electricity & circuits"],["smole","Moles & titration"],["speri","Periodic table"],["spun","Punnett square"],["swave","Wave calculator"],["srate","Rate of reaction"],["scmd2","Command terms (full)"],["sbody","Body systems"],["sprac","Experimental design checker"],["fr","French questions"],["frsb","French sentence builder"],["frdr","French table drills"],["frex","French practice exam"],["frw","French writing and Section C sentences"],["eng","English essay"],["annot","Poem annotator"],["engx","English tools"],["legal","Legal practice"],["tr","Translate"]];
+const TOOL_GROUPS=[["Memorise","Flip cards and mixed questions from every subject.",["flash","mix"]],["Drill questions","Fresh questions every time, with the answer checked for you.",["math","sci","fr","frsb","frdr","frex","frw"]],["Science tools","Calculators, reference pages and visualisers for Science.",["sphys","selec","smole","speri","spun","swave","srate","scmd2","sbody","sprac"]],["Write and translate","Essays, poems, case studies and French translation.",["eng","annot","legal","tr"]]];
 function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="undefined"&&curSub&&SUBJ_CFG[curSub]){const c=SUBJ_CFG[curSub];const ks=c.tools;if(ks.indexOf(tool.k)<0)tool={k:ks[0],arg:""};
  const ksf=ks.filter(k=>k!=="engx"&&!(curSub==="E"&&(k==="flash"||true)));
  const primKeys=["flash",c.drill[0],"mscope"].filter(k=>ksf.indexOf(k)>=0);
@@ -8401,7 +8841,7 @@ function viewTools(){const nm=Object.fromEntries(TOOLS);if(typeof curSub!=="unde
  const moreOpen=moreKeys.indexOf(tool.k)>=0;
  return `<div class="toolpanel"><div class="tools">${primKeys.map(btn).join("")}</div></div>${moreKeys.length?`<details class="toolpanel more"${moreOpen?" open":""}><summary class="toolpanel-h">More tools</summary><div class="tools">${moreKeys.map(btn).join("")}</div></details>`:""}<div id="tool"></div>`}
  return TOOL_GROUPS.map(g=>`<div class="toolpanel more"><div class="toolpanel-h">${g[0]}</div><div class="mut" style="font-size:12px;margin-bottom:10px">${g[1]}</div><div class="tools">${g[2].map(k=>`<button data-act="toolk" data-k="${k}" aria-pressed="${tool.k===k}">${nm[k]}</button>`).join("")}</div></div>`).join("")+`<div id="tool"></div>`}
-function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mcas:()=>window.toolMathsCAS(el),mcashard:()=>window.toolMathsCASHard(el),mcalc:()=>window.toolCasCalc(el),msolve:()=>window.toolCasEqSolve(el),mgraph:()=>window.toolCasGraphFn(el),mstats:()=>window.toolCasStatsCalc(el),msim:()=>window.toolCasSimSolve(el),mseq:()=>window.toolCasSeq(el),mtsolve:()=>window.toolCasTrigSolve(el),mconic:()=>window.toolCasConic(el),mcascmd:()=>window.toolCasCmd(el),mbox:()=>window.toolCasBoxPlot(el),m3d:()=>window.toolCas3D(el),mbrg:()=>window.toolCasBearings(el),muc:()=>window.toolCasUnitCircle(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
+function bindTool(){const el=$("#tool");if(!el)return;({mix:toolMix,flash:toolFlash,math:()=>toolDrill(el,MATH_SETS,"math"),sci:()=>toolDrill(el,SCI_SETS,"sci"),fr:()=>toolDrill(el,FR_SETS,"fr"),frsb:()=>window.toolFrSb(el),frdr:()=>window.toolFrDr(el),frex:()=>window.toolFrEx(el),frw:()=>frWrite(el),eng:toolEng,engx:()=>window.toolEngX(el),mvid:()=>window.toolMathsVid(el),mrecall:()=>window.toolMathsRecall(el),mexact:()=>window.toolMathsExact(el),mquad:()=>window.toolMathsQuad(el),mtfgen:()=>window.toolMathsGen(el),mapp:()=>window.toolMathsApp(el),mcas:()=>window.toolMathsCAS(el),mcashard:()=>window.toolMathsCASHard(el),mcalc:()=>window.toolCasCalc(el),msolve:()=>window.toolCasEqSolve(el),mgraph:()=>window.toolCasGraphFn(el),mstats:()=>window.toolCasStatsCalc(el),msim:()=>window.toolCasSimSolve(el),mseq:()=>window.toolCasSeq(el),mtsolve:()=>window.toolCasTrigSolve(el),mconic:()=>window.toolCasConic(el),mcascmd:()=>window.toolCasCmd(el),mbox:()=>window.toolCasBoxPlot(el),m3d:()=>window.toolCas3D(el),mbrg:()=>window.toolCasBearings(el),muc:()=>window.toolCasUnitCircle(el),mpack:()=>window.toolMathsPack(el),mscope:()=>window.toolMathsScope(el),sphys:()=>window.toolSciPhys(el),selec:()=>window.toolSciElec(el),smole:()=>window.toolSciMole(el),speri:()=>window.toolSciPeriodic(el),spun:()=>window.toolSciPunnett(el),swave:()=>window.toolSciWave(el),srate:()=>window.toolSciRate(el),scmd2:()=>window.toolSciCmd2(el),sbody:()=>window.toolSciBody(el),sprac:()=>window.toolSciPrac(el),annot:toolAnnot,legal:toolLegal,tr:toolTr})[tool.k](el)}
 function usetool(t){const p=t.split(":");let k=p[0];if(k==="gen"){tool={k:p[1],arg:p[2]||""}}else if(k==="flash"){tool={k:"flash",arg:p[1]+(p[2]?":"+p[2]:"")}}else if(k==="annot"){tool={k:"annot",arg:""}}else if(k==="frsb"){tool={k:"frsb",arg:""}}else if(k==="frdr"){tool={k:"frdr",arg:""}}else if(k==="frex"){tool={k:"frex",arg:""}}else if(k==="frw"){tool={k:"frw",arg:""}}else if(k==="essay"||k==="essay-timer"){tool={k:"eng",arg:k}}else if(k==="french-write"){tool={k:"fr",arg:"write"}}else if(k==="legalcase"){tool={k:"legal",arg:p[1]==="defam"?"tort":p[1]}}else if(k==="defam"){tool={k:"legal",arg:"defam"}}else if(k==="legalmock"){tool={k:"legal",arg:"mock"}}else return;focus=null;tab="tools";render();window.scrollTo(0,0)}
 function cleanTxt(s){return String(s).replace(/\\\(|\\\)/g,"").replace(/\\ce\{([^}]*)\}/g,"$1").replace(/\\ce\{->\}|\\rightarrow|->/g,"→").replace(/_\{?(\d+)\}?/g,(m,d)=>d.replace(/\d/g,x=>"₀₁₂₃₄₅₆₇₈₉"[x])).replace(/\^\{?([\d+-]+)\}?/g,(m,d)=>d.replace(/[\d+-]/g,x=>({"+":"⁺","-":"⁻"}[x]||"⁰¹²³⁴⁵⁶⁷⁸⁹"[x]))).replace(/\{|\}/g,"").replace(/<br\s*\/?>/g,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ")}
 function deckFor0(arg){const [k,sub]=(arg||"sci:all").split(":");if(k==="sci"){const all=ANKI.science.map(c=>({q:c.q,a:c.a,k:"s"+hash(c.q)}));if(sub==="cmd")return {name:"Science command terms",cards:SCI_CMD.map(c=>({q:c[0],a:c[1],k:"m"+hash(c[0])}))};if(!sub||sub==="all")return {name:"Science (Anki deck)",cards:all};const keep=all.filter(c=>topicOf(c)===sub);return {name:"Science: "+sub,cards:keep}}
