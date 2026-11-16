@@ -9720,8 +9720,95 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.bd)return;if(t.dataset.bd==="what")BD.what=t.value;if(t.dataset.bd==="files"){BD.files=Array.from(t.files||[]);const l=document.getElementById("bdfl");if(l)l.textContent=BD.files.length?BD.files.map(f=>f.name).join(", "):"No files chosen"}});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-bd]");if(!t)return;const k=t.dataset.bd;if(k==="star"){BD.rating=+t.dataset.n;bdRefresh()}else if(k==="send")bdSend()});
 
-const APP_VER=108;
+/* Account: Google + email sign-in (Firebase Auth) and cloud save of progress (Firestore).
+   Paste the Firebase web config into ACCT_CFG to switch it on. With an empty config the tab only shows a "not switched on" note. */
+const ACCT_CFG={apiKey:"AIzaSyBmgEiyMJvwsr2iyBLg_a3Aa0GRaT3tm8U",authDomain:"themosshead-s-academics.firebaseapp.com",projectId:"themosshead-s-academics",storageBucket:"themosshead-s-academics.firebasestorage.app",messagingSenderId:"147637572078",appId:"1:147637572078:web:52ac1ae6f720b291c2feff"};
+const ACCT_SDK="https://www.gstatic.com/firebasejs/10.14.1/";
+const AC={on:!!ACCT_CFG.apiKey,ready:false,loading:false,user:null,msg:"",err:"",busy:false,email:"",pw:"",mode:"in",choice:null,last:0,block:false,t:null,first:0,sdkErr:false};
+const acRawSet=Storage.prototype.setItem,acRawDel=Storage.prototype.removeItem,acRawClr=Storage.prototype.clear;
+const acSkip=k=>/^(acct:|firebase:|firebaseLocalStorage)/.test(k);
+const acQuiet=k=>k==="ssp-study-bk";/* study-time counter ticks every second: saved with everything else, but never triggers a save on its own */
+const acG=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const acP=(k,v)=>{try{acRawSet.call(localStorage,k,String(v))}catch(e){}};
+function acTouch(k){k=String(k);if(acSkip(k)||acQuiet(k))return;acP("acct:dirty",Date.now());if(!AC.user||AC.choice)return;if(!AC.first)AC.first=Date.now();clearTimeout(AC.t);const wait=Date.now()-AC.first>60000?0:6000;AC.t=setTimeout(()=>acPush(),wait)}
+Storage.prototype.setItem=function(k,v){if(this!==localStorage)return acRawSet.call(this,k,v);if(AC.block)return;const o=this.getItem(k);acRawSet.call(this,k,v);if(o!==String(v))acTouch(k)};
+Storage.prototype.removeItem=function(k){if(this!==localStorage)return acRawDel.call(this,k);if(AC.block)return;const o=this.getItem(k);acRawDel.call(this,k);if(o!==null)acTouch(k)};
+Storage.prototype.clear=function(){if(this===localStorage&&AC.block)return;if(this!==localStorage)return acRawClr.call(this);const keep=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(acSkip(k))keep.push([k,localStorage.getItem(k)])}acRawClr.call(this);keep.forEach(x=>acP(x[0],x[1]));acTouch("*")};
+function acSnapshot(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!acSkip(k))o[k]=localStorage.getItem(k)}return JSON.stringify(o)}
+function acRef(){return firebase.firestore().collection("users").doc(AC.user.uid).collection("save")}
+async function acPush(){if(!AC.user||AC.choice||AC.block)return;clearTimeout(AC.t);AC.first=0;const mark=acG("acct:dirty");
+ try{const s=acSnapshot(),CH=700000,n=Math.max(1,Math.ceil(s.length/CH)),ts=Date.now(),ref=acRef(),b=firebase.firestore().batch();
+  for(let i=0;i<n;i++)b.set(ref.doc("c"+i),{d:s.slice(i*CH,(i+1)*CH)});
+  b.set(ref.doc("meta"),{ts,n,len:s.length,ver:APP_VER});await b.commit();
+  acP("acct:synced",ts);acP("acct:uid",AC.user.uid);if(acG("acct:dirty")===mark)acRawDel.call(localStorage,"acct:dirty");AC.last=ts;AC.err="";acRefresh()}
+ catch(e){AC.err="Could not save to your account just now ("+acErr(e)+"). Your progress is still saved in this browser and will be sent again later.";acRefresh()}}
+async function acPull(meta){const ref=acRef();let s="";for(let i=0;i<meta.n;i++){const d=await ref.doc("c"+i).get();if(!d.exists)throw new Error("part of the saved copy is missing");s+=d.data().d}
+ if(s.length!==meta.len)throw new Error("the saved copy is incomplete");const o=JSON.parse(s);
+ AC.block=true;clearTimeout(AC.t);const rm=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!acSkip(k))rm.push(k)}
+ rm.forEach(k=>acRawDel.call(localStorage,k));Object.keys(o).forEach(k=>{if(!acSkip(k))acP(k,o[k])});
+ acP("acct:synced",meta.ts);acP("acct:uid",AC.user.uid);acRawDel.call(localStorage,"acct:dirty");location.reload()}
+async function acSync(){if(!AC.user||AC.choice||AC.block)return;
+ try{const m=await acRef().doc("meta").get();const same=acG("acct:uid")===AC.user.uid,dirty=acG("acct:dirty");
+  if(!m.exists)return acPush();const meta=m.data();AC.last=meta.ts;
+  if(!same){AC.choice=meta;AC.msg="";acRefresh();return}
+  if(String(meta.ts)===acG("acct:synced")){if(dirty)acPush();else acRefresh();return}
+  /* the account copy was changed by another device: keep this device's copy only if it has real unsaved edits newer than that */
+  if(AC.dirty0&&+AC.dirty0>meta.ts)return acPush();
+  await acPull(meta)}
+ catch(e){AC.err="Could not check your account ("+acErr(e)+").";acRefresh()}}
+function acErr(e){const c=(e&&e.code)||"";const M={"auth/invalid-email":"That email address doesn't look right.","auth/missing-password":"Type a password.","auth/weak-password":"Use a password of at least 6 characters.","auth/email-already-in-use":"There is already an account with that email. Use Sign in instead.","auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"Wrong email or password.","auth/too-many-requests":"Too many tries. Wait a few minutes and try again.","auth/popup-closed-by-user":"The Google window was closed before finishing.","auth/cancelled-popup-request":"The Google window was closed before finishing.","auth/popup-blocked":"Your browser blocked the Google window. Allow pop-ups for this site, or use email instead.","auth/network-request-failed":"No connection.","auth/unauthorized-domain":"This web address has not been approved for sign-in yet (owner: add it under Authorised domains).","auth/operation-not-allowed":"This sign-in method has not been switched on yet (owner: enable it in the sign-in settings).","auth/requires-recent-login":"For safety, sign out, sign in again, then retry.","permission-denied":"the account storage rules are refusing access","unavailable":"no connection"};return M[c]||c||(e&&e.message)||"unknown error"}
+function acLoad(){if(!AC.on||AC.ready||AC.loading||location.protocol==="file:")return;AC.loading=true;
+ const one=f=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=ACCT_SDK+f;s.onload=ok;s.onerror=()=>no(new Error(f));document.head.appendChild(s)});
+ one("firebase-app-compat.js").then(()=>Promise.all([one("firebase-auth-compat.js"),one("firebase-firestore-compat.js")])).then(()=>{firebase.initializeApp(ACCT_CFG);AC.ready=true;AC.loading=false;
+  firebase.auth().onAuthStateChanged(u=>{AC.user=u;AC.choice=null;AC.busy=false;if(u){AC.pw="";acSync()}acRefresh()})}).catch(()=>{AC.loading=false;AC.sdkErr=true;acRefresh()})}
+function acRefresh(){if(typeof tab!=="undefined"&&tab==="acct"){const a=document.activeElement;if(a&&a.dataset&&a.dataset.ac&&/INPUT/.test(a.tagName))return acPaint();const y=window.scrollY;render();window.scrollTo(0,y)}}
+function acPaint(){const m=document.getElementById("acmsg");if(m)m.textContent=AC.err||AC.msg}
+function acWhen(ts){if(!ts)return"not yet";try{return new Date(ts).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){return""}}
+function viewAcct(){ebStyle();const C=h=>`<section class="eb"><div class="eb-card"><b>Account</b>${h}</div></section>`;
+ const note=`<p class="eb-note" style="margin-top:12px">What is stored if you sign in: your email address, your name (Google sign-in only), and your progress in this app. Nothing else, and it is only used to save your progress. Other students cannot see it. You can delete it all at any time from this page.</p>`;
+ if(!AC.on)return C(`<p class="eb-note">Sign-in is not switched on yet. For now your progress is saved in this browser on this device only.</p>`);
+ if(location.protocol==="file:")return C(`<p class="eb-note">Sign-in only works on the website link, not on a downloaded copy of the page. Your progress here is saved in this browser.</p>`);
+ if(AC.sdkErr)return C(`<p class="eb-note">Could not load sign-in (no connection, or it is blocked on this network). Your progress is still saved in this browser.</p><button data-ac="retry">Try again</button>`);
+ if(!AC.ready)return C(`<p class="eb-note">Loading sign-in...</p>`);
+ const msg=`<div class="eb-note" id="acmsg" role="status" style="margin-top:8px;${AC.err?"color:var(--bad)":""}">${esc(AC.err||AC.msg)}</div>`;
+ if(AC.user){const u=AC.user;
+  if(AC.choice)return C(`<p class="eb-note">Signed in as <b>${esc(u.email||u.displayName||"")}</b>.</p><p style="margin:10px 0 6px"><b>Which progress do you want to keep?</b></p><p class="eb-note">Your account already has progress saved on ${esc(acWhen(AC.choice.ts))}. This device also has its own progress. Pick one; the other is replaced.</p>
+   <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="pri" data-ac="usecloud" ${AC.busy?"disabled":""}>Use my account's progress</button><button data-ac="uselocal" ${AC.busy?"disabled":""}>Keep this device's progress</button><button class="ghost" data-ac="out">Cancel and sign out</button></div>${msg}`);
+  return C(`<p class="eb-note">Signed in as <b>${esc(u.email||u.displayName||"")}</b>. Your progress saves to your account automatically and follows you to any device you sign in on.</p>
+   <p class="eb-note">Last saved to your account: <b>${esc(acWhen(AC.last))}</b>. If you use two devices at the same moment, the most recent save wins.</p>
+   <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="pri" data-ac="savenow" ${AC.busy?"disabled":""}>Save now</button><button data-ac="out">Sign out</button></div>
+   <details style="margin-top:14px"><summary class="eb-note">Delete my account</summary><p class="eb-note">Removes your account and the progress saved in it. Progress in this browser stays.</p><button data-ac="del1">Delete my account</button> <span id="acdel" hidden><button style="border-color:var(--bad);color:var(--bad)" data-ac="del2">Yes, delete it</button></span></details>${msg}${note}`)}
+ const up=AC.mode==="up";
+ return C(`<p class="eb-note">Sign in to save your progress to an account, so it is not lost if this browser is cleared and it follows you between your phone and laptop. Signing in is optional.</p>
+  <button class="pri" data-ac="google" ${AC.busy?"disabled":""} style="margin-top:6px">Continue with Google</button>
+  <p class="eb-note" style="margin:14px 0 6px">Or use an email and password:</p>
+  <label class="eb-note" for="acem">Email</label><input id="acem" type="email" data-ac="email" value="${esc(AC.email)}" autocomplete="email" style="width:100%">
+  <label class="eb-note" for="acpw" style="display:block;margin-top:8px">Password${up?" (at least 6 characters)":""}</label><input id="acpw" type="password" data-ac="pw" value="${esc(AC.pw)}" autocomplete="${up?"new-password":"current-password"}" style="width:100%">
+  <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="pri" data-ac="${up?"signup":"signin"}" ${AC.busy?"disabled":""}>${up?"Create account":"Sign in"}</button><button class="ghost" data-ac="swap">${up?"I already have an account":"Create a new account"}</button>${up?"":`<button class="ghost" data-ac="reset">Forgot password</button>`}</div>${msg}${note}`)}
+async function acDo(k){if(k==="retry"){AC.sdkErr=false;acLoad();return acRefresh()}if(k==="swap"){AC.mode=AC.mode==="up"?"in":"up";AC.err="";AC.msg="";return acRefresh()}
+ if(k==="del1"){const s=document.getElementById("acdel");if(s)s.hidden=false;return}
+ if(!AC.ready)return;const au=firebase.auth();AC.err="";AC.msg="";
+ const run=async(f,ok)=>{AC.busy=true;acRefresh();try{await f();if(ok)AC.msg=ok}catch(e){AC.err=acErr(e)}AC.busy=false;acRefresh()};
+ if(k==="google")return run(()=>au.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+ if(k==="signin")return run(()=>au.signInWithEmailAndPassword(AC.email.trim(),AC.pw));
+ if(k==="signup")return run(async()=>{const c=await au.createUserWithEmailAndPassword(AC.email.trim(),AC.pw);try{await c.user.sendEmailVerification()}catch(e){}});
+ if(k==="reset"){if(!AC.email.trim()){AC.err="Type your email first, then press Forgot password.";return acRefresh()}return run(()=>au.sendPasswordResetEmail(AC.email.trim()),"If there is an account for that email, a reset link has been sent. Check your inbox and junk folder.")}
+ if(k==="out"){clearTimeout(AC.t);if(AC.user&&!AC.choice&&acG("acct:dirty"))await acPush();return run(()=>au.signOut(),"Signed out. Progress stays in this browser.")}
+ if(k==="savenow")return run(()=>acPush(),"");
+ if(k==="uselocal"){AC.choice=null;return run(()=>acPush(),"Saved this device's progress to your account.")}
+ if(k==="usecloud"){const m=AC.choice;AC.busy=true;acRefresh();try{AC.choice=null;await acPull(m)}catch(e){AC.choice=m;AC.busy=false;AC.err="Could not load your account's progress ("+acErr(e)+").";acRefresh()}return}
+ if(k==="del2")return run(async()=>{const ref=acRef(),all=await ref.get(),b=firebase.firestore().batch();all.forEach(d=>b.delete(d.ref));await b.commit();await AC.user.delete();["acct:uid","acct:synced"].forEach(x=>acRawDel.call(localStorage,x))},"Account deleted. Progress stays in this browser.")}
+document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.ac)return;if(t.dataset.ac==="email")AC.email=t.value;if(t.dataset.ac==="pw")AC.pw=t.value});
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("button[data-ac]");if(t)acDo(t.dataset.ac)});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset&&(e.target.dataset.ac==="pw"||e.target.dataset.ac==="email"))acDo(AC.mode==="up"?"signup":"signin")});
+document.addEventListener("visibilitychange",()=>{if(!AC.user||AC.choice)return;if(document.visibilityState==="hidden"){AC.dirty0=acG("acct:dirty");if(AC.dirty0)acPush().then(()=>{AC.dirty0=acG("acct:dirty")})}else acSync()});
+AC.dirty0=acG("acct:dirty");
+acLoad();
+
+const APP_VER=110;
 const APP_LOG=[
+[110,"2026-11-16 20:45","Sign-in is now switched on. More > Account lets you sign in with Google or an email and password, and your progress then saves to your account automatically and follows you between devices. Signing in is optional; without it, progress keeps saving in this browser as before."],
+[109,"2026-11-16 20:30","New Account page (More > Account) for saving progress to an account: sign in with Google or with an email and password, and your progress saves automatically and follows you between devices. Includes forgot-password, sign out, and delete-my-account. It is built but not switched on yet: until the owner finishes the one-off setup, the page says sign-in is not switched on and progress keeps saving in this browser exactly as before."],
 [108,"2026-11-16 00:40","Removed the public list on the notice board — it used to show everyone's submitted requests (initials, what they asked for, status). Someone submitted an abusive entry through it, so now the board is submit-only: you can still post a request, but nobody (including other students) can see any request, who sent it, or what's in it — only the site owner does, same as contact details and files already worked."],
 [107,"2026-11-15 18:11","Added a new Science file: \"Science: learn it, revise it, pass it\", the same full exam-scope revision guide format as the French one, pinned to the top of Science's Files list. Covers every topic actually on the teacher's checklist (motion, forces, electricity, magnetism and generators, astronomy, chemical reactions, genetics, evolution, and climate change) with tables, worked examples, self-test quizzes and diagrams, plus a study schedule and exam technique section."],
 [106,"2026-11-15 16:56","Fixed a real bug found while shipping v105's full-deck multiple choice: the app's auto-formula renderer was misreading plain working-out text (like \"n = 0.585/36.50 = 0.01603 mol\") as a maths expression and scrambling it into unreadable fragments — about 30% of Science cards had this, including some flip-card answers already, not just the new multiple-choice options. Flashcards (both Flip cards and Multiple choice) are now excluded from that auto-renderer entirely, since their text is plain working-out, not formatted equations. Checked across the full 2,914-card deck, confirmed clean."],
@@ -10194,13 +10281,13 @@ const MCATS={M:["Algebra slip","Sign error","No-calculator arithmetic","Misread 
 const catsFor=sj=>MCATS[sj]||MCATS.def;
 const ERRP={S:"List each lost mark: topic, why it was lost, correct answer in one line.",M:"List each wrong question: topic, the step that failed, the right method.",F:"List each mistake with the rule (tense, agreement, accent) and a corrected sentence.",L:"List each missed element or defence with the correct rule and example.",E:"Note the weakest paragraph, why it was weak, and the fix."};
 let tab="home",viewDay=null,focus=null,tool={k:"flash",arg:""},openId=null;
-const TAB_GROUPS=[["home","Home",["home"]],["subjects","Subjects",["subjects","learn","sheets","tools","qb","lc"]],["review","Exams",["triage","ttest","dates","xr","tests","rev","prog"]],["more","More",["files","res","help","log","set"]],["req","Requests",["eb","board"]]];
-const TAB_LABEL={triage:"Triage",ttest:"Topic test",dates:"Exam dates",xr:"Exam Room",tests:"Tests",rev:"Spaced review",prog:"Progress",files:"Files",res:"Research",help:"How it works",log:"Version history",eb:"EB",board:"Notice board",set:"Settings"};
+const TAB_GROUPS=[["home","Home",["home"]],["subjects","Subjects",["subjects","learn","sheets","tools","qb","lc"]],["review","Exams",["triage","ttest","dates","xr","tests","rev","prog"]],["more","More",["files","res","help","log","set","acct"]],["req","Requests",["eb","board"]]];
+const TAB_LABEL={triage:"Triage",ttest:"Topic test",dates:"Exam dates",xr:"Exam Room",tests:"Tests",rev:"Spaced review",prog:"Progress",files:"Files",res:"Research",help:"How it works",log:"Version history",eb:"EB",board:"Notice board",set:"Settings",acct:"Account"};
 function tabs(){const g=TAB_GROUPS.find(x=>x[2].includes(tab))||TAB_GROUPS[0];let h=`<nav class="tabs" role="tablist">${TAB_GROUPS.map(x=>`<button role="tab" data-act="tab" data-v="${x[2].includes(tab)?tab:x[2][0]}" aria-selected="${x===g}">${x[1]}</button>`).join("")}</nav>`;if((g[2].length>1||g[0]==="req")&&g[0]!=="subjects")h+=`<nav class="tabs sub" role="tablist">${g[2].map(k=>`<button role="tab" data-act="tab" data-v="${k}" aria-selected="${tab===k}">${TAB_LABEL[k]}</button>`).join("")}</nav>`;return h}
 function render(){const a=$("#app");if(!a)return;autoDone();
  const t=nowD();const pts=score();const el=examsLeft();
  let h=`<header class="top"><div class="brand"><h1>TheMossHead's Academics</h1><small>Year 10 end-of-year exams · v${APP_VER}</small></div><div class="score"><div><b>${pts}</b><br>points</div><div><b>${streak()}</b><br>day streak</div><div><b>${level(pts)}</b><br>level</div></div></header>`+tabs()+subCrumb();
- if(tab==="home")h+=viewHome();else if(tab==="dates")h+=viewDates();else if(tab==="triage")h+=viewTriage();else if(tab==="ttest")h+=viewTTest();else if(tab==="subjects")h+=viewSubjects();else if(tab==="today")h+=viewToday(t);else if(tab==="plan")h+=viewPlan(t);else if(tab==="tools")h+=viewTools();else if(tab==="tests")h+=viewTests();else if(tab==="files")h+=viewFiles();else if(tab==="res")h+=viewRes();else if(tab==="rev")h+=viewReview();else if(tab==="xr")h+=viewExam();else if(tab==="qb")h+=viewQB();else if(tab==="lc")h+=viewLC();else if(tab==="learn")h+=viewLearn();else if(tab==="sheets")h+=viewSheets();else if(tab==="help")h+=viewHelp();else if(tab==="log")h+=viewLog();else if(tab==="eb")h+=viewEB();else if(tab==="board")h+=viewBoard();else if(tab==="prog")h+=viewProg();else h+=viewSet();
+ if(tab==="home")h+=viewHome();else if(tab==="dates")h+=viewDates();else if(tab==="triage")h+=viewTriage();else if(tab==="ttest")h+=viewTTest();else if(tab==="subjects")h+=viewSubjects();else if(tab==="today")h+=viewToday(t);else if(tab==="plan")h+=viewPlan(t);else if(tab==="tools")h+=viewTools();else if(tab==="tests")h+=viewTests();else if(tab==="files")h+=viewFiles();else if(tab==="res")h+=viewRes();else if(tab==="rev")h+=viewReview();else if(tab==="xr")h+=viewExam();else if(tab==="qb")h+=viewQB();else if(tab==="lc")h+=viewLC();else if(tab==="learn")h+=viewLearn();else if(tab==="sheets")h+=viewSheets();else if(tab==="help")h+=viewHelp();else if(tab==="log")h+=viewLog();else if(tab==="eb")h+=viewEB();else if(tab==="board")h+=viewBoard();else if(tab==="prog")h+=viewProg();else if(tab==="acct")h+=viewAcct();else h+=viewSet();
  a.innerHTML=h;
  if(focus)renderFocus();else{const f=$("#fo");if(f)f.remove()}
  if(tab==="tools")bindTool();if(tab==="rev")bindSR();if(tab==="learn")bindLearn();if(tab==="sheets")bindSheets();if(tab==="xr")bindExam();if(tab==="qb")bindQB();if(tab==="lc")bindLC();
