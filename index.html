@@ -442,6 +442,12 @@ html.fz-on,html.fz-on body{overflow:hidden}
 .fz-opt:disabled{cursor:default}
 .fz-fb{min-height:24px;font-size:15px}.fz-fb .ok{color:var(--good)}.fz-fb .no{color:var(--bad)}
 .fz-sc2{color:var(--mut)}
+.hdr-acct{position:fixed;top:12px;right:16px;z-index:40;display:flex;gap:8px}
+.hdr-acct button{padding:7px 14px;border-radius:999px;font-size:13px;white-space:nowrap}
+@media (max-width:520px){.hdr-acct{position:static;justify-content:flex-end;margin:0 0 6px;top:auto;right:auto}}
+.gate{max-width:460px;margin:7vh auto 40px;padding:0 16px}
+.gate-h{font-size:clamp(28px,7vw,40px);line-height:1.1;letter-spacing:-.01em;margin:0 0 18px;text-align:center}
+.gate .eb-card .row button{flex:1}
 /* ===== optional appearance settings (everything below only applies when an option is switched on) ===== */
 :root[data-theme="night"]{--bg:#05080c;--fg:#dfe7f2;--mut:#8b9bb0;--line:#1b2431;--card:#0b1119;--soft:#121a25;--acc:#6aa8ff;--accfg:#041226;--good:#58c88b;--bad:#f07a70;--warn:#e8a64a;color-scheme:dark}
 :root[data-theme="pastel"]{--bg:#fbf4fa;--fg:#3b3350;--mut:#7a6f90;--line:#eadff0;--card:#fffafe;--soft:#f3e8f6;--acc:#9b7fd1;--accfg:#fff;--good:#4aa87a;--bad:#d9667c;--warn:#c98f3a}
@@ -9724,7 +9730,7 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
    Paste the Firebase web config into ACCT_CFG to switch it on. With an empty config the tab only shows a "not switched on" note. */
 const ACCT_CFG={apiKey:"AIzaSyBmgEiyMJvwsr2iyBLg_a3Aa0GRaT3tm8U",authDomain:"themosshead-s-academics.firebaseapp.com",projectId:"themosshead-s-academics",storageBucket:"themosshead-s-academics.firebasestorage.app",messagingSenderId:"147637572078",appId:"1:147637572078:web:52ac1ae6f720b291c2feff"};
 const ACCT_SDK="https://www.gstatic.com/firebasejs/10.14.1/";
-const AC={on:!!ACCT_CFG.apiKey,ready:false,loading:false,user:null,msg:"",err:"",busy:false,email:"",pw:"",mode:"in",choice:null,last:0,block:false,t:null,first:0,sdkErr:false};
+const AC={known:false,legal:false,on:!!ACCT_CFG.apiKey,ready:false,loading:false,user:null,msg:"",err:"",busy:false,email:"",pw:"",mode:"in",choice:null,last:0,block:false,t:null,first:0,sdkErr:false};
 const acRawSet=Storage.prototype.setItem,acRawDel=Storage.prototype.removeItem,acRawClr=Storage.prototype.clear;
 const acSkip=k=>/^(acct:|firebase:|firebaseLocalStorage)/.test(k);
 const acQuiet=k=>k==="ssp-study-bk";/* study-time counter ticks every second: saved with everything else, but never triggers a save on its own */
@@ -9760,11 +9766,17 @@ function acErr(e){const c=(e&&e.code)||"";const M={"auth/invalid-email":"That em
 function acLoad(){if(!AC.on||AC.ready||AC.loading||location.protocol==="file:")return;AC.loading=true;
  const one=f=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=ACCT_SDK+f;s.onload=ok;s.onerror=()=>no(new Error(f));document.head.appendChild(s)});
  one("firebase-app-compat.js").then(()=>Promise.all([one("firebase-auth-compat.js"),one("firebase-firestore-compat.js")])).then(()=>{firebase.initializeApp(ACCT_CFG);AC.ready=true;AC.loading=false;
-  firebase.auth().onAuthStateChanged(u=>{AC.user=u;AC.choice=null;AC.busy=false;if(u){AC.pw="";acSync()}acRefresh()})}).catch(()=>{AC.loading=false;AC.sdkErr=true;acRefresh()})}
-function acRefresh(){if(typeof tab!=="undefined"&&tab==="acct"){const a=document.activeElement;if(a&&a.dataset&&a.dataset.ac&&/INPUT/.test(a.tagName))return acPaint();const y=window.scrollY;render();window.scrollTo(0,y)}}
+  firebase.auth().onAuthStateChanged(u=>{AC.user=u;AC.known=true;AC.choice=null;AC.busy=false;if(u){AC.pw="";acSync()}acRender()})}).catch(()=>{AC.loading=false;AC.sdkErr=true;acRender()});
+ setTimeout(()=>{if(!AC.ready){AC.sdkErr=true;acRender()}},15000)}
+/* sign-in gate: shown instead of the app until signed in (skipped on downloaded copies, or if sign-in cannot load, since nobody could sign in then) */
+function acGate(){return AC.on&&location.protocol!=="file:"&&!AC.sdkErr&&(!AC.known||!AC.user||!!AC.choice)}
+function acRender(){if(typeof render!=="function")return;const y=window.scrollY;render();window.scrollTo(0,y)}
+function viewGate(){const body=!AC.known?`<section class="eb"><div class="eb-card"><p class="eb-note">Loading...</p></div></section>`:viewAcct();
+ return `<div class="gate"><h1 class="gate-h">TheMossHead's Academics</h1>${body}<p class="eb-note" style="text-align:center;margin-top:14px"><button class="ghost sm" data-ac="legal">${AC.legal?"Hide":"Read the"} Privacy Policy and Terms</button></p>${AC.legal&&typeof viewLegal==="function"?viewLegal():""}</div>`}
+function acRefresh(){if(acGate()||(typeof tab!=="undefined"&&tab==="acct")){const a=document.activeElement;if(a&&a.dataset&&a.dataset.ac&&/INPUT/.test(a.tagName))return acPaint();const y=window.scrollY;render();window.scrollTo(0,y)}}
 function acPaint(){const m=document.getElementById("acmsg");if(m)m.textContent=AC.err||AC.msg}
 function acWhen(ts){if(!ts)return"not yet";try{return new Date(ts).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){return""}}
-function viewAcct(){ebStyle();const C=h=>`<section class="eb"><div class="eb-card"><b>Account</b>${h}</div></section>`;
+function viewAcct(){ebStyle();const C=h=>`<section class="eb"><div class="eb-card"><b>${AC.ready&&!AC.user?(AC.mode==="up"?"Sign up":"Log in"):"Account"}</b>${h}</div></section>`;
  const note=`<p class="eb-note" style="margin-top:12px">What is stored if you sign in: your email address, your name (Google sign-in only), and your progress in this app. Nothing else, and it is only used to save your progress. Other students cannot see it. You can delete it all at any time from this page.</p>`;
  if(!AC.on)return C(`<p class="eb-note">Sign-in is not switched on yet. For now your progress is saved in this browser on this device only.</p>`);
  if(location.protocol==="file:")return C(`<p class="eb-note">Sign-in only works on the website link, not on a downloaded copy of the page. Your progress here is saved in this browser.</p>`);
@@ -9779,13 +9791,16 @@ function viewAcct(){ebStyle();const C=h=>`<section class="eb"><div class="eb-car
    <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="pri" data-ac="savenow" ${AC.busy?"disabled":""}>Save now</button><button data-ac="out">Sign out</button></div>
    <details style="margin-top:14px"><summary class="eb-note">Delete my account</summary><p class="eb-note">Removes your account and the progress saved in it. Progress in this browser stays.</p><button data-ac="del1">Delete my account</button> <span id="acdel" hidden><button style="border-color:var(--bad);color:var(--bad)" data-ac="del2">Yes, delete it</button></span></details>${msg}${note}`)}
  const up=AC.mode==="up";
- return C(`<p class="eb-note">Sign in to save your progress to an account, so it is not lost if this browser is cleared and it follows you between your phone and laptop. Signing in is optional.</p>
+ return C(`<p class="eb-note">${up?"Create an account":"Log in"} to use the site. Your progress saves to your account, so it is not lost if this browser is cleared and it follows you between your phone and laptop.</p><div class="row" style="gap:6px;margin:4px 0 12px"><button class="${up?"ghost":"pri"} sm" data-ac="swapin" ${up?"":"aria-pressed=\"true\""}>Log in</button><button class="${up?"pri":"ghost"} sm" data-ac="swapup" ${up?"aria-pressed=\"true\"":""}>Sign up</button></div>
   <button class="pri" data-ac="google" ${AC.busy?"disabled":""} style="margin-top:6px">Continue with Google</button>
   <p class="eb-note" style="margin:14px 0 6px">Or use an email and password:</p>
   <label class="eb-note" for="acem">Email</label><input id="acem" type="email" data-ac="email" value="${esc(AC.email)}" autocomplete="email" style="width:100%">
   <label class="eb-note" for="acpw" style="display:block;margin-top:8px">Password${up?" (at least 6 characters)":""}</label><input id="acpw" type="password" data-ac="pw" value="${esc(AC.pw)}" autocomplete="${up?"new-password":"current-password"}" style="width:100%">
-  <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="pri" data-ac="${up?"signup":"signin"}" ${AC.busy?"disabled":""}>${up?"Create account":"Sign in"}</button><button class="ghost" data-ac="swap">${up?"I already have an account":"Create a new account"}</button>${up?"":`<button class="ghost" data-ac="reset">Forgot password</button>`}</div>${msg}${note}`)}
-async function acDo(k){if(k==="retry"){AC.sdkErr=false;acLoad();return acRefresh()}if(k==="swap"){AC.mode=AC.mode==="up"?"in":"up";AC.err="";AC.msg="";return acRefresh()}
+  <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="pri" data-ac="${up?"signup":"signin"}" ${AC.busy?"disabled":""}>${up?"Create account":"Sign in"}</button>${up?"":`<button class="ghost" data-ac="reset">Forgot password</button>`}</div>${msg}${note}`)}
+async function acDo(k){if(k==="retry"){AC.sdkErr=false;acLoad();return acRefresh()}if(k==="swapin"||k==="swapup"){AC.mode=k==="swapup"?"up":"in";AC.err="";AC.msg="";return acRefresh()}if(k==="swap"){AC.mode=AC.mode==="up"?"in":"up";AC.err="";AC.msg="";return acRefresh()}
+ if(k==="legal"){AC.legal=!AC.legal;return acRender()}
+ if(k==="goacct"){if(typeof tab!=="undefined"){tab="acct";render()}return}
+ if(k==="goin"||k==="goup"){AC.mode=k==="goup"?"up":"in";AC.err="";AC.msg="";AC.choice=null;if(typeof tab!=="undefined"){tab="acct";render()}return}
  if(k==="del1"){const s=document.getElementById("acdel");if(s)s.hidden=false;return}
  if(!AC.ready)return;const au=firebase.auth();AC.err="";AC.msg="";
  const run=async(f,ok)=>{AC.busy=true;acRefresh();try{await f();if(ok)AC.msg=ok}catch(e){AC.err=acErr(e)}AC.busy=false;acRefresh()};
@@ -9805,8 +9820,70 @@ document.addEventListener("visibilitychange",()=>{if(!AC.user||AC.choice)return;
 AC.dirty0=acG("acct:dirty");
 acLoad();
 
-const APP_VER=110;
+/* Privacy Policy and Terms & Conditions page. Plain content page, no logic beyond rendering. */
+function viewLegal(){ebStyle();
+ return `<section class="eb"><div class="eb-card">
+<h3 style="margin-top:0">Privacy Policy</h3>
+<p class="eb-note"><i>Last updated 17 November 2026.</i></p>
+
+<p class="eb-note">TheMossHead's Academics ("this site") is a free study tool built by a parent for his son's Year 10 studies at Melbourne High School, and shared with classmates. It is not a school product and not run by a company. This page explains what information the site collects and what happens to it.</p>
+
+<p style="margin:14px 0 4px"><b>What is collected</b></p>
+<p class="eb-note">To use the site you sign in with Google or an email and password. This collects your email address, and your name if you sign in with Google. Your progress (answers, scores, notes) is saved in your browser and in your account, so it can follow you between devices. It is stored with Google Firebase, a cloud service, under the site owner's account.</p>
+<p class="eb-note">If you post to the Notice board: what you type (and any files you choose to attach), plus, only if you choose to give them, your name and a way to contact you. Nobody else who uses the site can see what you post — only the site owner can.</p>
+<p class="eb-note">The site also uses a basic page-view counter (GoatCounter) to see roughly how many people visit and which pages are used. It does not use cookies and does not identify individual visitors.</p>
+
+<p style="margin:14px 0 4px"><b>What is not collected</b></p>
+<p class="eb-note">No advertising, no tracking across other websites, no selling or sharing of information with third parties for marketing, and no payment or financial information is ever requested.</p>
+
+<p style="margin:14px 0 4px"><b>Who can see it</b></p>
+<p class="eb-note">Only the site owner. Signed-in accounts are private to each person; nobody else using the site can see another person's email, progress, or notice-board submissions.</p>
+
+<p style="margin:14px 0 4px"><b>How long it is kept</b></p>
+<p class="eb-note">Progress saved in your browser stays until you clear your browser's storage or use Reset in Settings. Account data stays until you delete it yourself (Account > Delete my account) or ask the site owner to delete it.</p>
+
+<p style="margin:14px 0 4px"><b>Your choices</b></p>
+<p class="eb-note">You can delete your account and its saved progress at any time from the Account page (the Account button at the top right). You can ask the site owner to delete any notice-board submission.</p>
+
+<p style="margin:14px 0 4px"><b>Changes to this policy</b></p>
+<p class="eb-note">If this policy changes, the update date above will change and a note will be added to the Version history page.</p>
+
+<p style="margin:14px 0 4px"><b>Contact</b></p>
+<p class="eb-note">For any privacy question, deletion request, or concern: contact the site owner through the Notice board page, or by the contact details the owner has given you directly.</p>
+
+<hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
+<h3>Terms &amp; Conditions</h3>
+<p class="eb-note"><i>Last updated 17 November 2026.</i></p>
+
+<p style="margin:14px 0 4px"><b>What this is</b></p>
+<p class="eb-note">TheMossHead's Academics is a free, non-commercial study tool. It is provided as-is, for personal study use, with no charge. A free account is needed to use it.</p>
+
+<p style="margin:14px 0 4px"><b>No warranty</b></p>
+<p class="eb-note">The content (practice questions, explanations, summaries, flashcards, generated exam-style questions) is a study aid written to help with revision. It is not official material from any school, exam board, or publisher unless stated otherwise, and it may contain mistakes. It should not be treated as a guarantee of exam content, accuracy, or results. Always check against your own class materials and teacher guidance.</p>
+
+<p style="margin:14px 0 4px"><b>Acceptable use</b></p>
+<p class="eb-note">The Notice board and any other input on this site must not be used to submit abusive, threatening, hateful, or otherwise unlawful content. The site owner may remove any submission and may block further submissions at their discretion. Misuse may be reported to the relevant authorities where appropriate.</p>
+
+<p style="margin:14px 0 4px"><b>No liability</b></p>
+<p class="eb-note">To the extent permitted by law, the site owner is not liable for any loss arising from use of this site, including lost progress, exam outcomes, or technical issues with sign-in or cloud saving. Use of the site is at your own discretion.</p>
+
+<p style="margin:14px 0 4px"><b>Availability and changes</b></p>
+<p class="eb-note">The site may change, be taken offline, or have features added or removed at any time, without notice, since it is maintained informally by one person. Significant changes are recorded in the Version history page.</p>
+
+<p style="margin:14px 0 4px"><b>Governing law</b></p>
+<p class="eb-note">These terms are governed by the laws of Victoria, Australia.</p>
+
+<p style="margin:14px 0 4px"><b>Contact</b></p>
+<p class="eb-note">Questions about these terms can be raised through the Notice board page.</p>
+</div></section>`}
+
+const APP_VER=114;
 const APP_LOG=[
+[114,"2026-11-18 08:05","The site now opens on a Log in / Sign up page, and you need to be signed in to use it (Google or email). Account has moved out of More: once signed in, an Account button sits at the top right (sign out, save now, delete account). The Privacy Policy and Terms were updated to match, since signing in is no longer optional, and can be read from the sign-in page."],
+[113,"2026-11-17 21:40","Added Log in and Sign up buttons in the top-right corner, shown on every page until you are signed in (they disappear once you are). Pressing either jumps straight to the Account page with that form ready to fill in."],
+[112,"2026-11-17 21:32","Removed the \"Children's use\" section from the Privacy Policy and softened one reference in the Terms. The policy and terms now apply the same way to every visitor, without assuming or singling out anyone's age."],
+[111,"2026-11-17 21:30","Added a Privacy Policy and Terms & Conditions page (More > Privacy & Terms), covering what the site collects (nothing if you don't sign in; email/name and progress if you do; whatever you choose to type or attach on the Notice board), who can see it, how to delete it, and the usual no-liability and acceptable-use terms for a free personal study site."],
 [110,"2026-11-16 20:45","Sign-in is now switched on. More > Account lets you sign in with Google or an email and password, and your progress then saves to your account automatically and follows you between devices. Signing in is optional; without it, progress keeps saving in this browser as before."],
 [109,"2026-11-16 20:30","New Account page (More > Account) for saving progress to an account: sign in with Google or with an email and password, and your progress saves automatically and follows you between devices. Includes forgot-password, sign out, and delete-my-account. It is built but not switched on yet: until the owner finishes the one-off setup, the page says sign-in is not switched on and progress keeps saving in this browser exactly as before."],
 [108,"2026-11-16 00:40","Removed the public list on the notice board — it used to show everyone's submitted requests (initials, what they asked for, status). Someone submitted an abusive entry through it, so now the board is submit-only: you can still post a request, but nobody (including other students) can see any request, who sent it, or what's in it — only the site owner does, same as contact details and files already worked."],
@@ -10281,13 +10358,14 @@ const MCATS={M:["Algebra slip","Sign error","No-calculator arithmetic","Misread 
 const catsFor=sj=>MCATS[sj]||MCATS.def;
 const ERRP={S:"List each lost mark: topic, why it was lost, correct answer in one line.",M:"List each wrong question: topic, the step that failed, the right method.",F:"List each mistake with the rule (tense, agreement, accent) and a corrected sentence.",L:"List each missed element or defence with the correct rule and example.",E:"Note the weakest paragraph, why it was weak, and the fix."};
 let tab="home",viewDay=null,focus=null,tool={k:"flash",arg:""},openId=null;
-const TAB_GROUPS=[["home","Home",["home"]],["subjects","Subjects",["subjects","learn","sheets","tools","qb","lc"]],["review","Exams",["triage","ttest","dates","xr","tests","rev","prog"]],["more","More",["files","res","help","log","set","acct"]],["req","Requests",["eb","board"]]];
-const TAB_LABEL={triage:"Triage",ttest:"Topic test",dates:"Exam dates",xr:"Exam Room",tests:"Tests",rev:"Spaced review",prog:"Progress",files:"Files",res:"Research",help:"How it works",log:"Version history",eb:"EB",board:"Notice board",set:"Settings",acct:"Account"};
+const TAB_GROUPS=[["home","Home",["home"]],["subjects","Subjects",["subjects","learn","sheets","tools","qb","lc"]],["review","Exams",["triage","ttest","dates","xr","tests","rev","prog"]],["more","More",["files","res","help","log","set","legal"]],["req","Requests",["eb","board"]]];
+const TAB_LABEL={triage:"Triage",ttest:"Topic test",dates:"Exam dates",xr:"Exam Room",tests:"Tests",rev:"Spaced review",prog:"Progress",files:"Files",res:"Research",help:"How it works",log:"Version history",eb:"EB",board:"Notice board",set:"Settings",acct:"Account",legal:"Privacy & Terms"};
 function tabs(){const g=TAB_GROUPS.find(x=>x[2].includes(tab))||TAB_GROUPS[0];let h=`<nav class="tabs" role="tablist">${TAB_GROUPS.map(x=>`<button role="tab" data-act="tab" data-v="${x[2].includes(tab)?tab:x[2][0]}" aria-selected="${x===g}">${x[1]}</button>`).join("")}</nav>`;if((g[2].length>1||g[0]==="req")&&g[0]!=="subjects")h+=`<nav class="tabs sub" role="tablist">${g[2].map(k=>`<button role="tab" data-act="tab" data-v="${k}" aria-selected="${tab===k}">${TAB_LABEL[k]}</button>`).join("")}</nav>`;return h}
-function render(){const a=$("#app");if(!a)return;autoDone();
+function render(){const a=$("#app");if(!a)return;if(typeof acGate==="function"&&acGate()){a.innerHTML=viewGate();const f=$("#fo");if(f)f.remove();return}autoDone();
  const t=nowD();const pts=score();const el=examsLeft();
- let h=`<header class="top"><div class="brand"><h1>TheMossHead's Academics</h1><small>Year 10 end-of-year exams · v${APP_VER}</small></div><div class="score"><div><b>${pts}</b><br>points</div><div><b>${streak()}</b><br>day streak</div><div><b>${level(pts)}</b><br>level</div></div></header>`+tabs()+subCrumb();
- if(tab==="home")h+=viewHome();else if(tab==="dates")h+=viewDates();else if(tab==="triage")h+=viewTriage();else if(tab==="ttest")h+=viewTTest();else if(tab==="subjects")h+=viewSubjects();else if(tab==="today")h+=viewToday(t);else if(tab==="plan")h+=viewPlan(t);else if(tab==="tools")h+=viewTools();else if(tab==="tests")h+=viewTests();else if(tab==="files")h+=viewFiles();else if(tab==="res")h+=viewRes();else if(tab==="rev")h+=viewReview();else if(tab==="xr")h+=viewExam();else if(tab==="qb")h+=viewQB();else if(tab==="lc")h+=viewLC();else if(tab==="learn")h+=viewLearn();else if(tab==="sheets")h+=viewSheets();else if(tab==="help")h+=viewHelp();else if(tab==="log")h+=viewLog();else if(tab==="eb")h+=viewEB();else if(tab==="board")h+=viewBoard();else if(tab==="prog")h+=viewProg();else if(tab==="acct")h+=viewAcct();else h+=viewSet();
+ const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goin">Log in</button><button class="sm pri" data-ac="goup">Sign up</button></div>`;
+ let h=acctBtns+`<header class="top"><div class="brand"><h1>TheMossHead's Academics</h1><small>Year 10 end-of-year exams · v${APP_VER}</small></div><div class="score"><div><b>${pts}</b><br>points</div><div><b>${streak()}</b><br>day streak</div><div><b>${level(pts)}</b><br>level</div></div></header>`+tabs()+subCrumb();
+ if(tab==="home")h+=viewHome();else if(tab==="dates")h+=viewDates();else if(tab==="triage")h+=viewTriage();else if(tab==="ttest")h+=viewTTest();else if(tab==="subjects")h+=viewSubjects();else if(tab==="today")h+=viewToday(t);else if(tab==="plan")h+=viewPlan(t);else if(tab==="tools")h+=viewTools();else if(tab==="tests")h+=viewTests();else if(tab==="files")h+=viewFiles();else if(tab==="res")h+=viewRes();else if(tab==="rev")h+=viewReview();else if(tab==="xr")h+=viewExam();else if(tab==="qb")h+=viewQB();else if(tab==="lc")h+=viewLC();else if(tab==="learn")h+=viewLearn();else if(tab==="sheets")h+=viewSheets();else if(tab==="help")h+=viewHelp();else if(tab==="log")h+=viewLog();else if(tab==="eb")h+=viewEB();else if(tab==="board")h+=viewBoard();else if(tab==="prog")h+=viewProg();else if(tab==="acct")h+=viewAcct();else if(tab==="legal")h+=viewLegal();else h+=viewSet();
  a.innerHTML=h;
  if(focus)renderFocus();else{const f=$("#fo");if(f)f.remove()}
  if(tab==="tools")bindTool();if(tab==="rev")bindSR();if(tab==="learn")bindLearn();if(tab==="sheets")bindSheets();if(tab==="xr")bindExam();if(tab==="qb")bindQB();if(tab==="lc")bindLC();
