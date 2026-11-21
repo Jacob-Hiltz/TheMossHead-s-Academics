@@ -486,9 +486,8 @@ html.fz-on,html.fz-on body{overflow:hidden}
 :root[data-theme="mono"]{--bg:#f2f2f2;--fg:#111;--mut:#555;--line:#cfcfcf;--card:#fff;--soft:#e6e6e6;--acc:#222;--accfg:#fff}
 :root[data-theme="mono"] body{filter:grayscale(1)}
 :root[data-theme="spring"]{--bg:#f1f8ee;--fg:#1d3a24;--mut:#52705a;--line:#d3e6cd;--card:#fcfffa;--soft:#e2f0dc;--acc:#3f9a4d;--accfg:#fff;--good:#2e8a46;--bad:#c4503f;--warn:#b98320}
-.u-hicontrast{--fg:#000;--mut:#222;--line:#555}
-.u-hicontrast[data-theme="dark"],.u-hicontrast[data-theme="night"]{--fg:#fff;--mut:#ddd;--line:#aaa}
 .u-hicontrast .card,.u-hicontrast button,.u-hicontrast input,.u-hicontrast select{border-width:2px}
+.u-hicontrast body{font-weight:500}
 .u-softbad{--bad:#d98b84}
 .u-cbsafe{--good:#1f6fb8;--bad:#d9801e}
 .u-subjcol{--math:#2563eb}
@@ -2892,6 +2891,18 @@ const uiL2H=(h,sa,l)=>{const c=(1-Math.abs(2*l-1))*sa,x=c*(1-Math.abs((h/60)%2-1
 const UI_SATK={"--bg":3.2,"--card":3.2,"--soft":3.2,"--line":3.2,"--ncall":3.2,"--acc":3.6,"--fg":2,"--mut":2,"--accfg":2};
 function uiHuePal(e,mode){const o={},B=UI_BASE[mode],nt=mode==="night",ref=nt?215:120;for(const k in B){const[h,sa,l]=uiH2L(B[k]);o[k]=uiL2H(((h+e[1]-ref)%360+360)%360,Math.min(nt?1:.8,sa*(nt?1:UI_SATK[k])*e[2]),l)}return o}
 const uiSwatch=e=>e[1]===null?"#8aa08a":uiL2H(e[1],.75*e[2],.5);
+const uiRGB=h=>{const n=parseInt(h.slice(1),16);return[n>>16,(n>>8)&255,n&255]};
+const uiHex=a=>"#"+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
+const uiMix=(a,b,t)=>{const x=uiRGB(a),y=uiRGB(b);return uiHex(x.map((v,i)=>v+(y[i]-v)*t))};
+const uiLum=h=>{const[r,g,b]=uiRGB(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b};
+const uiCR=(a,b)=>{const x=uiLum(a),y=uiLum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+function uiHiPal(p,mode){const dk=mode!=="light",o=Object.assign({},p);
+ const bg=dk?uiMix(p["--bg"],"#000000",.5):uiMix(p["--bg"],"#ffffff",.6),fg=dk?"#ffffff":"#000000";
+ o["--bg"]=bg;o["--fg"]=fg;o["--mut"]=uiMix(fg,bg,.1);o["--line"]=uiMix(bg,fg,.65);
+ o["--card"]=dk?uiMix(bg,"#ffffff",.07):"#ffffff";o["--soft"]=dk?uiMix(bg,"#ffffff",.12):uiMix(bg,"#000000",.06);o["--ncall"]=o["--soft"];
+ let acc=p["--acc"],t=0;while(uiCR(acc,bg)<7&&t<1){t+=.05;acc=uiMix(p["--acc"],dk?"#ffffff":"#000000",t)}
+ o["--acc"]=acc;o["--accfg"]=uiCR(acc,"#000000")>=uiCR(acc,"#ffffff")?"#000000":"#ffffff";
+ o["--good"]=dk?"#6dffa8":"#0a5c2c";o["--bad"]=dk?"#ff8f86":"#8f1d16";o["--warn"]=dk?"#ffd070":"#7a4a00";return o}
 function uiApply(){const h=document.documentElement;if(!h)return;
  const keep=[...h.classList].filter(c=>!/^u-/.test(c));h.className=keep.join(" ");
  const add=[];UI_OPTS.forEach(o=>{const id=o[0],t=o[5],v=U(id);if(t==="tog"&&v)add.push("u-"+id);else if(t==="sel")add.push("u-"+id+"-"+v)});
@@ -2899,7 +2910,10 @@ function uiApply(){const h=document.documentElement;if(!h)return;
  const th=uiThemeNow();if(th==="system")h.removeAttribute("data-theme");else h.setAttribute("data-theme",th);
  const st=h.style;
  const ts=U("textsize");st.setProperty("--u-zoom",String(ts/100));
- {const he=uiHueEntry(U("hue")),th0=uiThemeNow();const names=["--bg","--fg","--mut","--line","--card","--soft","--acc","--accfg","--ncall"];const he2=he&&he[1]!==null?he:th0==="night"?["Moss",130,.45]:null;if(he2){const pal=uiHuePal(he2,th0==="night"?"night":th0==="light"?"light":"dark");names.forEach(k=>st.setProperty(k,pal[k]))}else names.forEach(k=>st.removeProperty(k))}
+ {const he=uiHueEntry(U("hue")),th0=uiThemeNow(),hi=!!U("hicontrast");const names=["--bg","--fg","--mut","--line","--card","--soft","--acc","--accfg","--ncall","--good","--bad","--warn"];const mode=th0==="night"?"night":th0==="light"?"light":"dark";const he2=he&&he[1]!==null?he:th0==="night"?["Moss",130,.45]:null;
+  let pal=he2?uiHuePal(he2,mode):hi?Object.assign({},UI_BASE[mode],{"--good":"#7fc99a","--bad":"#e8837a","--warn":"#e3b765"}):null;
+  if(pal&&hi)pal=uiHiPal(pal,mode);
+  if(pal)names.forEach(k=>{if(pal[k])st.setProperty(k,pal[k]);else st.removeProperty(k)});else names.forEach(k=>st.removeProperty(k))}
  const sj=uiSubj();h.setAttribute("data-subj",sj);const sc={math:"var(--math)",sci:"var(--sci)",fr:"var(--fr)",eng:"var(--eng)",leg:"var(--leg)"}[sj];if(sc)st.setProperty("--sc",sc);else st.removeProperty("--sc");
  if(U("readfont"))uiFont("lex","https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap");
  if(U("serifguides"))uiFont("serif","https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&display=swap");
@@ -9615,8 +9629,9 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through the Notice board page.`)}
 </div></section>`}
 
-const APP_VER=143;
+const APP_VER=144;
 const APP_LOG=[
+[144,"2026-11-21 16:10","High contrast now works with every theme and all 32 colours: it deepens the background, makes text pure black or white, strengthens borders and brightens or darkens the accent until it passes a 7:1 contrast check."],
 [143,"2026-11-21 15:45","Map of the whole website redrawn to match the app today: central home screen, its six buttons, Settings pages, the year-level chooser and the Year 10 tabs. Help text, FAQ and the tour updated to match (Backup and reset, the past-paper tracker, no exam countdown on the Year 10 home)."],
 [142,"2026-11-21 15:20","Privacy Policy rewritten: each of the five points is now a full paragraph. Terms and Conditions are unchanged."],
 [141,"2026-11-21 15:00","About: the whole Version section is removed. About now ends after Customising."],
