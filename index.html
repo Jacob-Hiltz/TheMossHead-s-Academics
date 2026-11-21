@@ -581,6 +581,13 @@ nav.tabs.sub button{font-size:calc(13px*var(--u-zoom,1));opacity:.9}
 .uihue .uisw2:hover::after,.uihue .uisw2:focus-visible::after{background:#4a4f4b;color:#f1f3f1;border:1px solid rgba(255,255,255,.18)}
 :root[data-theme="light"] .uihue .uisw2:hover::after,:root[data-theme="light"] .uihue .uisw2:focus-visible::after{background:#fff;color:#1f2a21;border:1px solid rgba(0,0,0,.18)}
 :root[data-theme="night"] .uihue .uisw2:hover::after,:root[data-theme="night"] .uihue .uisw2:focus-visible::after{background:#000;color:#f1f3f1;border:1px solid rgba(255,255,255,.22)}
+.uifonts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:440px}
+.uifb{position:relative;min-width:76px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:calc(17px*var(--u-zoom,1));line-height:1.2;cursor:pointer}
+.uifb.on{background:var(--acc);border-color:var(--acc);color:var(--accfg)}
+.uifb:hover{transform:scale(1.06)}
+.uifonts .uifb:hover::after,.uifonts .uifb:focus-visible::after{content:attr(data-name);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 9px;border-radius:8px;font-family:system-ui,sans-serif;font-size:calc(12px*var(--u-zoom,1));font-weight:600;white-space:nowrap;pointer-events:none;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.35);background:#4a4f4b;color:#f1f3f1;border:1px solid rgba(255,255,255,.18)}
+:root[data-theme="light"] .uifonts .uifb:hover::after,:root[data-theme="light"] .uifonts .uifb:focus-visible::after{background:#fff;color:#1f2a21;border:1px solid rgba(0,0,0,.18)}
+:root[data-theme="night"] .uifonts .uifb:hover::after,:root[data-theme="night"] .uifonts .uifb:focus-visible::after{background:#000;color:#f1f3f1;border:1px solid rgba(255,255,255,.22)}
 
 </style>
 <div id="app"></div>
@@ -2865,13 +2872,14 @@ const UI_VER="2026-10-26.2";
 const UI_OPTS=[
 ["theme","1","c","Theme","Light, dark or deep night. Deep night follows your colour choice too (green for Moss).","sel","dark",[["light","Light"],["dark","Dark"],["night","Deep night"]]],
 ["hue","4","c","Colour","Pick a colour for the whole app. The light and dark balance stays the same as the moss theme.","hue",""],
+["font","5","t","Font","Pick a set of fonts. Each choice has its own headings, body text and numbers font.","fontgrid",""],
 ["textsize","2","t","Text size","Makes everything bigger or smaller.","seg",100,[[90,"Extra small"],[95,"Small"],[100,"Medium"],[105,"Large"],[110,"Extra large"]]],
 ["hicontrast","3","c","High contrast","Stronger text and borders everywhere.","tog",0],
 ["reducemo","4","m","Reduce motion","Turns off animation.","tog",0]
 ];
 const UIMAP={};UI_OPTS.forEach(o=>UIMAP[o[0]]={id:o[0],n:o[1],cat:o[2],name:o[3],desc:o[4],type:o[5],def:o[6],ex:o[7]});
 const UIS=()=>(S.ui||(S.ui={}));
-const U=id=>{const o=UIMAP[id];if(!o)return 0;const v=UIS()[id];if(id==="hue")return uiHueEntry(UIS()[id])&&UIS()[id]!==""?UIS()[id]:"";if(id==="theme"&&!["light","dark","night"].includes(v))return o.def;if(id==="textsize"&&v!==undefined){const a=o.ex.map(x=>x[0]);return a.reduce((m,x)=>Math.abs(x-v)<Math.abs(m-v)?x:m,a[0])}return v===undefined?o.def:v};
+const U=id=>{const o=UIMAP[id];if(!o)return 0;const v=UIS()[id];if(id==="font")return uiFontEntry(UIS()[id])?UIS()[id]:"";if(id==="hue")return uiHueEntry(UIS()[id])&&UIS()[id]!==""?UIS()[id]:"";if(id==="theme"&&!["light","dark","night"].includes(v))return o.def;if(id==="textsize"&&v!==undefined){const a=o.ex.map(x=>x[0]);return a.reduce((m,x)=>Math.abs(x-v)<Math.abs(m-v)?x:m,a[0])}return v===undefined?o.def:v};
 function uiSet(id,v){UIS()[id]=v;save();uiApply();uiAfterRender()}
 function uiThemeNow(){return U("theme")}
 const uiIsDark=()=>{const th=uiThemeNow();return th==="dark"||th==="night"||(th==="system"&&matchMedia&&matchMedia("(prefers-color-scheme:dark)").matches)};
@@ -2903,6 +2911,38 @@ function uiHiPal(p,mode){const dk=mode!=="light",o=Object.assign({},p);
  let acc=p["--acc"],t=0;while(uiCR(acc,bg)<7&&t<1){t+=.05;acc=uiMix(p["--acc"],dk?"#ffffff":"#000000",t)}
  o["--acc"]=acc;o["--accfg"]=uiCR(acc,"#000000")>=uiCR(acc,"#ffffff")?"#000000":"#ffffff";
  o["--good"]=dk?"#6dffa8":"#0a5c2c";o["--bad"]=dk?"#ff8f86":"#8f1d16";o["--warn"]=dk?"#ffd070":"#7a4a00";return o}
+const UI_FONTS=[["Moss",null],
+["Easy read",["Lexend","s"],["Lexend","s"],["JetBrains Mono","m"]],["Hyperlegible",["Atkinson Hyperlegible","s"],["Atkinson Hyperlegible","s"],["Roboto Mono","m"]],
+["Classic",["Playfair Display","f"],["Source Serif 4","f"],["Source Code Pro","m"]],["Library",["Merriweather","f"],["Lora","f"],["Courier Prime","m"]],
+["Newspaper",["Libre Baskerville","f"],["Crimson Pro","f"],["Inconsolata","m"]],["Scholar",["EB Garamond","f"],["Spectral","f"],["Source Code Pro","m"]],
+["Editorial",["Fraunces","f"],["Newsreader","f"],["IBM Plex Mono","m"]],["Modern serif",["DM Serif Display","f"],["DM Sans","s"],["DM Mono","m"]],
+["Clean",["Inter","s"],["Inter","s"],["JetBrains Mono","m"]],["Friendly",["Nunito","s"],["Nunito Sans","s"],["Roboto Mono","m"]],
+["Rounded",["Quicksand","s"],["Nunito","s"],["Fira Code","m"]],["Soft",["Poppins","s"],["Open Sans","s"],["Roboto Mono","m"]],
+["Geometric",["Montserrat","s"],["Source Sans 3","s"],["Source Code Pro","m"]],["Tech",["Space Grotesk","s"],["Work Sans","s"],["Space Mono","m"]],
+["Code",["JetBrains Mono","m"],["Fira Sans","s"],["JetBrains Mono","m"]],["Humanist",["Fira Sans","s"],["Fira Sans","s"],["Fira Code","m"]],
+["Swiss",["Archivo","s"],["Libre Franklin","s"],["Roboto Mono","m"]],["Bold",["Oswald","s"],["Roboto","s"],["Roboto Mono","m"]],
+["Slab",["Roboto Slab","f"],["Roboto","s"],["Roboto Mono","m"]],["Typewriter",["Special Elite","m"],["Courier Prime","m"],["Courier Prime","m"]],
+["Handwritten",["Caveat","c"],["Patrick Hand","c"],["Inconsolata","m"]],["Playful",["Fredoka","s"],["Nunito","s"],["Roboto Mono","m"]],
+["Elegant",["Cormorant Garamond","f"],["Alegreya Sans","s"],["Inconsolata","m"]],["Sharp",["Sora","s"],["Manrope","s"],["JetBrains Mono","m"]],
+["Warm",["Alegreya","f"],["Alegreya Sans","s"],["Fira Code","m"]],["Sturdy",["Bitter","f"],["Source Sans 3","s"],["Source Code Pro","m"]],
+["Compact",["Zilla Slab","f"],["PT Sans","s"],["PT Mono","m"]],["Neutral",["Noto Serif","f"],["Noto Sans","s"],["Noto Sans Mono","m"]],
+["Ubuntu",["Ubuntu","s"],["Ubuntu","s"],["Ubuntu Mono","m"]],["Display",["Syne","s"],["Plus Jakarta Sans","s"],["Space Mono","m"]],
+["Literary",["Vollkorn","f"],["Karla","s"],["Inconsolata","m"]]];
+const uiFontEntry=n=>UI_FONTS.find(a=>a[0]===n&&a[1])||null;
+const UI_GEN={s:"sans-serif",f:"serif",m:"monospace",c:"cursive"};
+const uiFam=p=>`"${p[0]}",${UI_GEN[p[1]]}`;
+const uiFontW=n=>/^(DM Serif Display|Special Elite|Patrick Hand|PT Mono)$/.test(n)?"":n==="DM Mono"?":wght@400;500":":wght@400;700";
+function uiFontLinks(e){return [...new Set([e[1][0],e[2][0],e[3][0]])].map(n=>"https://fonts.googleapis.com/css2?family="+n.replace(/ /g,"+")+uiFontW(n)+"&display=swap")}
+function uiFontCss(e,guide){const H=uiFam(e[1]),B=uiFam(e[2]),M=uiFam(e[3]);
+ if(guide)return `body{font-family:${B}!important}h1,h2,h3,h4,h5,h6{font-family:${H}!important}code,pre,kbd,samp,.mono{font-family:${M}!important}`;
+ return `html body,html .nt,html nav.tabs button,html .bn,html .sj,html button:not(.uifb),html input,html select,html textarea,html .fz-t,html .fz-name,html .fz-done p{font-family:${B}!important}html h1,html h2,html h3,html .ch-hero h1,html .ch-btn b,html .score b,html .fz-done h2{font-family:${H}!important}html .mono,html .big,html .score,html .slot .t,html code,html pre{font-family:${M}!important}`}
+function uiFontPreviewLoad(){UI_FONTS.forEach(a=>{if(!a[1])return;const n=a[1][0],href="https://fonts.googleapis.com/css2?family="+n.replace(/ /g,"+")+(uiFontW(n)?":wght@700":"")+"&text=Moss&display=swap";if(document.querySelector('link[data-uifp="'+n+'"]'))return;try{const l=document.createElement("link");l.rel="stylesheet";l.href=href;l.dataset.uifp=n;document.head.appendChild(l)}catch(x){}})}
+const uiFontPrevW=n=>uiFontW(n)?700:400;
+function uiApplyFont(){const e=uiFontEntry(U("font"));let st=document.getElementById("ui-fontcss");
+ if(!e){if(st)st.remove();return}
+ uiFontLinks(e).forEach(href=>{if(!document.querySelector('link[data-uif="'+href+'"]')){try{const l=document.createElement("link");l.rel="stylesheet";l.href=href;l.dataset.uif=href;document.head.appendChild(l)}catch(x){}}});
+ if(!st){st=document.createElement("style");st.id="ui-fontcss";document.head.appendChild(st)}
+ st.textContent=uiFontCss(e)}
 function uiApply(){const h=document.documentElement;if(!h)return;
  const keep=[...h.classList].filter(c=>!/^u-/.test(c));h.className=keep.join(" ");
  const add=[];UI_OPTS.forEach(o=>{const id=o[0],t=o[5],v=U(id);if(t==="tog"&&v)add.push("u-"+id);else if(t==="sel")add.push("u-"+id+"-"+v)});
@@ -2921,6 +2961,7 @@ function uiApply(){const h=document.documentElement;if(!h)return;
  if(U("favicon")){try{const c=getComputedStyle(h).getPropertyValue("--acc").trim()||"#0b6b5d";const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${c}"/><text x="32" y="45" font-size="38" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#fff">S</text></svg>`;let l=document.querySelector("link#uifav");if(!l){l=document.createElement("link");l.id="uifav";l.rel="icon";document.head.appendChild(l)}l.href="data:image/svg+xml,"+encodeURIComponent(svg)}catch(e){}}
  else{const l=document.querySelector("link#uifav");if(l)l.remove()}
  uiSound();
+ try{uiApplyFont()}catch(e){}
 }
 function uiToast(msg,kind){if(!U("toasts")&&kind!=="force")return;let w=document.getElementById("uitoasts");if(!w){w=document.createElement("div");w.id="uitoasts";w.setAttribute("role","status");w.setAttribute("aria-live","polite");document.body.appendChild(w)}
  const t=document.createElement("div");t.className="uitoast "+(kind||"");t.textContent=msg;w.appendChild(t);setTimeout(()=>{t.classList.add("out");setTimeout(()=>t.remove(),400)},kind==="err"?4200:2200)}
@@ -2943,6 +2984,7 @@ function uiSound(){const k="off";const vol=U("soundvol")/100*0.5;
 document.addEventListener("click",()=>{if(uiAC&&uiAC.state==="suspended")uiAC.resume()},{passive:true});
 function uiGuideCss(n){const o=[];const th=uiThemeNow();const cs=getComputedStyle(document.documentElement);const v=x=>cs.getPropertyValue(x).trim();
  if(th!=="system"||U("hue")!==""){o.push(`body{background:${v("--bg")}!important;color:${v("--fg")}!important}a{color:${v("--acc")}}`)}
+ {const fe=uiFontEntry(U("font"));if(fe)o.push(uiFontCss(fe,true))}
  if(U("hicontrast"))o.push("body{color:"+(uiIsDark()?"#fff":"#000")+"!important;font-weight:500}");
  if(U("textsize")!==100)o.push(`:root{--u-zoom:${U("textsize")/100}}html{font-size:calc(100% * var(--u-zoom))}`);
  if(U("readfont"))o.push(`body,button,input,select,textarea{font-family:'Lexend',system-ui,sans-serif!important}`);
@@ -2982,7 +3024,7 @@ function uiGuideJs(n){const cfg={callouts:!!U("callouts"),animdiag:!!U("animdiag
 function uiTextScale(h){const z=U("textsize");if(z===100||!h)return h;const f=m=>`font-size:calc(${m}*var(--u-zoom,1))`;
  h=h.replace(/font-size:\s*(\d+(?:\.\d+)?px)/g,(a,m)=>f(m)).replace(/font-size:\s*(clamp\([^()]*\))/g,(a,m)=>f(m)).replace(/font:\s*(\d+(?:\.\d+)?px)/g,(a,m)=>`font:calc(${m}*var(--u-zoom,1))`);
  const tag=`<style id="ui-zoom">:root{--u-zoom:${z/100}}html{font-size:calc(100% * var(--u-zoom))}</style>`;const i=h.lastIndexOf("</body>");return i>=0?h.slice(0,i)+tag+h.slice(i):h+tag}
-function uiInject(n,h){if(!h)return h;if(n==="Tests.html")return uiTextScale(h);h=uiTextScale(h);const css=uiGuideCss(n),js=uiGuideJs(n);if(!css&&!js)return h;const tag=`<style id="ui-inj">${css}</style><script id="ui-inj-js">${js.replace(/<\//g,"<\\/")}<\/script>`;const i=h.lastIndexOf("</body>");const link=(U("readfont")?'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap">':"")+(U("serifguides")?'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&display=swap">':"")+(U("mathfont")?'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:wght@400;600&display=swap">':"");return i>=0?h.slice(0,i)+link+tag+h.slice(i):h+link+tag}
+function uiInject(n,h){if(!h)return h;if(n==="Tests.html")return uiTextScale(h);h=uiTextScale(h);const css=uiGuideCss(n),js=uiGuideJs(n);if(!css&&!js)return h;const tag=`<style id="ui-inj">${css}</style><script id="ui-inj-js">${js.replace(/<\//g,"<\\/")}<\/script>`;const i=h.lastIndexOf("</body>");const link=((()=>{const fe=uiFontEntry(U("font"));return fe?uiFontLinks(fe).map(h=>`<link rel="stylesheet" href="${h}">`).join(""):""})())+(U("readfont")?'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap">':"")+(U("serifguides")?'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&display=swap">':"")+(U("mathfont")?'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:wght@400;600&display=swap">':"");return i>=0?h.slice(0,i)+link+tag+h.slice(i):h+link+tag}
 const T=f=>{try{f()}catch(e){try{console.warn("ui",e)}catch(x){}}};
 const uiq=s=>document.querySelector(s),uiqa=s=>[...document.querySelectorAll(s)];
 let uiLast={done:null,tab:null,pts:null,streak:null,tool:null};
@@ -3029,6 +3071,7 @@ let uiSetSec="look";
 function uiRow(o){const id=o[0],t=o[5],v=U(id),x=o[7];let ctl="";const lab=esc(o[3]);
  if(t==="tog")ctl=`<label class="uisw"><input type="checkbox" data-ui="${id}" ${v?"checked":""} aria-label="${lab}"><span></span></label>`;
  else if(t==="sel")ctl=`<select data-ui="${id}" aria-label="${lab}">${x.map(a=>`<option value="${a[0]}" ${v===a[0]?"selected":""}>${esc(a[1])}</option>`).join("")}</select>`;
+ else if(t==="fontgrid"){try{uiFontPreviewLoad()}catch(e){}ctl=`<div class="uifonts" role="group" aria-label="${lab}">${UI_FONTS.map(a=>{const hn=a[1]?a[1][0]:"Bricolage Grotesque",fam=a[1]?uiFam(a[1]).replace(/"/g,"'"):"'Bricolage Grotesque',sans-serif",w=a[1]?uiFontPrevW(hn):700;return `<button class="uifb ${(v||"Moss")===a[0]?"on":""}" data-uia="font" data-v="${a[0]}" data-name="${a[0]} · ${hn}" aria-label="${a[0]} (${hn})" aria-pressed="${(v||"Moss")===a[0]}" style="font-family:${fam};font-weight:${w}">Moss</button>`}).join("")}</div>`}
  else if(t==="hue")ctl=`<div class="uihue" role="group" aria-label="${lab}">${UI_HUES.map(a=>`<button class="uisw2 ${(v||"Moss")===a[0]?"on":""}" data-uia="hue" data-v="${a[0]}" data-name="${a[0]}" aria-label="${a[0]}" aria-pressed="${(v||"Moss")===a[0]}" style="background:${uiSwatch(a)}"></button>`).join("")}</div>`;
  else if(t==="seg")ctl=`<div class="uiseg" role="group" aria-label="${lab}">${x.map(a=>`<button class="sm ${v===a[0]?"pri":""}" data-uia="seg" data-id="${id}" data-v="${a[0]}" aria-pressed="${v===a[0]}">${a[1]}</button>`).join("")}</div>`;
  else if(t==="rng")ctl=`<input type="range" data-ui="${id}" min="${x[0]}" max="${x[1]}" step="${x[2]}" value="${v}" aria-label="${lab}"><span class="mono uival" data-uiv="${id}">${v}${x[3]}</span>`;
@@ -3050,7 +3093,7 @@ document.addEventListener("change",e=>{const t=e.target;const id=t.dataset&&t.da
  uiSet(id,v)});
 document.addEventListener("input",e=>{const t=e.target;const id=t.dataset&&t.dataset.ui;if(!id)return;const o=UIMAP[id];if(o.type==="rng"){uiq('[data-uiv="'+id+'"]').textContent=t.value+o.ex[3];uiSet(id,+t.value)}else if(o.type==="col")uiSet(id,t.value)});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-uia]");if(!b)return;const a=b.dataset.uia,id=b.dataset.id;
- if(a==="sec"){uiSetSec=id;render()}else if(a==="seg"){uiSet(id,+b.dataset.v);render()}else if(a==="hue"){uiSet("hue",b.dataset.v==="Moss"?"":b.dataset.v);render()}
+ if(a==="sec"){uiSetSec=id;render()}else if(a==="seg"){uiSet(id,+b.dataset.v);render()}else if(a==="font"){uiSet("font",b.dataset.v==="Moss"?"":b.dataset.v);render()}else if(a==="hue"){uiSet("hue",b.dataset.v==="Moss"?"":b.dataset.v);render()}
 
  if(a==="tour")uiTour();else if(a==="new")uiWhatsNew(true)});
 function uiInit(){T(()=>{uiApply();uiMO.observe(document.body,{childList:true,subtree:true});uiAfterRender();setTimeout(()=>uiWhatsNew(false),900)})}
@@ -9629,8 +9672,10 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through the Notice board page.`)}
 </div></section>`}
 
-const APP_VER=144;
+const APP_VER=146;
 const APP_LOG=[
+[146,"2026-11-21 17:00","Font setting: every button now shows the word Moss written in that font set's heading font; hovering shows the font set name and its heading font."],
+[145,"2026-11-21 16:40","New Font setting in Appearance: 32 font sets, each with its own headings, body and numbers font. It applies to the whole app and the study guides. Moss is the original look."],
 [144,"2026-11-21 16:10","High contrast now works with every theme and all 32 colours: it deepens the background, makes text pure black or white, strengthens borders and brightens or darkens the accent until it passes a 7:1 contrast check."],
 [143,"2026-11-21 15:45","Map of the whole website redrawn to match the app today: central home screen, its six buttons, Settings pages, the year-level chooser and the Year 10 tabs. Help text, FAQ and the tour updated to match (Backup and reset, the past-paper tracker, no exam countdown on the Year 10 home)."],
 [142,"2026-11-21 15:20","Privacy Policy rewritten: each of the five points is now a full paragraph. Terms and Conditions are unchanged."],
@@ -9986,7 +10031,7 @@ const SUBJ={S:{n:"Science",c:"var(--sci)"},M:{n:"Maths",c:"var(--math)"},F:{n:"F
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const LS="ssp-state-v1";
 const DEF=()=>({cards:{},drafts:{},essay:{},prefs:{},miss:[],papers:[],tests:[],ts:0,ui:{},mixlog:[]});
-const mkS=o=>{const s=Object.assign(DEF(),o);for(const k of ["done","err","dist","swap","exam","skip","resched","flex","light","tb","rate","goals","mcat","diag","hof","auto","noauto"])delete s[k];if(s.prefs)delete s.prefs.fake;if(s.ui&&typeof s.ui==="object"){const K=["theme","textsize","hicontrast","reducemo","hue"];for(const k of Object.keys(s.ui))if(!K.includes(k))delete s.ui[k]}return s};
+const mkS=o=>{const s=Object.assign(DEF(),o);for(const k of ["done","err","dist","swap","exam","skip","resched","flex","light","tb","rate","goals","mcat","diag","hof","auto","noauto"])delete s[k];if(s.prefs)delete s.prefs.fake;if(s.ui&&typeof s.ui==="object"){const K=["theme","textsize","hicontrast","reducemo","hue","font"];for(const k of Object.keys(s.ui))if(!K.includes(k))delete s.ui[k]}return s};
 let S=DEF();
 let cloud=null,saveT=null,syncNote="Saved in this browser",unsub=null;
 const CID=Math.random().toString(36).slice(2);
