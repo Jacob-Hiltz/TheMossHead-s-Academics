@@ -445,7 +445,12 @@ html.fz-on,html.fz-on body{overflow:hidden}
 .hdr-acct{position:fixed;top:12px;right:16px;z-index:40;display:flex;gap:8px}
 .hdr-acct button{padding:7px 14px;border-radius:999px;font-size:calc(13px*var(--u-zoom,1));white-space:nowrap}
 @media (max-width:520px){.hdr-acct{position:static;justify-content:flex-end;margin:0 0 6px;top:auto;right:auto}}
-.gate{max-width:460px;margin:7vh auto 40px;padding:0 16px}
+.gate{display:grid;grid-template-columns:minmax(300px,400px) 1fr;min-height:100vh;margin:0;padding:0;max-width:none;width:100%}
+.gate-form{background:var(--card);border-right:1px solid var(--line);padding:40px 30px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.gate-form .eb-card{background:transparent;border:0;box-shadow:none;padding:0}
+.gate-form .eb{margin:0}
+.gate-big{margin:0;display:flex;align-items:center;padding:40px 6vw;font-size:calc(clamp(32px,6vw,88px)*var(--u-zoom,1));line-height:1.05;letter-spacing:-.02em;font-weight:800;color:var(--acc);min-width:0;overflow-wrap:anywhere}
+@media (max-width:720px){.gate{grid-template-columns:1fr;min-height:0}.gate-big{order:-1;padding:28px 20px 8px;font-size:calc(clamp(30px,10vw,52px)*var(--u-zoom,1))}.gate-form{border-right:0;padding:20px 20px 40px}}
 .gate-h{font-size:calc(clamp(28px,7vw,40px)*var(--u-zoom,1));line-height:1.1;letter-spacing:-.01em;margin:0 0 18px;text-align:center}
 .gate .eb-card .row button{flex:1}
 .lg .lg-h{margin:18px 0 4px}
@@ -479,6 +484,17 @@ html.fz-on,html.fz-on body{overflow:hidden}
 .ch-v{margin:0;font-size:calc(13px*var(--u-zoom,1));color:var(--mut)}
 .ch-nav{margin-bottom:6px}
 .uiseg{display:flex;flex-wrap:wrap;gap:6px}
+
+#app.gated{max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#app.gated:before{display:none!important}
+#app.gated>*{animation:none!important}
+body:has(#app.gated){overflow-x:hidden;padding-top:0;background-image:none!important}
+.gate{position:fixed;inset:0;z-index:50;width:auto;margin:0;min-height:0;overflow:auto;background:var(--bg);grid-template-rows:minmax(100%,auto)}
+
+.gate-big{color:#fff}
+.gate-form input{background:var(--bg)}
+#gtimer{position:fixed;top:8px;left:8px;z-index:80;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:calc(13px*var(--u-zoom,1));font-variant-numeric:tabular-nums;pointer-events:none}
+#gtimer.low{border-color:var(--bad);color:var(--bad)}
 /* ===== optional appearance settings (everything below only applies when an option is switched on) ===== */
 :root[data-theme="night"]{--bg:#05080c;--fg:#dfe7f2;--mut:#8b9bb0;--line:#1b2431;--card:#0b1119;--soft:#121a25;--acc:#6aa8ff;--accfg:#041226;--good:#58c88b;--bad:#f07a70;--warn:#e8a64a;color-scheme:dark}
 :root[data-theme="pastel"]{--bg:#fbf4fa;--fg:#3b3350;--mut:#7a6f90;--line:#eadff0;--card:#fffafe;--soft:#f3e8f6;--acc:#9b7fd1;--accfg:#fff;--good:#4aa87a;--bad:#d9667c;--warn:#c98f3a}
@@ -17705,10 +17721,21 @@ function acLoad(){if(!AC.on||AC.ready||AC.loading||location.protocol==="file:")r
 function acDb(){if(AC.dbp)return AC.dbp;return AC.dbp=new Promise((ok,no)=>{const s=document.createElement("script");s.src=ACCT_SDK+"firebase-firestore-compat.js";s.onload=()=>{try{firebase.firestore().settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(e){}ok()};s.onerror=()=>{AC.dbp=null;no(new Error("database"))};document.head.appendChild(s)})}
 /* sign-in gate: shown instead of the app until signed in (skipped on downloaded copies, or if sign-in cannot load, since nobody could sign in then) */
 function acSet(u){if(u&&AC.guest){AC.guest=false;acRawDel.call(localStorage,"acct:guest")}AC.user=u;AC.known=true;AC.choice=null;AC.busy=false;AC.unver=!!(u&&!u.emailVerified);if(u){AC.pw="";if(!AC.unver)acSync()}acRender()}
+/* guest mode lasts 10 minutes from the first time it is used on this device, then sign-in is required */
+const GUEST_MS=600000;
+function acGEnd(){return+acG("acct:gend")||0}
+function acGUsed(){const e=acGEnd();return !!e&&e<=Date.now()}
+function acGuestEnd(){AC.guest=false;acRawDel.call(localStorage,"acct:guest");AC.mode="in";AC.err="Your 10 minutes as a guest are up. Please log in or sign up to keep going.";AC.msg="";acTick();acRender()}
+function acTick(){let el=document.getElementById("gtimer");const show=AC.on&&AC.guest&&!AC.user&&!AC.sdkErr&&location.protocol!=="file:";
+ if(!show){if(el)el.remove();return}
+ const left=Math.max(0,acGEnd()-Date.now());if(!left){return acGuestEnd()}
+ if(!el){el=document.createElement("div");el.id="gtimer";el.setAttribute("role","timer");el.title="Guest time left. Log in or sign up to keep your progress.";document.body.appendChild(el)}
+ const m=Math.floor(left/60000),sec=Math.floor(left/1000)%60;el.textContent="Guest "+m+":"+String(sec).padStart(2,"0");el.classList.toggle("low",left<60000)}
+setInterval(acTick,1000);
 function acGate(){if(AC.on&&!AC.ready&&!AC.sdkErr&&!AC.guest&&AC.hint)return false;return AC.on&&!AC.guest&&location.protocol!=="file:"&&!AC.sdkErr&&(!AC.known||!AC.user||!!AC.choice||!!AC.unver)}
 function acRender(){if(typeof render!=="function")return;const y=window.scrollY;render();window.scrollTo(0,y)}
 function viewGate(){const body=!AC.known?`<section class="eb"><div class="eb-card"><p class="eb-note">Loading...</p></div></section>`:viewAcct();
- return `<div class="gate"><h1 class="gate-h">TheMossHead's Academics</h1>${body}${AC.legal&&typeof viewLegal==="function"?viewLegal():""}</div>`}
+ return `<div class="gate"><aside class="gate-form">${body}${AC.legal&&typeof viewLegal==="function"?viewLegal():""}</aside><h1 class="gate-big" aria-label="TheMossHead's Academics"><span aria-hidden="true">The<br>Moss<br>Head's<br>Academics</span></h1></div>`}
 function acRefresh(){if(acGate()||(typeof tab!=="undefined"&&tab==="acct")){const a=document.activeElement;if(a&&a.dataset&&a.dataset.ac&&/INPUT/.test(a.tagName))return acPaint();const y=window.scrollY;render();window.scrollTo(0,y)}}
 function acPaint(){const m=document.getElementById("acmsg");if(m)m.textContent=AC.err||AC.msg}
 function acWhen(ts){if(!ts)return"not yet";try{return new Date(ts).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){return""}}
@@ -17734,10 +17761,10 @@ function viewAcct(){ebStyle();const C=h=>`<section class="eb"><div class="eb-car
   <input id="acem" type="email" data-ac="email" value="${esc(AC.email)}" placeholder="Email" aria-label="Email" autocomplete="email" maxlength="254" style="width:100%">
   <input id="acpw" type="password" data-ac="pw" value="${esc(AC.pw)}" placeholder="${up?"Password (8 or more characters)":"Password"}" aria-label="Password" maxlength="128" autocomplete="${up?"new-password":"current-password"}" style="width:100%;margin-top:8px">
   <button class="pri" data-ac="${up?"signup":"signin"}" ${AC.busy?"disabled":""} style="width:100%;margin-top:10px">${up?"Create account":"Log in"}</button>
-  <div class="gate-links">${up?"":`<button class="lnk" data-ac="reset">Forgot password?</button>`}${acGate()?`<button class="lnk" data-ac="guest">Continue as guest</button>`:""}</div>${msg}`)}
+  <div class="gate-links">${up?"":`<button class="lnk" data-ac="reset">Forgot password?</button>`}${acGate()&&!acGUsed()?`<button class="lnk" data-ac="guest">Continue as guest</button>`:""}</div>${msg}`)}
 async function acDo(k){if(k==="retry"){AC.sdkErr=false;acLoad();return acRefresh()}if(k==="swapin"||k==="swapup"){AC.mode=k==="swapup"?"up":"in";AC.err="";AC.msg="";return acRefresh()}if(k==="swap"){AC.mode=AC.mode==="up"?"in":"up";AC.err="";AC.msg="";return acRefresh()}
  if(k==="legal"){AC.legal=!AC.legal;return acRender()}
- if(k==="guest"){AC.guest=true;AC.err="";AC.msg="";acP("acct:guest","1");if(typeof tab!=="undefined")tab="ch";return acRender()}
+ if(k==="guest"){if(acGUsed()){AC.err="Your 10 minutes as a guest are used up. Please log in or sign up.";AC.guest=false;return acRefresh()}AC.guest=true;AC.err="";AC.msg="";if(!acGEnd())acP("acct:gend",Date.now()+GUEST_MS);acP("acct:guest","1");acTick();if(typeof tab!=="undefined")tab="ch";return acRender()}
  if(k==="goacct"){if(typeof tab!=="undefined"){tab="acct";render()}return}
  if(k==="goin"||k==="goup"){AC.mode=k==="goup"?"up":"in";AC.err="";AC.msg="";AC.choice=null;if(typeof tab!=="undefined"){tab="acct";render()}return}
  if(k==="del1"){const s=document.getElementById("acdel");if(s)s.hidden=false;return}
@@ -17778,8 +17805,10 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset&&(e.target.dataset.ac==="pw"||e.target.dataset.ac==="email"))acDo(AC.mode==="up"?"signup":"signin")});
 document.addEventListener("visibilitychange",()=>{if(!AC.user||AC.choice)return;if(AC.unver&&document.visibilityState==="hidden")return;if(document.visibilityState==="hidden"){AC.dirty0=acG("acct:dirty");if(AC.dirty0)acPush().then(()=>{AC.dirty0=acG("acct:dirty")})}else if(AC.unver&&AC.ready&&firebase.auth().currentUser){firebase.auth().currentUser.reload().then(()=>{if(firebase.auth().currentUser.emailVerified)return firebase.auth().currentUser.getIdToken(true).then(()=>acSet(firebase.auth().currentUser))}).catch(()=>{})}else acSync()});
 AC.dirty0=acG("acct:dirty");
+if(AC.guest&&acGUsed()){AC.guest=false;acRawDel.call(localStorage,"acct:guest");AC.err="Your 10 minutes as a guest are up. Please log in or sign up to keep going."}
 try{for(let i=0;i<localStorage.length;i++)if(/^firebase:authUser:/.test(localStorage.key(i))){AC.hint=true;break}}catch(e){}
 acLoad();
+acTick();
 
 /* Privacy Policy and Terms & Conditions page. Plain content page, no logic beyond rendering.
    Structure: short summary first, then a what/why/where table, then plain-language sections (layered, as the OAIC recommends). */
@@ -17831,8 +17860,9 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through the Notice board page.`)}
 </div></section>`}
 
-const APP_VER=199;
+const APP_VER=200;
 const APP_LOG=[
+[200,"2026-11-22 16:10","New sign-in screen: form in a left column, large white TheMossHead's Academics title on the right, in the site's colours (stacks on phones). Guest mode now runs a 10-minute countdown in the top-left corner, then sign-in is required and the guest button is removed on that device."],
 [199,"2026-11-22 15:35","Sign-up passwords now need at least 8 characters (was 6), matching the new password policy on the account service."],
 [198,"2026-11-22 15:40","Sign-in security: email addresses are now checked for a real format and length, email accounts must be verified (link emailed; verify screen with resend) before the app or cloud save opens, and each session is limited to 2 sign-ups and 2 emails sent."],
 [197,"2026-11-22 15:30","Sign-in fixed and faster: double Enter/click can no longer fire several log-in requests at once (the cause of \"too many log in attempts\"), a short pause after repeated wrong passwords, a clear one-minute wait message if the sign-in service blocks you, the app opens straight away for returning users, and the sign-in files now download in parallel with the large database file loaded only once you are signed in."],
@@ -18307,7 +18337,7 @@ function viewY12(){const C=[["eb","#d99a8a","Latin Units 3/4","Reading, translat
 function viewCentral(){const hr=new Date().getHours(),gr=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
  const B=(v,t,d,pri)=>`<button class="ch-btn${pri?" pri":""}" data-act="tab" data-v="${v}"><b>${t}</b><span>${d}</span></button>`;
  return `<section class="ch"><div class="ch-hero"><h1>TheMossHead's Academics</h1><p>${gr}.</p></div><div class="ch-grid">${B("yrs","Start","Choose your year level",1)}${B("set","Settings","Theme, text size and backup")}${B("board","Notice board","Send a request or message")}${B("help","How it works","A quick guide")}${B("legal","Privacy &amp; Terms","How your information is used")}${B("log","Version history","What has changed, and when")}</div></section>`}
-function render(){const a=$("#app");if(!a)return;if(typeof acGate==="function"&&acGate()){a.innerHTML=viewGate();return}
+function render(){const a=$("#app");if(!a)return;if(typeof acGate==="function"&&acGate()){a.classList.add("gated");a.innerHTML=viewGate();return}a.classList.remove("gated");
  const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goin">Log in</button><button class="sm pri" data-ac="goup">Sign up</button></div>`;
  if(tab==="ch"||tab==="yrs"){a.innerHTML=acctBtns+(tab==="yrs"?`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="ch">&lsaquo; Home</button></nav></div>`+viewYears():viewCentral());try{uiAfterRender()}catch(e){}return}
  if(tab==="y12"){tab="subjects";curSub=null}
