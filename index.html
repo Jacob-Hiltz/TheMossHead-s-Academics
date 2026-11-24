@@ -19159,15 +19159,15 @@ function acTick(){let el=document.getElementById("gtimer");const show=false&&AC.
  if(!el){el=document.createElement("div");el.id="gtimer";el.setAttribute("role","timer");el.title="Guest time left. Log in or sign up to keep your progress.";document.body.appendChild(el)}
  const m=Math.floor(left/60000),sec=Math.floor(left/1000)%60;el.textContent="Guest "+m+":"+String(sec).padStart(2,"0");el.classList.toggle("low",left<60000)}
 setInterval(acTick,1000);
-function acGate(){if(AC.on&&!AC.ready&&!AC.sdkErr&&!AC.guest&&AC.hint)return false;return AC.on&&!AC.guest&&location.protocol!=="file:"&&!AC.sdkErr&&(!AC.known||!AC.user||!!AC.choice||!!AC.unver)}
+function acGate(){if(AC.show==="in"&&AC.user&&!AC.choice&&!AC.unver)AC.show=false;if(AC.show)return true;if(AC.on&&!AC.ready&&!AC.sdkErr&&!AC.guest&&AC.hint)return false;return AC.on&&!AC.guest&&location.protocol!=="file:"&&!AC.sdkErr&&(!AC.known||!AC.user||!!AC.choice||!!AC.unver)}
 function acRender(){if(typeof render!=="function")return;const y=window.scrollY;render();window.scrollTo(0,y)}
-function viewGate(){const body=!AC.known?`<section class="eb"><div class="eb-card"><p class="eb-note">Loading...</p></div></section>`:viewAcct();
+function viewGate(){const off=AC.show&&(location.protocol==="file:"||!AC.on||AC.sdkErr);const body=off?`<section class="eb"><div class="eb-card"><button class="lnk" data-ac="back">&larr; Back</button><b>Sign-in is not available here</b><p class="eb-note">Logging in and signing up only work on the website, not in a downloaded copy of the page (or when the connection is blocked). Open <a href="https://jacob-hiltz.github.io/TheMossHead-s-Academics/" target="_blank" rel="noopener noreferrer">https://jacob-hiltz.github.io/TheMossHead-s-Academics/</a> to log in or sign up.</p></div></section>`:!AC.known?`<section class="eb"><div class="eb-card"><p class="eb-note">Loading...</p></div></section>`:viewAcct();
  return `<div class="gate"><aside class="gate-form">${body}</aside>${acLegalOv()}<h1 class="gate-big" aria-label="TheMossHead's Academics"><span aria-hidden="true">The<br>Moss<br>Head's<br>Academics</span></h1></div>`}
 function acRefresh(){if(acGate()||(typeof tab!=="undefined"&&tab==="acct")){const a=document.activeElement;if(a&&a.dataset&&a.dataset.ac&&/INPUT/.test(a.tagName))return acPaint();const y=window.scrollY;render();window.scrollTo(0,y)}}
 function acPaint(){const m=document.getElementById("acmsg");if(m)m.textContent=AC.err||AC.msg}
 function acWhen(ts){if(!ts)return"not yet";try{return new Date(ts).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){return""}}
 function acLegalOv(){return AC.legal&&typeof viewLegal==="function"?`<div class="lg-ov" role="dialog" aria-label="Privacy Policy and Terms"><div class="lg-box"><button class="pri" data-ac="legal">&larr; Back</button>${viewLegal()}<button class="pri" data-ac="legal">&larr; Back</button></div></div>`:""}
-function viewAcct(){ebStyle();const C=h=>`${acLegalOv()}<section class="eb"><div class="eb-card">${AC.from&&!acGate()?`<button class="lnk" data-ac="back">&larr; Back</button> `:""}${AC.ready&&!AC.user?"":"<b>Account</b>"}${h}</div></section>`;
+function viewAcct(){ebStyle();const C=h=>`${acLegalOv()}<section class="eb"><div class="eb-card">${(AC.from&&!acGate())||AC.show?`<button class="lnk" data-ac="back">&larr; Back</button> `:""}${AC.ready&&!AC.user?"":"<b>Account</b>"}${h}</div></section>`;
  if(!AC.on)return C(`<p class="eb-note">Sign-in is not switched on yet. For now your progress is saved in this browser on this device only.</p>`);
  if(location.protocol==="file:")return C(`<p class="eb-note">Sign-in only works on the website link, not on a downloaded copy of the page. Your progress here is saved in this browser.</p>`);
  if(AC.sdkErr)return C(`<p class="eb-note">Could not load sign-in (no connection, or it is blocked on this network). Your progress is still saved in this browser.</p><button data-ac="retry">Try again</button>`);
@@ -19189,13 +19189,13 @@ function viewAcct(){ebStyle();const C=h=>`${acLegalOv()}<section class="eb"><div
   <input id="acem" type="email" data-ac="email" value="${esc(AC.email)}" placeholder="Email" aria-label="Email" autocomplete="email" maxlength="254" style="width:100%">
   <input id="acpw" type="password" data-ac="pw" value="${esc(AC.pw)}" placeholder="${up?"Password (8 or more characters)":"Password"}" aria-label="Password" maxlength="128" autocomplete="${up?"new-password":"current-password"}" style="width:100%;margin-top:8px">
   <button class="pri" data-ac="${up?"signup":"signin"}" ${AC.busy?"disabled":""} style="width:100%;margin-top:10px">${up?"Create account":"Log in"}</button>
-  <div class="gate-links">${up?"":`<button class="lnk" data-ac="reset">Forgot password?</button>`}</div>${acGate()?`<div class="orline"><span>or</span></div><button data-ac="guest" style="width:100%">Use without an account</button><p class="eb-note" style="margin:8px 0 0">No sign-in needed. Your progress is saved in this browser on this device only. You can log in or sign up later from the top right.</p>`:""}${msg}`)}
+  <div class="gate-links">${up?"":`<button class="lnk" data-ac="reset">Forgot password?</button>`}</div>${acGate()&&!AC.show?`<div class="orline"><span>or</span></div><button data-ac="guest" style="width:100%">Use without an account</button><p class="eb-note" style="margin:8px 0 0">No sign-in needed. Your progress is saved in this browser on this device only. You can log in or sign up later from the top right.</p>`:""}${msg}`)}
 async function acDo(k){if(k==="retry"){AC.sdkErr=false;acLoad();return acRefresh()}if(k==="swapin"||k==="swapup"){AC.mode=k==="swapup"?"up":"in";AC.err="";AC.msg="";return acRefresh()}if(k==="swap"){AC.mode=AC.mode==="up"?"in":"up";AC.err="";AC.msg="";return acRefresh()}
  if(k==="legal"){AC.legal=!AC.legal;return acRender()}
  if(k==="guest"){if(acGUsed()){AC.err="Your 10 minutes as a guest are used up. Please log in or sign up.";AC.guest=false;return acRefresh()}AC.guest=true;AC.err="";AC.msg="";if(!acGEnd())acP("acct:gend",Date.now()+GUEST_MS);acP("acct:guest","1");acTick();if(typeof tab!=="undefined")tab="ch";return acRender()}
- if(k==="goacct"){if(typeof tab!=="undefined"){if(tab!=="acct")AC.from=tab;tab="acct";render()}return}
- if(k==="back"){if(typeof tab!=="undefined"){tab=AC.from||"home";AC.from=null;render()}return}
- if(k==="goin"||k==="goup"){AC.mode=k==="goup"?"up":"in";AC.err="";AC.msg="";AC.choice=null;if(typeof tab!=="undefined"){if(tab!=="acct")AC.from=tab;tab="acct";render()}return}
+ if(k==="goacct"){AC.show="acct";if(typeof tab!=="undefined"&&tab!=="acct")AC.from=tab;render();return}
+ if(k==="back"){AC.show=false;AC.err="";AC.msg="";AC.legal=false;if(typeof tab!=="undefined"){tab=AC.from||(tab==="acct"?"home":tab);AC.from=null}render();window.scrollTo(0,0);return}
+ if(k==="goin"||k==="goup"){AC.mode=k==="goup"?"up":"in";AC.err="";AC.msg="";AC.choice=null;AC.show="in";if(typeof tab!=="undefined"&&tab!=="acct")AC.from=tab;render();window.scrollTo(0,0);return}
  if(k==="del1"){const s=document.getElementById("acdel");if(s)s.hidden=false;return}
  if(!AC.ready)return;const au=firebase.auth();
  if(k==="chkv"){return (async()=>{AC.busy=true;AC.err="";AC.msg="";acRefresh();try{const cu=au.currentUser;await cu.reload();if(cu.emailVerified){await cu.getIdToken(true);acSet(cu);return}AC.err="Not verified yet. Open the link in the email we sent, then press the button again."}catch(e){AC.err=acErr(e)}AC.busy=false;acRefresh()})()}
@@ -19289,8 +19289,10 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through Requests page.`)}
 </div></section>`}
 
-const APP_VER=216;
+const APP_VER=218;
 const APP_LOG=[
+[218,"2026-11-25 07:40","Log in and Sign up now always show at the top right when you are not signed in, including in a downloaded copy of the page. In a downloaded copy (where sign-in cannot work) they open a short page with a Back button and the website link, instead of being hidden."],
+[217,"2026-11-25 07:30","Log in and Sign up are back at the top right, and now open the full-screen sign-in page (the big title and the form on the side), not the old in-app account page. The Account button for signed-in people and the Requests page use the same screen, with a Back button to return to where you were. The old account page is no longer reachable."],
 [216,"2026-11-24 20:30","Renamed the Notice board to Requests everywhere it appears (the Start tile, the page title, the help page, and the Privacy Policy and Terms). Older entries in this history keep the old name because that is what it was called at the time."],
 [215,"2026-11-24 19:00","Notice board now needs an account: without one it shows Log in and Sign up buttons instead of the form. Every request is sent with the email of the account that posted it, so the owner can see who sent it; the board and the Privacy Policy say so plainly. The old line saying nobody can see who sent a request was removed because it is no longer true."],
 [214,"2026-11-24 16:10","Removed the copyrighted Latin teacher files: the 124 supplied PDFs (grammar sheets, past papers, notes, worksets) and everything that opened them (the ebfiles zip reader, the Choose the 3 zip files button, the Supplied files list), plus the Latin unseens book from the VCE library list. The Latin practice, cards and plans that were written for this app are unchanged."],
@@ -19784,7 +19786,7 @@ function viewCentral(){const hr=new Date().getHours(),gr=hr<12?"Good morning":hr
  const B=(v,t,d,pri)=>`<button class="ch-btn${pri?" pri":""}" data-act="tab" data-v="${v}"><b>${t}</b><span>${d}</span></button>`;
  return `<section class="ch"><div class="ch-hero"><h1>TheMossHead's Academics</h1><p>${gr}.</p></div><div class="ch-grid">${B("start","Start","Year levels or Resources",1)}${B("set","Settings","Theme, text size and backup")}${B("board","Notice board","Send a request or message")}${B("help","How it works","A quick guide")}${B("legal","Privacy &amp; Terms","How your information is used")}${B("log","Version history","What has changed, and when")}</div></section>`}
 function render(){const a=$("#app");if(!a)return;if(typeof acGate==="function"&&acGate()){a.classList.add("gated");a.innerHTML=viewGate();return}a.classList.remove("gated");
- const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:"";
+ const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goin">Log in</button><button class="sm pri" data-ac="goup">Sign up</button></div>`;
  if(tab==="start"){a.innerHTML=acctBtns+viewStart();try{uiAfterRender()}catch(e){}return}
  if(tab==="resx"){a.innerHTML=acctBtns+`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="start">&lsaquo; Start</button></nav></div>`+(typeof viewResx==="function"?viewResx():"");try{uiAfterRender()}catch(e){}return}
  if(tab==="ch"||tab==="yrs"){a.innerHTML=acctBtns+(tab==="yrs"?`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="start">&lsaquo; Start</button></nav></div>`+viewYears():viewCentral());try{uiAfterRender()}catch(e){}return}
