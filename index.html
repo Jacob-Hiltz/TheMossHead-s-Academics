@@ -19174,9 +19174,9 @@ function acSet(u){if(u&&AC.guest){AC.guest=false;acRawDel.call(localStorage,"acc
 /* guest mode lasts 10 minutes from the first time it is used on this device, then sign-in is required */
 const GUEST_MS=600000;
 function acGEnd(){return+acG("acct:gend")||0}
-function acGUsed(){const e=acGEnd();return !!e&&e<=Date.now()}
+function acGUsed(){return false}/* guest mode no longer expires */
 function acGuestEnd(){AC.guest=false;acRawDel.call(localStorage,"acct:guest");AC.mode="in";AC.err="Your 10 minutes as a guest are up. Please log in or sign up to keep going.";AC.msg="";acTick();acRender()}
-function acTick(){let el=document.getElementById("gtimer");const show=AC.on&&AC.guest&&!AC.user&&!AC.sdkErr&&location.protocol!=="file:";
+function acTick(){let el=document.getElementById("gtimer");const show=false&&AC.on&&AC.guest&&!AC.user&&!AC.sdkErr&&location.protocol!=="file:";
  if(!show){if(el)el.remove();return}
  const left=Math.max(0,acGEnd()-Date.now());if(!left){return acGuestEnd()}
  if(!el){el=document.createElement("div");el.id="gtimer";el.setAttribute("role","timer");el.title="Guest time left. Log in or sign up to keep your progress.";document.body.appendChild(el)}
@@ -19212,7 +19212,7 @@ function viewAcct(){ebStyle();const C=h=>`${acLegalOv()}<section class="eb"><div
   <input id="acem" type="email" data-ac="email" value="${esc(AC.email)}" placeholder="Email" aria-label="Email" autocomplete="email" maxlength="254" style="width:100%">
   <input id="acpw" type="password" data-ac="pw" value="${esc(AC.pw)}" placeholder="${up?"Password (8 or more characters)":"Password"}" aria-label="Password" maxlength="128" autocomplete="${up?"new-password":"current-password"}" style="width:100%;margin-top:8px">
   <button class="pri" data-ac="${up?"signup":"signin"}" ${AC.busy?"disabled":""} style="width:100%;margin-top:10px">${up?"Create account":"Log in"}</button>
-  <div class="gate-links">${up?"":`<button class="lnk" data-ac="reset">Forgot password?</button>`}${acGate()&&!acGUsed()?`<button class="lnk" data-ac="guest">Continue as guest</button>`:""}</div>${msg}`)}
+  <div class="gate-links">${up?"":`<button class="lnk" data-ac="reset">Forgot password?</button>`}</div>${acGate()?`<div class="orline"><span>or</span></div><button data-ac="guest" style="width:100%">Use without an account</button><p class="eb-note" style="margin:8px 0 0">No sign-in needed. Your progress is saved in this browser on this device only. You can log in or sign up later from the top right.</p>`:""}${msg}`)}
 async function acDo(k){if(k==="retry"){AC.sdkErr=false;acLoad();return acRefresh()}if(k==="swapin"||k==="swapup"){AC.mode=k==="swapup"?"up":"in";AC.err="";AC.msg="";return acRefresh()}if(k==="swap"){AC.mode=AC.mode==="up"?"in":"up";AC.err="";AC.msg="";return acRefresh()}
  if(k==="legal"){AC.legal=!AC.legal;return acRender()}
  if(k==="guest"){if(acGUsed()){AC.err="Your 10 minutes as a guest are used up. Please log in or sign up.";AC.guest=false;return acRefresh()}AC.guest=true;AC.err="";AC.msg="";if(!acGEnd())acP("acct:gend",Date.now()+GUEST_MS);acP("acct:guest","1");acTick();if(typeof tab!=="undefined")tab="ch";return acRender()}
@@ -19312,8 +19312,9 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through the Notice board page.`)}
 </div></section>`}
 
-const APP_VER=211;
+const APP_VER=212;
 const APP_LOG=[
+[212,"2026-11-24 14:25","Sign-in is now optional: the log-in screen has a Use without an account button with no time limit, so the whole app works straight away. Progress then saves in this browser on this device only; Log in or Sign up (top right) is still there if you want it to follow you between devices, and you choose which progress to keep when you do. The 10-minute guest timer is gone."],
 [211,"2026-11-23 21:00","VCE library files now open in a new tab wrapped in the app's own branding: the TheMossHead's Academics header in your current theme colours, the file name, Download and Open raw file buttons. PDFs show in the page; Word, PowerPoint and Excel files show through Microsoft's online viewer; other types (zip, etc.) offer Download."],
 [210,"2026-11-23 20:45","The whole vce Drive folder (8,945 files, 21.5 GB) now lives on Cloudflare R2 and is listed in Resources under Professionally made: Year 11 and 12: VCE library, split into Exams, Textbooks and Miscellaneous, then subject, year and publisher. Tap a file to open it in a new tab. The Resources search now also searches every VCE file by name. Year 10 and Latin originals still open from the zip files."],
 [209,"2026-11-23 00:25","Top-up cards from your Drive files: Year 11 Biology (+46), Physics (+51, new Waves, light and radiation category), Business (+32), English (+21), Specialist Maths (+40); Year 12 Accounting and Economics (+~83), History, Politics and Geography (+~134), Environmental Science, HHD, PE and English Language (+~151). Anything uncertain says check with your teacher. The source files are listed in Resources."],
