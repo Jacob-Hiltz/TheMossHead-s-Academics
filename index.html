@@ -19312,8 +19312,9 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through the Notice board page.`)}
 </div></section>`}
 
-const APP_VER=212;
+const APP_VER=213;
 const APP_LOG=[
+[213,"2026-11-24 14:40","Removed the Log in and Sign up buttons from the top right (and the log-in page they opened). Without an account you just use the app; the buttons only come back as an Account button if you are already signed in. Log in and Sign up are still on the first screen next to Use without an account."],
 [212,"2026-11-24 14:25","Sign-in is now optional: the log-in screen has a Use without an account button with no time limit, so the whole app works straight away. Progress then saves in this browser on this device only; Log in or Sign up (top right) is still there if you want it to follow you between devices, and you choose which progress to keep when you do. The 10-minute guest timer is gone."],
 [211,"2026-11-23 21:00","VCE library files now open in a new tab wrapped in the app's own branding: the TheMossHead's Academics header in your current theme colours, the file name, Download and Open raw file buttons. PDFs show in the page; Word, PowerPoint and Excel files show through Microsoft's online viewer; other types (zip, etc.) offer Download."],
 [210,"2026-11-23 20:45","The whole vce Drive folder (8,945 files, 21.5 GB) now lives on Cloudflare R2 and is listed in Resources under Professionally made: Year 11 and 12: VCE library, split into Exams, Textbooks and Miscellaneous, then subject, year and publisher. Tap a file to open it in a new tab. The Resources search now also searches every VCE file by name. Year 10 and Latin originals still open from the zip files."],
@@ -19803,7 +19804,7 @@ function viewCentral(){const hr=new Date().getHours(),gr=hr<12?"Good morning":hr
  const B=(v,t,d,pri)=>`<button class="ch-btn${pri?" pri":""}" data-act="tab" data-v="${v}"><b>${t}</b><span>${d}</span></button>`;
  return `<section class="ch"><div class="ch-hero"><h1>TheMossHead's Academics</h1><p>${gr}.</p></div><div class="ch-grid">${B("start","Start","Year levels or Resources",1)}${B("set","Settings","Theme, text size and backup")}${B("board","Notice board","Send a request or message")}${B("help","How it works","A quick guide")}${B("legal","Privacy &amp; Terms","How your information is used")}${B("log","Version history","What has changed, and when")}</div></section>`}
 function render(){const a=$("#app");if(!a)return;if(typeof acGate==="function"&&acGate()){a.classList.add("gated");a.innerHTML=viewGate();return}a.classList.remove("gated");
- const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goin">Log in</button><button class="sm pri" data-ac="goup">Sign up</button></div>`;
+ const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:"";
  if(tab==="start"){a.innerHTML=acctBtns+viewStart();try{uiAfterRender()}catch(e){}return}
  if(tab==="resx"){a.innerHTML=acctBtns+`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="start">&lsaquo; Start</button></nav></div>`+(typeof viewResx==="function"?viewResx():"");try{uiAfterRender()}catch(e){}return}
  if(tab==="ch"||tab==="yrs"){a.innerHTML=acctBtns+(tab==="yrs"?`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="start">&lsaquo; Start</button></nav></div>`+viewYears():viewCentral());try{uiAfterRender()}catch(e){}return}
