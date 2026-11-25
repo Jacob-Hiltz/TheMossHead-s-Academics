@@ -19159,9 +19159,9 @@ function acTick(){let el=document.getElementById("gtimer");const show=false&&AC.
  if(!el){el=document.createElement("div");el.id="gtimer";el.setAttribute("role","timer");el.title="Guest time left. Log in or sign up to keep your progress.";document.body.appendChild(el)}
  const m=Math.floor(left/60000),sec=Math.floor(left/1000)%60;el.textContent="Guest "+m+":"+String(sec).padStart(2,"0");el.classList.toggle("low",left<60000)}
 setInterval(acTick,1000);
-function acGate(){if(AC.show==="in"&&AC.user&&!AC.choice&&!AC.unver)AC.show=false;if(AC.show)return true;if(AC.on&&!AC.ready&&!AC.sdkErr&&!AC.guest&&AC.hint)return false;return AC.on&&!AC.guest&&location.protocol!=="file:"&&!AC.sdkErr&&(!AC.known||!AC.user||!!AC.choice||!!AC.unver)}
+function acGate(){if(AC.show==="in"&&AC.user&&!AC.choice&&!AC.unver)AC.show=false;if(AC.show&&AC.on&&location.protocol!=="file:"&&!AC.sdkErr)return true;if(AC.on&&!AC.ready&&!AC.sdkErr&&!AC.guest&&AC.hint)return false;return AC.on&&!AC.guest&&location.protocol!=="file:"&&!AC.sdkErr&&(!AC.known||!AC.user||!!AC.choice||!!AC.unver)}
 function acRender(){if(typeof render!=="function")return;const y=window.scrollY;render();window.scrollTo(0,y)}
-function viewGate(){const off=AC.show&&(location.protocol==="file:"||!AC.on||AC.sdkErr);const body=off?`<section class="eb"><div class="eb-card"><button class="lnk" data-ac="back">&larr; Back</button><b>Sign-in is not available here</b><p class="eb-note">Logging in and signing up only work on the website, not in a downloaded copy of the page (or when the connection is blocked). Open <a href="https://jacob-hiltz.github.io/TheMossHead-s-Academics/" target="_blank" rel="noopener noreferrer">https://jacob-hiltz.github.io/TheMossHead-s-Academics/</a> to log in or sign up.</p></div></section>`:!AC.known?`<section class="eb"><div class="eb-card"><p class="eb-note">Loading...</p></div></section>`:viewAcct();
+function viewGate(){const body=!AC.known?`<section class="eb"><div class="eb-card"><p class="eb-note">Loading...</p></div></section>`:viewAcct();
  return `<div class="gate"><aside class="gate-form">${body}</aside>${acLegalOv()}<h1 class="gate-big" aria-label="TheMossHead's Academics"><span aria-hidden="true">The<br>Moss<br>Head's<br>Academics</span></h1></div>`}
 function acRefresh(){if(acGate()||(typeof tab!=="undefined"&&tab==="acct")){const a=document.activeElement;if(a&&a.dataset&&a.dataset.ac&&/INPUT/.test(a.tagName))return acPaint();const y=window.scrollY;render();window.scrollTo(0,y)}}
 function acPaint(){const m=document.getElementById("acmsg");if(m)m.textContent=AC.err||AC.msg}
@@ -19289,9 +19289,8 @@ ${H("Contact")}
 ${P(`Questions about these terms can be raised through Requests page.`)}
 </div></section>`}
 
-const APP_VER=218;
+const APP_VER=217;
 const APP_LOG=[
-[218,"2026-11-25 07:40","Log in and Sign up now always show at the top right when you are not signed in, including in a downloaded copy of the page. In a downloaded copy (where sign-in cannot work) they open a short page with a Back button and the website link, instead of being hidden."],
 [217,"2026-11-25 07:30","Log in and Sign up are back at the top right, and now open the full-screen sign-in page (the big title and the form on the side), not the old in-app account page. The Account button for signed-in people and the Requests page use the same screen, with a Back button to return to where you were. The old account page is no longer reachable."],
 [216,"2026-11-24 20:30","Renamed the Notice board to Requests everywhere it appears (the Start tile, the page title, the help page, and the Privacy Policy and Terms). Older entries in this history keep the old name because that is what it was called at the time."],
 [215,"2026-11-24 19:00","Notice board now needs an account: without one it shows Log in and Sign up buttons instead of the form. Every request is sent with the email of the account that posted it, so the owner can see who sent it; the board and the Privacy Policy say so plainly. The old line saying nobody can see who sent a request was removed because it is no longer true."],
@@ -19786,7 +19785,7 @@ function viewCentral(){const hr=new Date().getHours(),gr=hr<12?"Good morning":hr
  const B=(v,t,d,pri)=>`<button class="ch-btn${pri?" pri":""}" data-act="tab" data-v="${v}"><b>${t}</b><span>${d}</span></button>`;
  return `<section class="ch"><div class="ch-hero"><h1>TheMossHead's Academics</h1><p>${gr}.</p></div><div class="ch-grid">${B("start","Start","Year levels or Resources",1)}${B("set","Settings","Theme, text size and backup")}${B("board","Notice board","Send a request or message")}${B("help","How it works","A quick guide")}${B("legal","Privacy &amp; Terms","How your information is used")}${B("log","Version history","What has changed, and when")}</div></section>`}
 function render(){const a=$("#app");if(!a)return;if(typeof acGate==="function"&&acGate()){a.classList.add("gated");a.innerHTML=viewGate();return}a.classList.remove("gated");
- const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goin">Log in</button><button class="sm pri" data-ac="goup">Sign up</button></div>`;
+ const acctBtns=typeof AC==="undefined"?"":(AC.ready&&AC.user)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goacct">Account</button></div>`:(AC.on&&location.protocol!=="file:"&&!AC.sdkErr)?`<div class="hdr-acct" role="group" aria-label="Account"><button class="sm ghost" data-ac="goin">Log in</button><button class="sm pri" data-ac="goup">Sign up</button></div>`:"";
  if(tab==="start"){a.innerHTML=acctBtns+viewStart();try{uiAfterRender()}catch(e){}return}
  if(tab==="resx"){a.innerHTML=acctBtns+`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="start">&lsaquo; Start</button></nav></div>`+(typeof viewResx==="function"?viewResx():"");try{uiAfterRender()}catch(e){}return}
  if(tab==="ch"||tab==="yrs"){a.innerHTML=acctBtns+(tab==="yrs"?`<div class="ch" style="padding-bottom:0;gap:0"><nav class="tabs"><button data-act="tab" data-v="start">&lsaquo; Start</button></nav></div>`+viewYears():viewCentral());try{uiAfterRender()}catch(e){}return}
